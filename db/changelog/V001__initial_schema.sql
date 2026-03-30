@@ -1,0 +1,36 @@
+-- ============================================================
+-- Changelog: V001__initial_schema.sql
+-- Date: 2026-03-27
+-- Author: Agent_DBO
+-- Description: Initial schema -- reference only.
+--   The initial 18 tables are created by db/schema/init.sql
+--   This file exists as the starting point for the changelog sequence.
+--   Future schema changes should be V002+.
+-- Affected tables: all (18 tables)
+-- Idempotent: YES
+-- ============================================================
+
+-- Initial schema is managed by db/schema/tables/*.sql
+-- Run: mysql -u root -p vietnet < db/schema/init.sql
+--
+-- Tables created:
+-- 1.  users
+-- 2.  refresh_tokens
+-- 3.  login_attempts
+-- 4.  password_reset_tokens
+-- 5.  categories
+-- 6.  media
+-- 7.  projects
+-- 8.  project_gallery
+-- 9.  products
+-- 10. product_images
+-- 11. consultations
+-- 12. page_configs
+-- 13. page_config_history
+-- 14. settings
+-- 15. notifications
+-- 16. page_views
+-- 17. page_view_daily
+-- 18. email_logs
+
+SELECT 'V001: Initial schema reference -- see db/schema/init.sql' AS changelog_status;

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>VietNet Interior - Homepage (Edit Mode)</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;700&amp;family=Manrope:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "tertiary": "#24434b",
+              "on-secondary-container": "#736155",
+              "surface-tint": "#79573f",
+              "inverse-on-surface": "#f3f0ee",
+              "on-primary-fixed": "#2d1604",
+              "on-tertiary-container": "#b0d0db",
+              "inverse-surface": "#30302f",
+              "inverse-primary": "#eabda0",
+              "surface-container-high": "#eae8e6",
+              "tertiary-fixed": "#c8e8f3",
+              "on-surface": "#1b1c1b",
+              "secondary": "#6d5b4f",
+              "outline-variant": "#d4c3ba",
+              "on-secondary-fixed": "#261910",
+              "error": "#ba1a1a",
+              "surface-bright": "#fcf9f7",
+              "outline": "#82746d",
+              "on-background": "#1b1c1b",
+              "on-tertiary-fixed-variant": "#2d4b54",
+              "primary-container": "#6f4e37",
+              "on-surface-variant": "#50453e",
+              "primary-fixed": "#ffdcc6",
+              "tertiary-container": "#3c5a63",
+              "on-tertiary-fixed": "#001f27",
+              "on-primary-fixed-variant": "#5f402a",
+              "background": "#fcf9f7",
+              "surface-variant": "#e5e2e0",
+              "primary": "#553722",
+              "surface-dim": "#dcd9d8",
+              "on-error-container": "#93000a",
+              "surface-container-highest": "#e5e2e0",
+              "on-error": "#ffffff",
+              "on-secondary": "#ffffff",
+              "primary-fixed-dim": "#eabda0",
+              "on-tertiary": "#ffffff",
+              "on-primary-container": "#eec1a4",
+              "on-secondary-fixed-variant": "#544339",
+              "tertiary-fixed-dim": "#acccd6",
+              "secondary-fixed": "#f7decf",
+              "on-primary": "#ffffff",
+              "surface-container-lowest": "#ffffff",
+              "surface": "#fcf9f7",
+              "error-container": "#ffdad6",
+              "surface-container-low": "#f6f3f1",
+              "secondary-fixed-dim": "#dac2b4",
+              "secondary-container": "#f7decf",
+              "surface-container": "#f0edeb"
+            },
+            fontFamily: {
+              "headline": ["Noto Serif"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .edit-block {
+            position: relative;
+            outline: 2px dashed #6f4e37;
+            outline-offset: 4px;
+        }
+        .edit-trigger {
+            position: absolute;
+            top: -12px;
+            right: -12px;
+            background: #6f4e37;
+            color: white;
+            border-radius: 50%;
+            padding: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 40;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background font-body">
+<!-- Admin Toolbar (Mandatory) -->
+<div class="fixed top-0 left-0 w-full z-[100] bg-on-surface text-surface py-3 px-8 flex justify-between items-center shadow-xl">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-primary-fixed-dim" data-icon="edit_note">edit_note</span>
+<span class="font-label text-xs uppercase tracking-[0.2em] font-bold">Edit Mode: Homepage</span>
+</div>
+<div class="flex items-center gap-3">
+<button class="px-6 py-2 bg-surface/10 hover:bg-surface/20 transition-colors rounded-xl font-label text-xs uppercase tracking-widest">Cancel</button>
+<button class="px-6 py-2 bg-primary-container text-white hover:bg-primary transition-colors rounded-xl font-label text-xs uppercase tracking-widest shadow-lg">Save Changes</button>
+</div>
+</div>
+<!-- TopNavBar (JSON Managed) -->
+<nav class="fixed top-12 w-full z-50 bg-[#FCF9F7]/80 dark:bg-stone-900/80 backdrop-blur-xl shadow-sm dark:shadow-none">
+<div class="flex justify-between items-center px-8 py-4 max-w-screen-2xl mx-auto">
+<div class="text-2xl font-bold tracking-tighter text-[#553722] dark:text-[#FCF9F7]">VietNet</div>
+<div class="hidden md:flex gap-10 items-center">
+<a class="font-['Noto_Serif'] font-medium tracking-wide text-sm uppercase text-[#6F4E37] border-b-2 border-[#6F4E37] pb-1" href="#">Home</a>
+<a class="font-['Noto_Serif'] font-medium tracking-wide text-sm uppercase text-[#553722]/70 hover:text-[#553722] transition-colors" href="#">Projects</a>
+<a class="font-['Noto_Serif'] font-medium tracking-wide text-sm uppercase text-[#553722]/70 hover:text-[#553722] transition-colors" href="#">Catalog</a>
+<a class="font-['Noto_Serif'] font-medium tracking-wide text-sm uppercase text-[#553722]/70 hover:text-[#553722] transition-colors" href="#">Materials</a>
+<a class="font-['Noto_Serif'] font-medium tracking-wide text-sm uppercase text-[#553722]/70 hover:text-[#553722] transition-colors" href="#">Consultation</a>
+</div>
+<div class="flex items-center gap-6 text-[#553722]">
+<span class="material-symbols-outlined cursor-pointer hover:opacity-80 transition-opacity" data-icon="shopping_cart">shopping_cart</span>
+<span class="material-symbols-outlined cursor-pointer hover:opacity-80 transition-opacity" data-icon="account_circle">account_circle</span>
+</div>
+</div>
+</nav>
+<main class="pt-28">
+<!-- Hero Section -->
+<section class="relative h-[870px] px-8 py-4 max-w-screen-2xl mx-auto">
+<div class="edit-block h-full w-full rounded-full overflow-hidden relative group">
+<div class="edit-trigger">
+<span class="material-symbols-outlined !text-sm" data-icon="edit">edit</span>
+</div>
+<img class="w-full h-full object-cover" data-alt="Luxurious minimalist living room with beige linen sofa, marble coffee table, and large architectural window with soft morning light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD3ZaiGidFjFpo6fF9y9R0_JtEDTt3Ju7LnkTJAgnZEpCfZTl-kiqXlpmAshDnOofj0TW9IhPH-gHyEMzciKBEUof9pFzR8YB5svmvoFd20phqNNiX9moYywVirA-0M3aB6_0uYTDnZFv_P81aBwMlsqrnaJiOrYNNiMscgrj8cS1k59mNpGzJ5wUPy5YbySoVYgT-EfeS_IHPGIx8ND6oxShMm56EAFSXwc37KI6IvZdgI20bBEHgdcBYWyz6MKwKUXV9h3EiWk2ft"/>
+<div class="absolute inset-0 bg-gradient-to-r from-on-surface/40 to-transparent flex items-center px-16">
+<div class="max-w-2xl space-y-6">
+<div class="edit-block inline-block">
+<div class="edit-trigger"><span class="material-symbols-outlined !text-sm" data-icon="edit">edit</span></div>
+<span class="font-label text-surface tracking-[0.4em] uppercase text-xs">Since 1998</span>
+</div>
+<div class="edit-block">
+<div class="edit-trigger"><span class="material-symbols-outlined !text-sm" data-icon="edit">edit</span></div>
+<h1 class="font-headline text-7xl text-white leading-[1.1] tracking-tight">Designing <br/> Sacred Spaces</h1>
+</div>
+<div class="edit-block">
+<div class="edit-trigger"><span class="material-symbols-outlined !text-sm" data-icon="edit">edit</span></div>
+<p class="font-body text-surface/90 text-lg max-w-md">Refining the art of living through sustainable materials and timeless Vietnamese craftsmanship.</p>
+</div>
+<div class="pt-4 flex gap-4">
+<button class="px-8 py-4 bg-primary-container text-white rounded-xl font-label text-xs uppercase tracking-widest hover:scale-105 transition-transform">Explore Catalog</button>
+<button class="px-8 py-4 bg-white/10 backdrop-blur-md text-white border border-white/20 rounded-xl font-label text-xs uppercase tracking-widest hover:bg-white/20 transition-all">Our Process</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Asymmetric Intro Section -->
+<section class="py-32 px-8 max-w-7xl mx-auto">
+<div class="grid grid-cols-12 gap-12 items-center">
+<div class="col-span-12 md:col-span-5 space-y-8">
+<div class="edit-block">
+<div class="edit-trigger"><span class="material-symbols-outlined !text-sm" data-icon="edit">edit</span></div>
+<h2 class="font-headline text-4xl text-primary leading-tight">Meticulously Crafted, <br/> Intentionally Lived.</h2>
+</div>
+<div class="edit-block">
+<div class="edit-trigger"><span class="material-symbols-outlined !text-sm" data-icon="edit">edit</span></div>
+<p class="text-on-surface-variant leading-relaxed">VietNet Interior isn't just about furniture; it's about the dialogue between a person and their environment. We source rare timber and textiles that age gracefully, telling a story of heritage and quiet luxury.</p>
+</div>
+</div>
+<div class="col-span-12 md:col-span-7 flex justify-end">
+<div class="edit-block w-full max-w-lg aspect-[4/5] rounded-xl overflow-hidden shadow-2xl">
+<div class="edit-trigger"><span class="material-symbols-outlined !text-sm" data-icon="edit">edit</span></div>
+<img class="w-full h-full object-cover" data-alt="Detailed close-up of a handcrafted dark walnut chair with cream-colored woven upholstery against a minimalist clay-toned wall" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCDi04MYo24M3mOTT6_b8lIphsQLLa4UgxCFOU_PM30Z7Tf9o-z_QZZaE__YBoWnI5h2FuIJSJH9e5asAZ2HB5FvGZOS0Y7xvA2rKtkmAfk3EpPXa5hrymXaYMrVPhumwv6lpgTomBNObV5QI8Mwf6wkmAG9IBb4vOFE2wc8MCdu7-N20J3ycHpOjeeQ0QMDm8tgrnWLegwzYSnuGQfBcgCtPU8DySRdl9GtcZphgAf96J3Vbpp8NHvtTjiBXRYSd-qmu9j1okogSG3"/>
+</div>
+</div>
+</div>
+</section>
+<!-- Bento Grid Portfolio -->
+<section class="bg-surface-container-low py-32 px-8">
+<div class="max-w-screen-2xl mx-auto">
+<div class="flex justify-between items-end mb-16">
+<div class="edit-block">
+<div class="edit-trigger"><span class="material-symbols-outlined !text-sm" data-icon="edit">edit</span></div>
+<span class="font-label text-primary tracking-[0.3em] uppercase text-xs">Selected Works</span>
+<h2 class="font-headline text-5xl text-primary mt-4">The Portfolio</h2>
+</div>
+<button class="font-label text-xs uppercase tracking-widest border-b border-primary pb-2 text-primary hover:opacity-70 transition-opacity">View All Projects</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 h-[800px]">
+<!-- Large Feature -->
+<div class="md:col-span-2 md:row-span-2 edit-block rounded-xl overflow-hidden group relative">
+<div class="edit-trigger"><span class="material-symbols-outlined !text-sm" data-icon="edit">edit</span></div>
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" data-alt="Spacious modern kitchen with dark wood cabinets and a marble island under soft dramatic pendant lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBB8RWggLqXo32AY317_dUuNxfMJL2QvucMQXRiYB0HRUqrJOrNiJRV0DfTMa1ZSy6RXJxlySM7bmIhYHP7wP-sp8_JzZsUOAQSolZivuziC1FTGX2hMp8b3n2CkjXeGlLI141DOtkN-l_8MSyCf_0KRajg5lfzi33IbylyvhhwmwfPJczG1ZuSmBIUMeb7qTLkXT4JjjMKNFJcsKyV6PCawbvpQWXiwtwLaFOodsfE8SeFfrl-xv3MMmn7nDGuCKn0IRHOPCgcYdsP"/>
+<div class="absolute bottom-0 left-0 w-full p-8 bg-gradient-to-t from-primary/80 to-transparent">
+<p class="text-white/70 font-label text-[10px] tracking-widest uppercase">Saigon Villa</p>
+<h3 class="text-white font-headline text-2xl mt-1">The Monolith Kitchen</h3>
+</div>
+</div>
+<!-- Small Feature 1 -->
+<div class="edit-block rounded-xl overflow-hidden group relative">
+<div class="edit-trigger"><span class="material-symbols-outlined !text-sm" data-icon="edit">edit</span></div>
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" data-alt="Sunlit bedroom with natural linen bedding and a simple wooden headboard against a warm white wall" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCQzDUkJxASUG8DZVgJUmVMVDhPdzvoQugOMFE-XySpqmArTp7TodEow2BakqPzFALP5eq_4gbbJf0VurqdBpD7yFpGq3ldl4QQHXDQilyu80jG5n37rK8QdMFCtBOX2r9spxYg7JIVzjWuvkeVNgNqFM6k1Yjo5Nke64u_gRdqJ6LehTXDfK4B_ChsIO0f_mLSvwoyTfjwaGcg4R_XLM9KnOFmbVfoYmxp_mxaA9YJWTB5GDhW6bF0wTbSCVX-EtAYGHHcDvy1cuWT"/>
+<div class="absolute inset-0 bg-primary/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+<span class="material-symbols-outlined text-white text-4xl" data-icon="add">add</span>
+</div>
+</div>
+<!-- Small Feature 2 -->
+<div class="edit-block rounded-xl overflow-hidden group relative">
+<div class="edit-trigger"><span class="material-symbols-outlined !text-sm" data-icon="edit">edit</span></div>
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" data-alt="Cozy reading nook with a mid-century modern leather armchair and a brass floor lamp in a dimly lit study" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD7SM-XJ7hitexnw57wi83r7cNWtjHp86O5x95WBeBJ0NZk3v5tSve9BUpYVDh2O0IEU-1YbN-CuJQFal4HXmaPlcJmL2n8crhErMM4JrPneZ9AdbP6EMGSKQhamLTLYEFs16wfrhxeruwByE7E0VlRXn-OzchYt3hg6iSIuDrqAgY1OdIwmAuo6Rglfvbpsth7E8pmLVScM1Ys9LdT2KuYv_HKW6pBWR_FGo-W2FOWaHgmdWMXS175xWfd8dl_glhLUJH9a0VwfQTY"/>
+</div>
+<!-- Horizontal Feature -->
+<div class="md:col-span-2 edit-block rounded-xl overflow-hidden group relative">
+<div class="edit-trigger"><span class="material-symbols-outlined !text-sm" data-icon="edit">edit</span></div>
+<img class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" data-alt="Wide shot of a luxury dining room with a long oak table and sculptural chairs under an architectural ceiling" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDpviEbh49cGh7ioohQoeiaLFovqelwH_ye8pW33_M_4F-spiuGAYOJj62M1rSdDaj3hmrPGQllHbQmbQDoq_ewBNeVdRiPdsooKrjxl2j4O_MQ13zxYWNqvXLbme4ALhUt9y6APfY07wMPTgA7Rm5G1MWI7hpbcBBeWkD5fqwWOiB0L8TeZ0IjpJCLU6ZG4HtBng_dY3CtyTNRggx2EZQp0H17_zrdWxCsLAQpgn-nqv_kpa8sbHybOvy4jzwsn9N9g3Opl_9bTz_9"/>
+<div class="absolute bottom-0 left-0 w-full p-8 bg-gradient-to-t from-primary/80 to-transparent">
+<p class="text-white/70 font-label text-[10px] tracking-widest uppercase">Da Lat Retreat</p>
+<h3 class="text-white font-headline text-2xl mt-1">Echoes of Timber</h3>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Catalog Teaser -->
+<section class="py-32 px-8 max-w-7xl mx-auto text-center">
+<div class="edit-block inline-block mb-8">
+<div class="edit-trigger"><span class="material-symbols-outlined !text-sm" data-icon="edit">edit</span></div>
+<h2 class="font-headline text-4xl text-primary">Signature Materials</h2>
+</div>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-12 mt-16">
+<div class="space-y-4">
+<div class="edit-block aspect-square rounded-full overflow-hidden bg-surface-container-highest flex items-center justify-center group cursor-pointer">
+<div class="edit-trigger"><span class="material-symbols-outlined !text-sm" data-icon="edit">edit</span></div>
+<img class="w-full h-full object-cover opacity-80 group-hover:scale-110 transition-transform" data-alt="Macro texture of raw grey concrete with subtle imperfections" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBHAu_ELiZXm6vXEsbb04koZk70Y-n3AcbLcJKzsqMlaagwgjMjrIUY-yVyX2qsf_PF0YMlRrtgi_QajSt1z_aL_k3cETT1VKjZWp04oT2nTdRctl_Ty9TZGJZwAuNQw4cpLUBSHr581pVdDBvwFds5Hq6AwuIC4sZ__EhKMnYc7RNq6p03FSxeMhg1lpedU9NxZaL8MTWogmMdRnDR1loEfvZyDlDW7ihhe-GCAraA8mc-b_F0uJuQTuxpG6ASJQTrKec7Tk5i8cUJ"/>
+</div>
+<p class="font-label text-xs tracking-widest uppercase">Polished Stone</p>
+</div>
+<div class="space-y-4">
+<div class="edit-block aspect-square rounded-full overflow-hidden bg-surface-container-highest flex items-center justify-center group cursor-pointer">
+<div class="edit-trigger"><span class="material-symbols-outlined !text-sm" data-icon="edit">edit</span></div>
+<img class="w-full h-full object-cover opacity-80 group-hover:scale-110 transition-transform" data-alt="Close up of high quality dark walnut wood grain showing natural patterns" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAM9Re7wd990Kd2bitPI9z36pQnLDagYDHc1uqVacKwkGIuZQUYH6enngUot91mnLiFkeZB0tzBZrkO9WcNz5A1Kj8wHwlPkJhDTkqP0IR2MW0oOeOCe4so_2_i6vXhX_QOyD0-kLda9n2u8Kuwkipxzq6qiEagJd9u3nSasTh7LrE56fGxUTHMIbE-VIY0DLVV23biEjfAoqPNHu9-K5o8HRDNuMYyWRSHdf2-9eyxQRjQ5rboEW4z__ESuE5Y8FkLyBaTUiBFlPPg"/>
+</div>
+<p class="font-label text-xs tracking-widest uppercase">Reclaimed Walnut</p>
+</div>
+<div class="space-y-4">
+<div class="edit-block aspect-square rounded-full overflow-hidden bg-surface-container-highest flex items-center justify-center group cursor-pointer">
+<div class="edit-trigger"><span class="material-symbols-outlined !text-sm" data-icon="edit">edit</span></div>
+<img class="w-full h-full object-cover opacity-80 group-hover:scale-110 transition-transform" data-alt="Macro shot of natural beige linen fabric showing fine weave texture" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBtsq8NxMWkaTQS_-ZXoKZcaRE-IcKfYKJUHiizWawi6f3_TpcYRgAvtH2AH0xaqS5cYLeeB4fWHiDOG1BZ4wyvBh21-t1eJDRI_u7J99rebiDDyDGC3BaVw-fQ4hTjKpvSOYN_s1FcbuuXm1d83DNDzHNzLLGisjCYv8cedKpBuOa8vyVnwaYPnUTLRWd8UNB7MAOHkeiZnb_9uZIdi7e51e0nFqo93a0PqDPLYhuvE9ku8Yvd7RLBYHe3qSUZfp9fm5puOGmk_7wp"/>
+</div>
+<p class="font-label text-xs tracking-widest uppercase">Organic Linen</p>
+</div>
+<div class="space-y-4">
+<div class="edit-block aspect-square rounded-full overflow-hidden bg-surface-container-highest flex items-center justify-center group cursor-pointer">
+<div class="edit-trigger"><span class="material-symbols-outlined !text-sm" data-icon="edit">edit</span></div>
+<img class="w-full h-full object-cover opacity-80 group-hover:scale-110 transition-transform" data-alt="Close up of a brushed brass metallic surface with soft reflections" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDV1DKG8vc6Fi_IB0jvfV2BfkVLxnWZLsoY7k_OwowPy_b4JHMypZfkCpEymTTrfKNszHnEZ4tI7awC8OW47AoF8d7odjeQRu_46F7UauiQhUJ5IwoT6q4xwrsg75pqRORWEwme-azIqrppYQlmsRDBGPXM0e-qoulzdSZgOBqBFAUvBoRolJ6OnP5ySHpKuxfZRQ4z_5hvHzdRD2V1zY0cr4VOTJmgy4NorEMUmdGrYfU7Qo8laiE_lKh1uSGDEOcM6HtSktZOOUb0"/>
+</div>
+<p class="font-label text-xs tracking-widest uppercase">Hand-Brushed Brass</p>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer (JSON Managed) -->
+<footer class="w-full pt-16 pb-8 bg-[#553722] dark:bg-stone-950">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-12 px-8 max-w-7xl mx-auto">
+<div class="edit-block">
+<div class="edit-trigger"><span class="material-symbols-outlined !text-sm" data-icon="edit">edit</span></div>
+<div class="text-2xl font-['Noto_Serif'] text-[#FCF9F7] mb-4">VietNet</div>
+<p class="text-[#FCF9F7]/70 font-body text-sm leading-relaxed">Defining Vietnamese modernism through the lens of luxury and soulful minimalism. Each project is a journey into the heart of the home.</p>
+</div>
+<div>
+<h4 class="font-label text-xs uppercase tracking-[0.2em] text-[#FCF9F7] mb-6">Quick Links</h4>
+<div class="flex flex-col space-y-3">
+<a class="text-[#FCF9F7]/70 hover:text-[#FCF9F7] transition-colors font-['Manrope'] text-sm" href="#">Privacy Policy</a>
+<a class="text-[#FCF9F7]/70 hover:text-[#FCF9F7] transition-colors font-['Manrope'] text-sm" href="#">Terms of Service</a>
+<a class="text-[#FCF9F7]/70 hover:text-[#FCF9F7] transition-colors font-['Manrope'] text-sm" href="#">Shipping &amp; Returns</a>
+<a class="text-[#FCF9F7]/70 hover:text-[#FCF9F7] transition-colors font-['Manrope'] text-sm" href="#">Contact Us</a>
+</div>
+</div>
+<div class="edit-block">
+<div class="edit-trigger"><span class="material-symbols-outlined !text-sm" data-icon="edit">edit</span></div>
+<h4 class="font-label text-xs uppercase tracking-[0.2em] text-[#FCF9F7] mb-6">Connect</h4>
+<div class="flex gap-6 text-[#FCF9F7]/70">
+<span class="material-symbols-outlined cursor-pointer hover:text-white" data-icon="public">public</span>
+<span class="material-symbols-outlined cursor-pointer hover:text-white" data-icon="share">share</span>
+<span class="material-symbols-outlined cursor-pointer hover:text-white" data-icon="mail">mail</span>
+</div>
+</div>
+</div>
+<div class="mt-20 pt-8 border-t border-white/10 text-center">
+<p class="text-[#FCF9F7]/50 font-['Manrope'] text-xs tracking-widest uppercase">© 2024 VietNet Interior Design. Meticulously Crafted.</p>
+</div>
+</footer>
+</body></html>

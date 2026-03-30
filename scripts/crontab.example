@@ -1,0 +1,13 @@
+# ──────────────────────────────────────────
+# VietNet Crontab Configuration
+# Install: crontab /opt/vietnet/scripts/crontab.example
+# ──────────────────────────────────────────
+
+# MySQL backup — daily at 2:00 AM
+0 2 * * * /opt/vietnet/scripts/backup-mysql.sh >> /var/log/vietnet/cron.log 2>&1
+
+# Disk monitoring — every 30 minutes
+*/30 * * * * /opt/vietnet/scripts/monitor-disk.sh >> /var/log/vietnet/cron.log 2>&1
+
+# Docker cleanup — weekly Sunday at 3:00 AM
+0 3 * * 0 /opt/vietnet/scripts/docker-cleanup.sh >> /var/log/vietnet/cron.log 2>&1

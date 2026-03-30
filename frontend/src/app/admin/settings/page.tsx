@@ -1,0 +1,349 @@
+'use client'
+
+import { useState, useEffect, useCallback } from 'react'
+import {
+  AlertTriangle,
+  Check,
+  Loader2,
+  Globe,
+  Search,
+} from 'lucide-react'
+import { Button } from '@/components/ui/Button'
+import api from '@/lib/api'
+import type { ApiResponse } from '@/types'
+
+// ─── Types ─────────────────────────────────────────────────────
+
+interface SettingItem {
+  key: string
+  value: string
+  group: string
+}
+
+type TabId = 'site' | 'seo'
+
+// ─── Tab definition ────────────────────────────────────────────
+
+const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
+  { id: 'site', label: 'Cai dat chung', icon: <Globe className="h-4 w-4" /> },
+  { id: 'seo', label: 'SEO mac dinh', icon: <Search className="h-4 w-4" /> },
+]
+
+// ─── Site settings fields ──────────────────────────────────────
+
+const SITE_FIELDS: {
+  key: string
+  label: string
+  placeholder: string
+  type?: 'text' | 'textarea' | 'email' | 'tel' | 'url'
+}[] = [
+  { key: 'company_name', label: 'Ten cong ty', placeholder: 'VietNet Interior' },
+  { key: 'slogan', label: 'Slogan', placeholder: 'Noi that tinh te - Khong gian hoan hao' },
+  {
+    key: 'address',
+    label: 'Dia chi',
+    placeholder: '123 Nguyen Hue, Quan 1, TP.HCM',
+    type: 'textarea',
+  },
+  { key: 'phone', label: 'So dien thoai', placeholder: '0901234567', type: 'tel' },
+  { key: 'email', label: 'Email', placeholder: 'contact@bhquan.site', type: 'email' },
+  {
+    key: 'working_hours',
+    label: 'Gio lam viec',
+    placeholder: 'T2-T7: 8:00 - 17:30',
+  },
+  {
+    key: 'social_facebook',
+    label: 'Facebook URL',
+    placeholder: 'https://facebook.com/vietnetinterior',
+    type: 'url',
+  },
+  {
+    key: 'social_zalo',
+    label: 'Zalo URL',
+    placeholder: 'https://zalo.me/0901234567',
+    type: 'url',
+  },
+  {
+    key: 'social_instagram',
+    label: 'Instagram URL',
+    placeholder: 'https://instagram.com/vietnetinterior',
+    type: 'url',
+  },
+  {
+    key: 'social_youtube',
+    label: 'YouTube URL',
+    placeholder: 'https://youtube.com/@vietnetinterior',
+    type: 'url',
+  },
+]
+
+const SEO_FIELDS: {
+  key: string
+  label: string
+  placeholder: string
+  type?: 'text' | 'textarea' | 'url'
+  maxLength?: number
+  help?: string
+}[] = [
+  {
+    key: 'seo_title_template',
+    label: 'Template tieu de SEO',
+    placeholder: '{title} | VietNet Interior',
+    help: 'Su dung {title} de chen tieu de trang. VD: {title} | VietNet Interior',
+  },
+  {
+    key: 'seo_default_description',
+    label: 'Mo ta SEO mac dinh',
+    placeholder: 'VietNet Interior - Thiet ke noi that cao cap...',
+    type: 'textarea',
+    maxLength: 160,
+    help: 'Toi da 160 ky tu. Hien thi khi trang khong co mo ta rieng.',
+  },
+  {
+    key: 'seo_default_og_image',
+    label: 'Anh OG mac dinh (URL)',
+    placeholder: 'https://cdn.bhquan.site/og-default.jpg',
+    type: 'url',
+    help: 'Kich thuoc khuyen nghi: 1200x630px. Su dung khi trang khong co anh rieng.',
+  },
+]
+
+// ─── Toast Component ───────────────────────────────────────────
+
+function Toast({
+  message,
+  onClose,
+}: {
+  message: string
+  onClose: () => void
+}) {
+  useEffect(() => {
+    const timer = setTimeout(onClose, 3000)
+    return () => clearTimeout(timer)
+  }, [onClose])
+
+  return (
+    <div className="fixed bottom-6 right-6 z-[var(--z-toast,50)] flex items-center gap-2 rounded-xl bg-success-bg px-4 py-3 shadow-ambient-lg animate-in slide-in-from-bottom-4">
+      <Check className="h-4 w-4 text-success-text" />
+      <p className="text-body-sm font-medium text-success-text">{message}</p>
+    </div>
+  )
+}
+
+// ─── Main Settings Page ────────────────────────────────────────
+
+export default function AdminSettingsPage() {
+  const [activeTab, setActiveTab] = useState<TabId>('site')
+  const [settings, setSettings] = useState<Record<string, string>>({})
+  const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [toastMessage, setToastMessage] = useState<string | null>(null)
+
+  // Track original values for dirty check
+  const [originalSettings, setOriginalSettings] = useState<Record<string, string>>({})
+
+  const fetchSettings = useCallback(async () => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const res = (await api.get('/settings')) as unknown as ApiResponse<SettingItem[]>
+      const map: Record<string, string> = {}
+      if (Array.isArray(res.data)) {
+        res.data.forEach((item) => {
+          map[item.key] = item.value
+        })
+      }
+      setSettings(map)
+      setOriginalSettings(map)
+    } catch {
+      setError('Khong the tai cai dat. Vui long thu lai.')
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    fetchSettings()
+  }, [fetchSettings])
+
+  function updateSetting(key: string, value: string) {
+    setSettings((prev) => ({ ...prev, [key]: value }))
+  }
+
+  const currentFields = activeTab === 'site' ? SITE_FIELDS : SEO_FIELDS
+  const currentGroup = activeTab === 'site' ? 'site' : 'seo'
+
+  // Check if any field in current tab is dirty
+  const isDirty = currentFields.some(
+    (f) => (settings[f.key] || '') !== (originalSettings[f.key] || '')
+  )
+
+  async function handleSave() {
+    setIsSaving(true)
+    setError(null)
+
+    try {
+      // Only save changed fields
+      const changedFields = currentFields.filter(
+        (f) => (settings[f.key] || '') !== (originalSettings[f.key] || '')
+      )
+
+      await Promise.all(
+        changedFields.map((field) =>
+          api.put(`/settings/${field.key}`, {
+            value: settings[field.key] || '',
+            group: currentGroup,
+          })
+        )
+      )
+
+      // Update original to match saved
+      setOriginalSettings((prev) => {
+        const updated = { ...prev }
+        changedFields.forEach((f) => {
+          updated[f.key] = settings[f.key] || ''
+        })
+        return updated
+      })
+
+      setToastMessage('Da luu cai dat thanh cong!')
+    } catch {
+      setError('Khong the luu cai dat. Vui long thu lai.')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  return (
+    <div className="py-4">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="font-headline text-headline-lg text-on-surface">Cai dat</h1>
+        <p className="mt-1 text-body-md text-on-surface-variant">
+          Cau hinh he thong va tuy chinh.
+        </p>
+      </div>
+
+      {/* Error banner */}
+      {error && (
+        <div className="mb-6 flex items-center gap-3 rounded-xl bg-error-container px-4 py-3">
+          <AlertTriangle className="h-5 w-5 shrink-0 text-on-error-container" />
+          <p className="text-body-sm text-on-error-container">{error}</p>
+          <button
+            onClick={() => setError(null)}
+            className="ml-auto text-body-sm text-on-error-container underline"
+          >
+            Dong
+          </button>
+        </div>
+      )}
+
+      {/* Tab Navigation */}
+      <div className="mb-6 flex gap-2">
+        {TABS.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center gap-2 rounded-full px-4 py-2 text-body-sm font-medium transition-colors ${
+              activeTab === tab.id
+                ? 'bg-primary text-on-primary'
+                : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
+            }`}
+          >
+            {tab.icon}
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Form */}
+      {isLoading ? (
+        <div className="space-y-6">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="animate-pulse">
+              <div className="mb-2 h-4 w-24 rounded bg-surface-container" />
+              <div className="h-12 w-full rounded-xl bg-surface-container" />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="rounded-2xl bg-surface-container-lowest p-6 md:p-8">
+          <div className="space-y-6">
+            {currentFields.map((field) => {
+              const value = settings[field.key] || ''
+              const fieldType = field.type || 'text'
+              const maxLength = 'maxLength' in field ? (field.maxLength as number) : undefined
+              const help = 'help' in field ? (field.help as string) : undefined
+
+              return (
+                <div key={field.key}>
+                  <label className="mb-1 block font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
+                    {field.label}
+                  </label>
+                  {help && (
+                    <p className="mb-2 text-body-sm text-on-surface-variant/70">{help}</p>
+                  )}
+                  {fieldType === 'textarea' ? (
+                    <div>
+                      <textarea
+                        rows={3}
+                        value={value}
+                        onChange={(e) => updateSetting(field.key, e.target.value)}
+                        placeholder={field.placeholder}
+                        maxLength={maxLength}
+                        className="w-full rounded-xl bg-surface-container px-4 py-3 text-body-md text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary"
+                      />
+                      {maxLength && (
+                        <p className="mt-1 text-right text-body-sm text-on-surface-variant">
+                          {value.length}/{maxLength}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <input
+                      type={fieldType}
+                      value={value}
+                      onChange={(e) => updateSetting(field.key, e.target.value)}
+                      placeholder={field.placeholder}
+                      className="w-full rounded-xl bg-surface-container px-4 py-3 text-body-md text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  )}
+                </div>
+              )
+            })}
+          </div>
+
+          {/* Save button */}
+          <div className="mt-8 flex items-center justify-end gap-3">
+            {isDirty && (
+              <p className="text-body-sm text-on-surface-variant">
+                Co thay doi chua luu.
+              </p>
+            )}
+            <Button
+              onClick={handleSave}
+              disabled={!isDirty || isSaving}
+              loading={isSaving}
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Dang luu...
+                </>
+              ) : (
+                'Luu cai dat'
+              )}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Success Toast */}
+      {toastMessage && (
+        <Toast message={toastMessage} onClose={() => setToastMessage(null)} />
+      )}
+    </div>
+  )
+}

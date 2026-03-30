@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>VietNet Admin - Post Management</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;700&amp;family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "tertiary": "#24434b",
+              "on-secondary-container": "#736155",
+              "surface-tint": "#79573f",
+              "inverse-on-surface": "#f3f0ee",
+              "on-primary-fixed": "#2d1604",
+              "on-tertiary-container": "#b0d0db",
+              "inverse-surface": "#30302f",
+              "inverse-primary": "#eabda0",
+              "surface-container-high": "#eae8e6",
+              "tertiary-fixed": "#c8e8f3",
+              "on-surface": "#1b1c1b",
+              "secondary": "#6d5b4f",
+              "outline-variant": "#d4c3ba",
+              "on-secondary-fixed": "#261910",
+              "error": "#ba1a1a",
+              "surface-bright": "#fcf9f7",
+              "outline": "#82746d",
+              "on-background": "#1b1c1b",
+              "on-tertiary-fixed-variant": "#2d4b54",
+              "primary-container": "#6f4e37",
+              "on-surface-variant": "#50453e",
+              "primary-fixed": "#ffdcc6",
+              "tertiary-container": "#3c5a63",
+              "on-tertiary-fixed": "#001f27",
+              "on-primary-fixed-variant": "#5f402a",
+              "background": "#fcf9f7",
+              "surface-variant": "#e5e2e0",
+              "primary": "#553722",
+              "surface-dim": "#dcd9d8",
+              "on-error-container": "#93000a",
+              "surface-container-highest": "#e5e2e0",
+              "on-error": "#ffffff",
+              "on-secondary": "#ffffff",
+              "primary-fixed-dim": "#eabda0",
+              "on-tertiary": "#ffffff",
+              "on-primary-container": "#eec1a4",
+              "on-secondary-fixed-variant": "#544339",
+              "tertiary-fixed-dim": "#acccd6",
+              "secondary-fixed": "#f7decf",
+              "on-primary": "#ffffff",
+              "surface-container-lowest": "#ffffff",
+              "surface": "#fcf9f7",
+              "error-container": "#ffdad6",
+              "surface-container-low": "#f6f3f1",
+              "secondary-fixed-dim": "#dac2b4",
+              "secondary-container": "#f7decf",
+              "surface-container": "#f0edeb"
+            },
+            fontFamily: {
+              "headline": ["Noto Serif"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #d4c3ba;
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body class="bg-background font-body text-on-background antialiased flex overflow-hidden h-screen">
+<aside class="flex-col h-full p-6 space-y-4 bg-[#FCF9F7] dark:bg-stone-950 h-screen w-64 border-r border-[#6F4E37]/10 flex-shrink-0">
+<div class="mb-8">
+<h1 class="text-xl font-['Noto_Serif'] font-bold text-[#553722]">VietNet Admin</h1>
+<p class="text-[10px] font-['Manrope'] font-bold uppercase tracking-widest text-[#553722]/60">Interior Management</p>
+</div>
+<nav class="flex-1 space-y-2">
+<a class="transition-all duration-200 ease-in-out hover:translate-x-1 flex items-center gap-3 px-4 py-3 text-[#553722]/60 hover:bg-[#6F4E37]/5 hover:text-[#553722] font-['Manrope'] text-sm font-semibold" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span>Dashboard</span>
+</a>
+<a class="transition-all duration-200 ease-in-out hover:translate-x-1 flex items-center gap-3 px-4 py-3 bg-[#6F4E37] text-white rounded-lg shadow-lg font-['Manrope'] text-sm font-semibold" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+<span>Articles</span>
+</a>
+<a class="transition-all duration-200 ease-in-out hover:translate-x-1 flex items-center gap-3 px-4 py-3 text-[#553722]/60 hover:bg-[#6F4E37]/5 hover:text-[#553722] font-['Manrope'] text-sm font-semibold" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span>Accounts</span>
+</a>
+<a class="transition-all duration-200 ease-in-out hover:translate-x-1 flex items-center gap-3 px-4 py-3 text-[#553722]/60 hover:bg-[#6F4E37]/5 hover:text-[#553722] font-['Manrope'] text-sm font-semibold" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span>Settings</span>
+</a>
+</nav>
+<div class="pt-6 border-t border-[#6F4E37]/10">
+<button class="w-full bg-[#6F4E37] text-white py-3 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined" data-icon="add">add</span>
+                New Project
+            </button>
+</div>
+<div class="flex items-center gap-3 mt-auto pt-4">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="professional headshot of a male interior designer with a sophisticated look and warm lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDXyxIe9oh4VBWRJI4XoIe5j9QexlRPz2RcJHxpdHZkXmEjh2QOBaEFX5hLD2hfg1aJbW6kRpBqEDwx8anQns1dD3Jid6B1LluMNTAYrW4bJ2-o7zU1RAN9eSIdrzChkjb_EkQAF3bPUenHTwbR15hQAO5V9w-hAcj3Zw55hxEJgiccX8HLSZZsnAi4W1uwhFw4pc0Fy41CX7Pw-pKfYWmhN_1kUxarTp5GtLcIsQinucaHGxAjLYJwKPPLxKOcmuYMoX50KNyVJcTe"/>
+</div>
+<div>
+<p class="text-sm font-bold text-on-surface">Admin User Avatar</p>
+<p class="text-[10px] uppercase tracking-tighter text-on-surface-variant">Senior Curator</p>
+</div>
+</div>
+</aside>
+<main class="flex-1 overflow-y-auto custom-scrollbar flex flex-col">
+<header class="sticky top-0 z-10 px-10 py-8 flex justify-between items-end bg-[#FCF9F7]/80 backdrop-blur-xl">
+<div class="space-y-1">
+<p class="font-label text-[10px] tracking-[0.2em] text-primary/60 uppercase font-bold">Project Library</p>
+<h2 class="font-headline text-4xl font-bold text-primary tracking-tight">Post Management</h2>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-primary/40 text-lg" data-icon="search">search</span>
+<input class="pl-10 pr-4 py-2.5 bg-surface-container-lowest border-none rounded-xl text-sm focus:ring-1 focus:ring-primary/20 w-64 shadow-sm placeholder:text-primary/30" placeholder="Search projects..." type="text"/>
+</div>
+<button class="flex items-center gap-2 px-4 py-2.5 bg-surface-container-high rounded-xl text-sm font-semibold text-primary hover:bg-surface-container-highest transition-colors">
+<span class="material-symbols-outlined text-lg" data-icon="filter_list">filter_list</span>
+                    Filter
+                </button>
+</div>
+</header>
+<section class="px-10 pb-20">
+<div class="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-[0_24px_48px_rgba(85,55,34,0.04)]">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low border-b border-outline-variant/10">
+<th class="px-6 py-5 font-label text-[10px] tracking-widest text-primary/50 uppercase font-bold">Project Information</th>
+<th class="px-6 py-5 font-label text-[10px] tracking-widest text-primary/50 uppercase font-bold">Category</th>
+<th class="px-6 py-5 font-label text-[10px] tracking-widest text-primary/50 uppercase font-bold">Date Created</th>
+<th class="px-6 py-5 font-label text-[10px] tracking-widest text-primary/50 uppercase font-bold text-center">Status</th>
+<th class="px-6 py-5 font-label text-[10px] tracking-widest text-primary/50 uppercase font-bold text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/10">
+<tr class="group hover:bg-surface-container-low/30 transition-colors">
+<td class="px-6 py-5">
+<div class="flex items-center gap-4">
+<div class="w-16 h-12 rounded-lg overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="minimalist luxury living room with beige linen sofa, marble coffee table, and soft morning sunlight" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD9tfCKiMJ46pfESiYuI2F8wMM-o_nrffh8KeCeRPPPGYkMPB-knR2zRv7iRmqlAVrmir8nn7hAi3X9bGtkuBdSoalv3UgdjwfBDTcELaNYGP-OqucXgBl0kwNgdC-IyrFDt31eMMUV17F08gEWUdfYQKe9a3jefCWnHGVZ6busF6HuXkSxrSvwSKme2MFlThkTuoH4tUrmtat7hl88rNFcP7097LZC1plqxUw9ZhVjZ9Of9cLtWARgZjkW0TJql0ChUHiRY4WtDEO7"/>
+</div>
+<div>
+<h4 class="font-semibold text-on-surface text-sm">Minimalist Zen Penthouse</h4>
+<p class="text-xs text-on-surface-variant/70">Ref: VN-2024-001</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="text-xs font-medium text-on-surface-variant bg-surface-container-high px-2 py-1 rounded-md">Residential</span>
+</td>
+<td class="px-6 py-5">
+<p class="text-xs text-on-surface-variant">Oct 24, 2024</p>
+</td>
+<td class="px-6 py-5 text-center">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-100">
+<span class="w-1 h-1 rounded-full bg-emerald-500"></span>
+                                    Published
+                                </span>
+</td>
+<td class="px-6 py-5 text-right">
+<div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-2 hover:bg-primary/5 rounded-lg text-primary/70 transition-colors"><span class="material-symbols-outlined text-lg" data-icon="visibility">visibility</span></button>
+<button class="p-2 hover:bg-primary/5 rounded-lg text-primary/70 transition-colors"><span class="material-symbols-outlined text-lg" data-icon="edit">edit</span></button>
+<button class="p-2 hover:bg-error/5 rounded-lg text-error/70 transition-colors"><span class="material-symbols-outlined text-lg" data-icon="delete">delete</span></button>
+</div>
+</td>
+</tr>
+<tr class="group hover:bg-surface-container-low/30 transition-colors">
+<td class="px-6 py-5">
+<div class="flex items-center gap-4">
+<div class="w-16 h-12 rounded-lg overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="high-end corporate meeting room with dark wood paneling and architectural lighting design" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAiJ4POgMktqxYmVCQpSRftPIWEo_FA52R5UQMW5Qyi_RZhybQy2Ink5hk8GA6w9FntPFtBm5crzQUT_KaqNTmcBtJHSfuxaTgoeiRH73bB6EEjif5Ejki1h3zYlnMPtlcJgNwLOpYwHR1EpMiDi7yGsNYDS9K3fQei8yOocxszH6oh-OIkKi77LRAzBKDwDG6VXhx92qGTzNOJ1Wh5oWRvJk0UT7Ky9eERSPRGXcqKHYgHYTHF5naq17NJZUl5xvY2gkGrh62aHm70"/>
+</div>
+<div>
+<h4 class="font-semibold text-on-surface text-sm">Grand Oak Executive Suite</h4>
+<p class="text-xs text-on-surface-variant/70">Ref: VN-2024-003</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="text-xs font-medium text-on-surface-variant bg-surface-container-high px-2 py-1 rounded-md">Commercial</span>
+</td>
+<td class="px-6 py-5">
+<p class="text-xs text-on-surface-variant">Oct 22, 2024</p>
+</td>
+<td class="px-6 py-5 text-center">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-100">
+<span class="w-1 h-1 rounded-full bg-amber-500"></span>
+                                    Draft
+                                </span>
+</td>
+<td class="px-6 py-5 text-right">
+<div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-2 hover:bg-primary/5 rounded-lg text-primary/70 transition-colors"><span class="material-symbols-outlined text-lg" data-icon="visibility">visibility</span></button>
+<button class="p-2 hover:bg-primary/5 rounded-lg text-primary/70 transition-colors"><span class="material-symbols-outlined text-lg" data-icon="edit">edit</span></button>
+<button class="p-2 hover:bg-error/5 rounded-lg text-error/70 transition-colors"><span class="material-symbols-outlined text-lg" data-icon="delete">delete</span></button>
+</div>
+</td>
+</tr>
+<tr class="group hover:bg-surface-container-low/30 transition-colors">
+<td class="px-6 py-5">
+<div class="flex items-center gap-4">
+<div class="w-16 h-12 rounded-lg overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="ultra-modern kitchen with dark emerald cabinetry and gold hardware accents" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC88nFrnpseOvt-SVFRHosVMFE1N_cNHFB_dPKobdDMD796jYSv-phq8vlehsPFwn1n_XOCZEhMaPVsvmxvs_KOKSwExqrL8XvEeCGbRKIRtoBZj5cTtAZ2BxZbHYMrymAxu51tzE9lNYboX6baLN6jXqovXFq-kz1MeysMpw0YuTtCSh0jW3Sm3_5UUBTE08veuv3fBnbALKg5Lmt2pjGFyumxS0Z-jafE1M_ioGRSQ0ftDwTrsPMp8WHfiFIjT1FC0ZrWxhuk-qG_"/>
+</div>
+<div>
+<h4 class="font-semibold text-on-surface text-sm">Emerald Lake Kitchen</h4>
+<p class="text-xs text-on-surface-variant/70">Ref: VN-2024-008</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="text-xs font-medium text-on-surface-variant bg-surface-container-high px-2 py-1 rounded-md">Hospitality</span>
+</td>
+<td class="px-6 py-5">
+<p class="text-xs text-on-surface-variant">Oct 19, 2024</p>
+</td>
+<td class="px-6 py-5 text-center">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-100">
+<span class="w-1 h-1 rounded-full bg-emerald-500"></span>
+                                    Published
+                                </span>
+</td>
+<td class="px-6 py-5 text-right">
+<div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-2 hover:bg-primary/5 rounded-lg text-primary/70 transition-colors"><span class="material-symbols-outlined text-lg" data-icon="visibility">visibility</span></button>
+<button class="p-2 hover:bg-primary/5 rounded-lg text-primary/70 transition-colors"><span class="material-symbols-outlined text-lg" data-icon="edit">edit</span></button>
+<button class="p-2 hover:bg-error/5 rounded-lg text-error/70 transition-colors"><span class="material-symbols-outlined text-lg" data-icon="delete">delete</span></button>
+</div>
+</td>
+</tr>
+<tr class="group hover:bg-surface-container-low/30 transition-colors">
+<td class="px-6 py-5">
+<div class="flex items-center gap-4">
+<div class="w-16 h-12 rounded-lg overflow-hidden flex-shrink-0">
+<img class="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110" data-alt="rustic chic bedroom with warm wood beams and soft layered lighting textures" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCGuViq5xsXSPaC7mq37X7rVB7z8ZG08CANs2ETUvhY0EFHdR3BezKdH7naY6uc_LISomYiAHDPZls-HBUbLZOKcyoRq9hpCcniwBjVHW0J2QwSZgpafiZn8UaaEaRm2TZ2xWnKcl09vS_Hx2mtV4xked8WpNZyNop_1ifLP0TpBkVND7wDSZve1UEhpOwfE7ZEICIrlPXb816py4-IiO72nrBS-L0ITyyvCUvhUUOk_9FS6r92rF1gEx75hu7AeJaXX0fygtylL8eK"/>
+</div>
+<div>
+<h4 class="font-semibold text-on-surface text-sm">Vintage Loft Master</h4>
+<p class="text-xs text-on-surface-variant/70">Ref: VN-2024-012</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-5">
+<span class="text-xs font-medium text-on-surface-variant bg-surface-container-high px-2 py-1 rounded-md">Residential</span>
+</td>
+<td class="px-6 py-5">
+<p class="text-xs text-on-surface-variant">Oct 15, 2024</p>
+</td>
+<td class="px-6 py-5 text-center">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-100">
+<span class="w-1 h-1 rounded-full bg-emerald-500"></span>
+                                    Published
+                                </span>
+</td>
+<td class="px-6 py-5 text-right">
+<div class="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+<button class="p-2 hover:bg-primary/5 rounded-lg text-primary/70 transition-colors"><span class="material-symbols-outlined text-lg" data-icon="visibility">visibility</span></button>
+<button class="p-2 hover:bg-primary/5 rounded-lg text-primary/70 transition-colors"><span class="material-symbols-outlined text-lg" data-icon="edit">edit</span></button>
+<button class="p-2 hover:bg-error/5 rounded-lg text-error/70 transition-colors"><span class="material-symbols-outlined text-lg" data-icon="delete">delete</span></button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+<div class="px-6 py-6 bg-surface-container-low/50 flex justify-between items-center">
+<p class="text-xs text-on-surface-variant/60 font-medium">Showing 4 of 28 boutique projects</p>
+<div class="flex gap-1">
+<button class="w-8 h-8 flex items-center justify-center rounded-lg border border-outline-variant/30 text-primary hover:bg-primary hover:text-white transition-all"><span class="material-symbols-outlined text-sm" data-icon="chevron_left">chevron_left</span></button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg bg-primary text-white text-xs font-bold">1</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg border border-outline-variant/30 text-primary hover:bg-surface-container-high text-xs font-bold transition-all">2</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg border border-outline-variant/30 text-primary hover:bg-surface-container-high text-xs font-bold transition-all">3</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-lg border border-outline-variant/30 text-primary hover:bg-primary hover:text-white transition-all"><span class="material-symbols-outlined text-sm" data-icon="chevron_right">chevron_right</span></button>
+</div>
+</div>
+</div>
+</section>
+<footer class="mt-auto w-full pt-16 pb-8 bg-[#553722] dark:bg-stone-950">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-12 px-8 max-w-7xl mx-auto">
+<div>
+<h3 class="text-2xl font-['Noto_Serif'] text-[#FCF9F7] mb-4">VietNet Interior</h3>
+<p class="text-[#FCF9F7]/60 font-['Manrope'] text-sm leading-relaxed">Defining the pinnacle of modern architectural luxury. Meticulously crafting spaces that resonate with soul and intention.</p>
+</div>
+<div class="flex flex-col space-y-3">
+<p class="font-label text-[10px] tracking-widest text-[#FCF9F7]/40 uppercase mb-2">Internal Links</p>
+<a class="text-[#FCF9F7]/70 hover:text-[#FCF9F7] font-['Manrope'] text-sm transition-colors" href="#">Project Archives</a>
+<a class="text-[#FCF9F7]/70 hover:text-[#FCF9F7] font-['Manrope'] text-sm transition-colors" href="#">Vendor Database</a>
+<a class="text-[#FCF9F7]/70 hover:text-[#FCF9F7] font-['Manrope'] text-sm transition-colors" href="#">Material Library</a>
+<a class="text-[#FCF9F7]/70 hover:text-[#FCF9F7] font-['Manrope'] text-sm transition-colors" href="#">Brand Assets</a>
+</div>
+<div class="flex flex-col space-y-3">
+<p class="font-label text-[10px] tracking-widest text-[#FCF9F7]/40 uppercase mb-2">Legal</p>
+<a class="text-[#FCF9F7]/70 hover:text-[#FCF9F7] font-['Manrope'] text-sm transition-colors" href="#">Privacy Policy</a>
+<a class="text-[#FCF9F7]/70 hover:text-[#FCF9F7] font-['Manrope'] text-sm transition-colors" href="#">Terms of Service</a>
+</div>
+</div>
+<div class="mt-12 pt-8 border-t border-white/5 text-center">
+<p class="text-[#FCF9F7]/40 font-['Manrope'] text-xs tracking-wide">© 2024 VietNet Interior Design. Meticulously Crafted.</p>
+</div>
+</footer>
+</main>
+</body></html>

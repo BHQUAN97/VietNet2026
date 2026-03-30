@@ -1,0 +1,85 @@
+'use client'
+
+import { usePathname } from 'next/navigation'
+
+const ZALO_URL = process.env.NEXT_PUBLIC_ZALO_URL || 'https://zalo.me/vietnetinterior'
+const MESSENGER_URL = process.env.NEXT_PUBLIC_MESSENGER_URL || 'https://m.me/vietnetinterior'
+const PHONE_NUMBER = process.env.NEXT_PUBLIC_PHONE || 'tel:0901234567'
+
+function ZaloIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M12 2C6.48 2 2 6.03 2 11c0 2.76 1.35 5.22 3.46 6.87V22l3.84-2.11c.87.24 1.78.36 2.7.36 5.52 0 10-4.03 10-9S17.52 2 12 2zm.97 12.15H9.63c-.18 0-.32-.14-.32-.32s.14-.32.32-.32h3.34c.18 0 .32.14.32.32s-.14.32-.32.32zm2.4-2.4H8.63c-.18 0-.32-.14-.32-.32 0-.18.14-.32.32-.32h6.74c.18 0 .32.14.32.32 0 .18-.14.32-.32.32zm0-2.4H8.63c-.18 0-.32-.14-.32-.32 0-.18.14-.32.32-.32h6.74c.18 0 .32.14.32.32 0 .18-.14.32-.32.32z" />
+    </svg>
+  )
+}
+
+function MessengerIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <path d="M12 2C6.36 2 2 6.13 2 11.7c0 2.91 1.2 5.42 3.15 7.18.16.15.26.36.27.58l.05 1.82c.02.56.6.92 1.1.68l2.03-.9c.17-.08.36-.1.55-.06.6.16 1.24.25 1.85.25 5.64 0 10-4.13 10-9.7S17.64 2 12 2zm5.95 7.55-2.92 4.63c-.46.74-1.45.92-2.13.4l-2.32-1.74a.6.6 0 0 0-.72 0l-3.13 2.38c-.42.32-.97-.18-.69-.63l2.92-4.63c.47-.74 1.45-.92 2.13-.4l2.32 1.74a.6.6 0 0 0 .72 0l3.13-2.38c.42-.32.97.18.69.63z" />
+    </svg>
+  )
+}
+
+function PhoneIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z" />
+    </svg>
+  )
+}
+
+const widgets = [
+  {
+    href: ZALO_URL,
+    label: 'Chat Zalo',
+    icon: ZaloIcon,
+    className: 'bg-[#0068FF] text-on-primary hover:bg-[#0055CC]',
+  },
+  {
+    href: MESSENGER_URL,
+    label: 'Chat Messenger',
+    icon: MessengerIcon,
+    className: 'bg-[#0084FF] text-on-primary hover:bg-[#006ACC]',
+  },
+  {
+    href: PHONE_NUMBER,
+    label: 'Goi dien',
+    icon: PhoneIcon,
+    className: 'bg-primary-container text-on-primary hover:bg-primary animate-widget-pulse',
+  },
+]
+
+export function FloatingWidgets() {
+  const pathname = usePathname()
+
+  // Hide on admin pages
+  if (pathname.startsWith('/admin')) {
+    return null
+  }
+
+  return (
+    <div
+      className="fixed right-4 z-[var(--z-fixed)] flex flex-col gap-3 bottom-[calc(var(--bottom-nav-height)+1rem)] md:bottom-8"
+      aria-label="Lien he nhanh"
+      role="group"
+    >
+      {widgets.map((widget) => {
+        const Icon = widget.icon
+        return (
+          <a
+            key={widget.label}
+            href={widget.href}
+            target={widget.href.startsWith('tel:') ? undefined : '_blank'}
+            rel={widget.href.startsWith('tel:') ? undefined : 'noopener noreferrer'}
+            aria-label={widget.label}
+            className={`flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-transform duration-300 hover:scale-110 ${widget.className}`}
+          >
+            <Icon className="h-6 w-6" />
+          </a>
+        )
+      })}
+    </div>
+  )
+}

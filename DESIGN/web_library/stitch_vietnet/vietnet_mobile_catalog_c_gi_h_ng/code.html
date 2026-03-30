@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;700&amp;family=Manrope:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "tertiary": "#24434b",
+              "background": "#fcf9f7",
+              "surface-container-highest": "#e5e2e0",
+              "surface-container-high": "#eae8e6",
+              "error": "#ba1a1a",
+              "on-primary": "#ffffff",
+              "error-container": "#ffdad6",
+              "secondary": "#6d5b4f",
+              "on-tertiary-container": "#b0d0db",
+              "on-secondary-container": "#736155",
+              "tertiary-container": "#3c5a63",
+              "on-secondary": "#ffffff",
+              "primary-fixed-dim": "#eabda0",
+              "primary-fixed": "#ffdcc6",
+              "outline": "#82746d",
+              "on-background": "#1b1c1b",
+              "surface-container-low": "#f6f3f1",
+              "on-tertiary-fixed-variant": "#2d4b54",
+              "secondary-container": "#f7decf",
+              "secondary-fixed": "#f7decf",
+              "surface-container": "#f0edeb",
+              "surface": "#fcf9f7",
+              "inverse-surface": "#30302f",
+              "on-error-container": "#93000a",
+              "tertiary-fixed-dim": "#acccd6",
+              "on-primary-container": "#eec1a4",
+              "tertiary-fixed": "#c8e8f3",
+              "on-secondary-fixed-variant": "#544339",
+              "surface-tint": "#79573f",
+              "outline-variant": "#d4c3ba",
+              "on-surface": "#1b1c1b",
+              "primary-container": "#6f4e37",
+              "on-secondary-fixed": "#261910",
+              "on-tertiary": "#ffffff",
+              "on-tertiary-fixed": "#001f27",
+              "surface-bright": "#fcf9f7",
+              "on-surface-variant": "#50453e",
+              "inverse-primary": "#eabda0",
+              "on-primary-fixed-variant": "#5f402a",
+              "on-error": "#ffffff",
+              "inverse-on-surface": "#f3f0ee",
+              "primary": "#553722",
+              "on-primary-fixed": "#2d1604",
+              "surface-variant": "#e5e2e0",
+              "surface-container-lowest": "#ffffff",
+              "secondary-fixed-dim": "#dac2b4",
+              "surface-dim": "#dcd9d8"
+            },
+            fontFamily: {
+              "headline": ["Noto Serif"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-surface text-on-surface font-body antialiased">
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 w-full z-50 bg-[#FCF9F7]/80 dark:bg-stone-900/80 backdrop-blur-xl shadow-sm shadow-[#553722]/5 flex justify-between items-center px-6 h-16">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-[#553722] dark:text-[#D7CCC8]">menu</span>
+<span class="text-2xl font-bold text-[#553722] dark:text-[#D7CCC8] uppercase tracking-widest font-serif">VietNet</span>
+</div>
+<div class="flex items-center gap-4"><span class="material-symbols-outlined text-[#553722] dark:text-[#D7CCC8]">shopping_bag</span>
+<span class="material-symbols-outlined text-[#553722] dark:text-[#D7CCC8]">shopping_cart</span></div>
+</header>
+<main class="pt-20 pb-24 px-4 max-w-md mx-auto">
+<!-- Catalog Header & Filter Toggle -->
+<section class="mb-8">
+<div class="flex items-end justify-between mb-6">
+<div class="space-y-1">
+<span class="text-[0.65rem] font-label uppercase tracking-[0.2em] text-secondary font-bold">Collections</span>
+<h1 class="text-3xl font-headline font-bold text-primary leading-tight">Tủ Bếp</h1>
+</div>
+<button class="flex items-center gap-2 bg-surface-container-low px-4 py-2.5 rounded-full border border-outline-variant/10 shadow-sm active:scale-95 transition-transform">
+<span class="material-symbols-outlined text-sm">tune</span>
+<span class="text-xs font-label font-bold uppercase tracking-wider text-primary">Filters</span>
+</button>
+</div>
+<!-- Material Fast Filters (Horizontal Scroll) -->
+<div class="flex overflow-x-auto gap-3 no-scrollbar pb-2">
+<button class="whitespace-nowrap px-5 py-2 rounded-xl bg-primary-container text-white text-xs font-bold transition-colors">All Materials</button>
+<button class="whitespace-nowrap px-5 py-2 rounded-xl bg-surface-container-high text-on-surface-variant text-xs font-medium hover:bg-surface-container-highest transition-colors">Industrial Wood</button>
+<button class="whitespace-nowrap px-5 py-2 rounded-xl bg-surface-container-high text-on-surface-variant text-xs font-medium hover:bg-surface-container-highest transition-colors">Natural Wood</button>
+<button class="whitespace-nowrap px-5 py-2 rounded-xl bg-surface-container-high text-on-surface-variant text-xs font-medium hover:bg-surface-container-highest transition-colors">Acrylic Polish</button>
+</div>
+</section>
+<!-- Product Grid (Asymmetric 2-Column) -->
+<section class="grid grid-cols-2 gap-4">
+<!-- Product Item 1 -->
+<div class="group flex flex-col gap-3">
+<div class="relative aspect-[3/4] overflow-hidden rounded-xl bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Modern minimalist kitchen cabinets in matte charcoal finish with integrated warm LED lighting and marble backsplash" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDFYgGwmh_kfCBvZdGXARt6jCvH9I6Ay3P2mmCv00Bgps0hnRYeHSYL6tTmy85cyhfgDhi1Xfn1Gz5CmoEnlS2AEWo9O8K6NMXiTi4cNix-CI49ZitGlPqjfd9Yg8kV1Z9-2phvYagAgeNXaMntJM5NWVfB_Bo2B8UT3yoghSisKLPVxlMBVYX-QJuZ42sM1d5mzfQW8LiCIw135LKIHzVjCb32ygqX2WrUwWQK0K0XDnBHUFlOs8kWOK26r7kMldfD-SYVDW_IIjGg"/>
+<div class="absolute top-3 right-3">
+<span class="bg-white/90 backdrop-blur px-2 py-1 rounded-md text-[0.6rem] font-bold uppercase text-primary tracking-tighter">New</span>
+</div>
+</div>
+<div class="px-1">
+<h3 class="text-sm font-bold text-primary leading-tight mb-1">Minimalist Noir Cabinet</h3>
+<p class="text-[0.7rem] text-secondary mb-3 uppercase tracking-wide">Industrial Wood</p>
+<button class="w-full py-2 bg-surface-container-lowest border border-outline-variant/20 rounded-lg text-[0.7rem] font-bold uppercase tracking-widest text-primary hover:bg-primary hover:text-white transition-all">
+                        View Details
+                    </button>
+</div>
+</div>
+<!-- Product Item 2 -->
+<div class="group flex flex-col gap-3 mt-8">
+<div class="relative aspect-[3/4] overflow-hidden rounded-xl bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Luxurious kitchen design featuring natural oak wood cabinetry with brass handles and soft morning sunlight" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAeFzMjviLkBwZY1Lllp3_Ad0-2AmjiM8McL14apd7ZaWw1qWDJvNgSeDp1fJfFx1Po1Rcu27KDvgBG4SoXnbiu96-hZRD6ARxuoUN4d1VpOM3UmZApgTRI9ud8ExDlHS17lsKvHrvuuG6WplQkx3Ihibj6eDhp0YRoyCdFS7QIAPQne5jyD91B2kwAo8Ch4NMo9tn4IN0IczAdBp88xL9OxfHzW21Zk-b-hC7JPicsy0Nn9NGNsTvGkejS6YYosxmmKobppk4E1YUP"/>
+</div>
+<div class="px-1">
+<h3 class="text-sm font-bold text-primary leading-tight mb-1">Classic Oak Essence</h3>
+<p class="text-[0.7rem] text-secondary mb-3 uppercase tracking-wide">Natural Wood</p>
+<button class="w-full py-2 bg-surface-container-lowest border border-outline-variant/20 rounded-lg text-[0.7rem] font-bold uppercase tracking-widest text-primary hover:bg-primary hover:text-white transition-all">
+                        View Details
+                    </button>
+</div>
+</div>
+<!-- Product Item 3 -->
+<div class="group flex flex-col gap-3 -mt-8">
+<div class="relative aspect-[3/4] overflow-hidden rounded-xl bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="High-gloss white acrylic kitchen island with contemporary silver hardware and clean architectural lines" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD6m-b5mQYhSHpdgM-tKpj1eYP0K_XAhvy8MzqF8OF-Vz3P6442MT49qixTQbq5pb3C-t2R0fk4R6FBbagdY2XMHjyuUDAqrqdvomd5cAhsVVrn8dp4g2Dl5qbE51clMzjMInyqoZBj42QwMqD7q_oIrF0zK0BxQVi_nmLO4iTETzPi3zPap1vvE0W5Bp0HBjn1z3dTj02gsbprph0BN10XpIhIgosKRfHhDJVH13_WYNZC0xGgYwRvYIQ_WJBARtlHGUNc4gG952GD"/>
+</div>
+<div class="px-1">
+<h3 class="text-sm font-bold text-primary leading-tight mb-1">Pearl Gloss Island</h3>
+<p class="text-[0.7rem] text-secondary mb-3 uppercase tracking-wide">Acrylic Polish</p>
+<button class="w-full py-2 bg-surface-container-lowest border border-outline-variant/20 rounded-lg text-[0.7rem] font-bold uppercase tracking-widest text-primary hover:bg-primary hover:text-white transition-all">
+                        View Details
+                    </button>
+</div>
+</div>
+<!-- Product Item 4 -->
+<div class="group flex flex-col gap-3">
+<div class="relative aspect-[3/4] overflow-hidden rounded-xl bg-surface-container">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Traditional rustic kitchen featuring dark walnut cabinetry and warm golden hour lighting reflecting on surfaces" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDYZgBbYdzGcMqiyCktSx6-mM_nCtc2tvpJarhmGhSq7cPvKrkw7ZFzm48JDWHZb1pnn8vQ_oeEx0z12Nrrdl0K4FttYUMTgeu1c19uqS-nOvJy75NVdqCAFPybJtAu5wB77wtBmdLTOapdsuaYfu45po74glSWzz7NFoEQzN7Xykw47VJ6r49eS34QmdZjz9Q5qYcz0KNUuLLaa1jgtC9wGwjLzpXVnDQNwki4zabtErSDRQAUwHmQG88g0NICPDiU95YGx9Jvu118"/>
+</div>
+<div class="px-1">
+<h3 class="text-sm font-bold text-primary leading-tight mb-1">Walnut Heritage</h3>
+<p class="text-[0.7rem] text-secondary mb-3 uppercase tracking-wide">Natural Wood</p>
+<button class="w-full py-2 bg-surface-container-lowest border border-outline-variant/20 rounded-lg text-[0.7rem] font-bold uppercase tracking-widest text-primary hover:bg-primary hover:text-white transition-all">
+                        View Details
+                    </button>
+</div>
+</div>
+</section>
+<!-- Pagination / Load More -->
+<div class="mt-16 flex flex-col items-center gap-6">
+<div class="flex gap-2">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="w-2 h-2 rounded-full bg-outline-variant"></span>
+<span class="w-2 h-2 rounded-full bg-outline-variant"></span>
+<span class="w-2 h-2 rounded-full bg-outline-variant"></span>
+</div>
+<button class="px-10 py-4 bg-primary text-on-primary text-xs font-bold uppercase tracking-[0.2em] rounded-full shadow-lg shadow-primary/20 active:scale-95 transition-all">
+                Load More Items
+            </button>
+</div>
+</main>
+<!-- Bottom Navigation Shell -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-3xl bg-[#FCF9F7] shadow-[0_-4px_24px_rgba(85,55,34,0.06)] flex justify-around items-center h-20 pb-safe px-4">
+<div class="flex flex-col items-center justify-center text-stone-400">
+<span class="material-symbols-outlined mb-1">home</span>
+<span class="font-sans text-[10px] uppercase tracking-[0.1em] font-medium">Home</span>
+</div>
+<div class="flex flex-col items-center justify-center text-stone-400">
+<span class="material-symbols-outlined mb-1">architecture</span>
+<span class="font-sans text-[10px] uppercase tracking-[0.1em] font-medium">Projects</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#6F4E37] dark:text-[#D7CCC8] bg-[#6F4E37]/10 rounded-xl px-3 py-1">
+<span class="material-symbols-outlined mb-1">import_contacts</span>
+<span class="font-sans text-[10px] uppercase tracking-[0.1em] font-medium">Catalog</span>
+</div>
+<div class="flex flex-col items-center justify-center text-stone-400">
+<span class="material-symbols-outlined mb-1">chat_bubble</span>
+<span class="font-sans text-[10px] uppercase tracking-[0.1em] font-medium">Contact</span>
+</div>
+</nav>
+<!-- Background Decoration -->
+<div class="fixed top-0 right-0 -z-10 w-64 h-64 bg-primary-container/5 rounded-full blur-3xl opacity-50 translate-x-1/2 -translate-y-1/2"></div>
+<div class="fixed bottom-0 left-0 -z-10 w-96 h-96 bg-tertiary/5 rounded-full blur-3xl opacity-30 -translate-x-1/3 translate-y-1/3"></div>
+<!-- Filter Bottom Sheet (Placeholder visual overlay) -->
+<div class="fixed inset-0 bg-black/20 backdrop-blur-sm z-[60] opacity-0 pointer-events-none transition-opacity duration-300">
+<div class="absolute bottom-0 w-full bg-surface rounded-t-[2.5rem] p-8 shadow-2xl transition-transform duration-500 translate-y-full">
+<div class="w-12 h-1.5 bg-outline-variant/30 rounded-full mx-auto mb-8"></div>
+<h2 class="text-2xl font-headline font-bold text-primary mb-6">Filter Materials</h2>
+<div class="space-y-6">
+<div>
+<h3 class="text-xs font-label font-bold uppercase tracking-widest text-secondary mb-4">Wood Type</h3>
+<div class="flex flex-wrap gap-2">
+<span class="px-4 py-2 rounded-lg bg-surface-container-low border border-outline-variant/20 text-sm">Industrial Wood</span>
+<span class="px-4 py-2 rounded-lg bg-primary-container text-white text-sm">Natural Wood</span>
+<span class="px-4 py-2 rounded-lg bg-surface-container-low border border-outline-variant/20 text-sm">Engineered</span>
+</div>
+</div>
+<div>
+<h3 class="text-xs font-label font-bold uppercase tracking-widest text-secondary mb-4">Finish</h3>
+<div class="flex flex-wrap gap-2">
+<span class="px-4 py-2 rounded-lg bg-surface-container-low border border-outline-variant/20 text-sm">Matte</span>
+<span class="px-4 py-2 rounded-lg bg-surface-container-low border border-outline-variant/20 text-sm">High Gloss</span>
+<span class="px-4 py-2 rounded-lg bg-surface-container-low border border-outline-variant/20 text-sm">Textured</span>
+</div>
+</div>
+</div>
+<button class="w-full mt-10 py-4 bg-primary text-white rounded-xl font-bold uppercase tracking-widest">Apply Filters</button>
+</div>
+</div>
+</body></html>
