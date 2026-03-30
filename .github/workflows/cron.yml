@@ -1,0 +1,25 @@
+name: Scheduled Tasks
+
+on:
+  schedule:
+    - cron: '0 18 * * *'   # 1:00 AM UTC+7 — traffic sync
+    - cron: '0 19 * * *'   # 2:00 AM UTC+7 — cleanup expired sessions
+
+jobs:
+  traffic-sync:
+    if: github.event.schedule == '0 18 * * *'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run traffic sync cron
+        run: |
+          curl -f -s -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.API_URL }}/api/cron/traffic-sync"
+
+  cleanup-sessions:
+    if: github.event.schedule == '0 19 * * *'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run cleanup expired sessions
+        run: |
+          curl -f -s -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
+            "${{ secrets.API_URL }}/api/cron/cleanup-sessions"
