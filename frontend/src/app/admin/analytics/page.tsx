@@ -222,7 +222,7 @@ export default function AdminAnalyticsPage() {
                   {data.topPages.map((page, i) => (
                     <tr
                       key={page.path}
-                      className="border-t border-outline-variant/5"
+                      className="even:bg-surface-container-low/30"
                     >
                       <td className="py-3 pr-4">
                         <div className="flex items-center gap-2">

@@ -82,7 +82,7 @@ export function Lightbox({ images, initialIndex = 0, onClose }: LightboxProps) {
       {/* Close button */}
       <button
         onClick={onClose}
-        className="absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-surface/20 text-white backdrop-blur-sm transition-colors hover:bg-surface/40"
+        className="absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-surface/20 text-white backdrop-blur-sm transition-colors hover:bg-surface/40 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
         aria-label="Dong"
       >
         <X className="h-6 w-6" />
@@ -93,7 +93,7 @@ export function Lightbox({ images, initialIndex = 0, onClose }: LightboxProps) {
         <button
           onClick={goPrev}
           disabled={currentIndex === 0}
-          className="absolute left-4 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-surface/20 text-white backdrop-blur-sm transition-colors hover:bg-surface/40 disabled:opacity-30"
+          className="absolute left-4 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-surface/20 text-white backdrop-blur-sm transition-colors hover:bg-surface/40 disabled:opacity-30 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
           aria-label="Hinh truoc"
         >
           <ChevronLeft className="h-6 w-6" />
@@ -105,7 +105,7 @@ export function Lightbox({ images, initialIndex = 0, onClose }: LightboxProps) {
         <button
           onClick={goNext}
           disabled={currentIndex === images.length - 1}
-          className="absolute right-4 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-surface/20 text-white backdrop-blur-sm transition-colors hover:bg-surface/40 disabled:opacity-30"
+          className="absolute right-4 top-1/2 z-10 flex h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-surface/20 text-white backdrop-blur-sm transition-colors hover:bg-surface/40 disabled:opacity-30 focus-visible:ring-2 focus-visible:ring-white focus-visible:outline-none"
           aria-label="Hinh sau"
         >
           <ChevronRight className="h-6 w-6" />

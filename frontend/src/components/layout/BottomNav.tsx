@@ -126,7 +126,7 @@ export function BottomNav() {
                   'flex flex-col items-center justify-center transition-transform duration-200 active:scale-90',
                   menuOpen
                     ? 'rounded-xl bg-primary-container/10 px-3 py-1 text-primary-container'
-                    : 'px-3 py-1 text-on-surface-variant/50 hover:text-primary'
+                    : 'px-3 py-1 text-on-surface-variant/70 hover:text-primary'
                 )}
                 aria-label={menuOpen ? 'Đóng menu' : 'Mở menu'}
               >
@@ -155,7 +155,7 @@ export function BottomNav() {
                 'flex flex-col items-center justify-center transition-transform duration-200 active:scale-90',
                 isActive
                   ? 'rounded-xl bg-primary-container/10 px-3 py-1 text-primary-container'
-                  : 'px-3 py-1 text-on-surface-variant/50 hover:text-primary'
+                  : 'px-3 py-1 text-on-surface-variant/70 hover:text-primary'
               )}
               aria-label={item.label}
             >
