@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;700&amp;family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "tertiary": "#24434b",
+              "on-secondary-container": "#736155",
+              "surface-tint": "#79573f",
+              "inverse-on-surface": "#f3f0ee",
+              "on-primary-fixed": "#2d1604",
+              "on-tertiary-container": "#b0d0db",
+              "inverse-surface": "#30302f",
+              "inverse-primary": "#eabda0",
+              "surface-container-high": "#eae8e6",
+              "tertiary-fixed": "#c8e8f3",
+              "on-surface": "#1b1c1b",
+              "secondary": "#6d5b4f",
+              "outline-variant": "#d4c3ba",
+              "on-secondary-fixed": "#261910",
+              "error": "#ba1a1a",
+              "surface-bright": "#fcf9f7",
+              "outline": "#82746d",
+              "on-background": "#1b1c1b",
+              "on-tertiary-fixed-variant": "#2d4b54",
+              "primary-container": "#6f4e37",
+              "on-surface-variant": "#50453e",
+              "primary-fixed": "#ffdcc6",
+              "tertiary-container": "#3c5a63",
+              "on-tertiary-fixed": "#001f27",
+              "on-primary-fixed-variant": "#5f402a",
+              "background": "#fcf9f7",
+              "surface-variant": "#e5e2e0",
+              "primary": "#553722",
+              "surface-dim": "#dcd9d8",
+              "on-error-container": "#93000a",
+              "surface-container-highest": "#e5e2e0",
+              "on-error": "#ffffff",
+              "on-secondary": "#ffffff",
+              "primary-fixed-dim": "#eabda0",
+              "on-tertiary": "#ffffff",
+              "on-primary-container": "#eec1a4",
+              "on-secondary-fixed-variant": "#544339",
+              "tertiary-fixed-dim": "#acccd6",
+              "secondary-fixed": "#f7decf",
+              "on-primary": "#ffffff",
+              "surface-container-lowest": "#ffffff",
+              "surface": "#fcf9f7",
+              "error-container": "#ffdad6",
+              "surface-container-low": "#f6f3f1",
+              "secondary-fixed-dim": "#dac2b4",
+              "secondary-container": "#f7decf",
+              "surface-container": "#f0edeb"
+            },
+            fontFamily: {
+              "headline": ["Noto Serif"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background font-body text-on-background antialiased pb-24">
+<nav class="fixed top-0 w-full z-50 bg-[#FCF9F7]/80 dark:bg-stone-900/80 backdrop-blur-xl shadow-sm dark:shadow-none">
+<div class="flex justify-between items-center px-6 py-4 max-w-screen-2xl mx-auto">
+<div class="text-2xl font-bold tracking-tighter text-[#553722] dark:text-[#FCF9F7] font-headline">VietNet</div>
+<div class="flex gap-4">
+<button class="text-[#553722] hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined" data-icon="shopping_cart">shopping_cart</span>
+</button>
+<button class="text-[#553722] hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</div>
+</nav>
+<main class="pt-24 px-4 max-w-lg mx-auto">
+<header class="mb-8">
+<h1 class="font-headline text-3xl font-bold text-primary tracking-tight mb-2">Kitchen Catalog</h1>
+<p class="text-on-surface-variant font-medium text-sm">Discover meticulously crafted culinary spaces.</p>
+</header>
+<div class="flex justify-between items-center mb-6">
+<button class="flex items-center gap-2 bg-surface-container-low px-4 py-2.5 rounded-full border border-outline-variant/20 hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined text-sm" data-icon="tune">tune</span>
+<span class="font-label text-xs font-bold uppercase tracking-widest text-primary">Filter &amp; Sort</span>
+</button>
+<div class="text-xs font-label font-bold uppercase tracking-widest text-on-surface-variant">
+                12 Items
+            </div>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div class="group">
+<div class="relative aspect-[3/4] overflow-hidden rounded-xl mb-3 bg-surface-container-low">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Modern minimalist kitchen with matte oak cabinets and white marble island in soft natural daylight" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC6BFcxCt0yFD39Tc-DTMVwTEqsXybQg5rXqeRdlxed3Wvbf9au1tUm1JWVAiUKt2CBSM5JqRhw1pv_5M7hfNkbvqE7m-02PwEWfWuZHoEy01JHvSF_4-ruoH24e4wzLCaQwCeV2hslPamh8PVbgx7RKY2IJXmzc9DTKIWVghRpb4Ta0r_pC1E2jfctlRAbcODANpEhY4NCg_EASbnAx357JoYHCnKibiX02rNZE6CJtfPoxWeh9ymh0wOmoiZwTes3XR9VT30cp9hm"/>
+<div class="absolute top-3 left-3 bg-primary-container text-white px-2 py-1 rounded text-[10px] font-bold uppercase tracking-widest">New</div>
+<button class="absolute bottom-3 right-3 w-10 h-10 bg-surface-container-lowest/90 backdrop-blur-md rounded-full flex items-center justify-center text-primary shadow-lg active:scale-90 transition-transform">
+<span class="material-symbols-outlined" data-icon="add_shopping_cart">add_shopping_cart</span>
+</button>
+</div>
+<h3 class="font-headline text-sm font-bold text-primary mb-1">Oak Minimalist</h3>
+<div class="flex justify-between items-center">
+<span class="text-xs font-bold text-on-surface-variant">$4,200</span>
+<span class="material-symbols-outlined text-[16px] text-primary" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+</div>
+<div class="group">
+<div class="relative aspect-[3/4] overflow-hidden rounded-xl mb-3 bg-surface-container-low">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Dark charcoal textured kitchen cabinets with brass handles and dramatic spotlighting in a luxury apartment" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCQI8qnE-jQ2JDPBpTEz4ZNmVif0rEmezDNoNUrNy-yNp7nmpf9W5-3ZiuBbQBWIwBbN1d68DIbnNcNc7zwFgb-O-RKsj90VXKbEYP8YpcbL0bJzO7aIuWqYDGzREaptGCZMamRnqJF-4LA2vJLUpL13hXHX3oXwtQYrRc81X_HM-jxMIxrI4OCj8j1LJkuomqjIRpTUSQ9CTJyiSCgtZd0S2nIUfbblazHSxPc-NOULbDP8FsU3LBjZZmlvnGQvSiS2DU7MhuldU0P"/>
+<button class="absolute bottom-3 right-3 w-10 h-10 bg-surface-container-lowest/90 backdrop-blur-md rounded-full flex items-center justify-center text-primary shadow-lg active:scale-90 transition-transform">
+<span class="material-symbols-outlined" data-icon="add_shopping_cart">add_shopping_cart</span>
+</button>
+</div>
+<h3 class="font-headline text-sm font-bold text-primary mb-1">Charcoal Texture</h3>
+<div class="flex justify-between items-center">
+<span class="text-xs font-bold text-on-surface-variant">$5,850</span>
+<span class="material-symbols-outlined text-[16px] text-primary" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+</div>
+<div class="group">
+<div class="relative aspect-[3/4] overflow-hidden rounded-xl mb-3 bg-surface-container-low">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Light sage green kitchen cabinets in a traditional farmhouse style with porcelain sink and wooden countertops" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBVjYGi32gqIk7y0vxwdc1KB-3FoQUZCxj1sSkK9UclOJOtqmfxGPxlbEu5nR9cV9O_RJkZE396PtDsKmRUAFmBrd1i1QSpITXlvee6wstkgl-157JnpUJr8a_t1P44JZ6MdgbH1YKvdyQv4LPAu3dr_Exe4AQGq0NxlonBn19LnL7Dsu-PMjm2P6zdfzU9gEgxx5Rj-L4tF9nvnQhQorLef_Uo2gbfQlHxRIoU3QvO6300F5jSKrWjfPE1bUOiVb3_CtLnGXz80Lxl"/>
+<div class="absolute top-3 left-3 bg-primary-container text-white px-2 py-1 rounded text-[10px] font-bold uppercase tracking-widest">New</div>
+<button class="absolute bottom-3 right-3 w-10 h-10 bg-surface-container-lowest/90 backdrop-blur-md rounded-full flex items-center justify-center text-primary shadow-lg active:scale-90 transition-transform">
+<span class="material-symbols-outlined" data-icon="add_shopping_cart">add_shopping_cart</span>
+</button>
+</div>
+<h3 class="font-headline text-sm font-bold text-primary mb-1">Sage Farmhouse</h3>
+<div class="flex justify-between items-center">
+<span class="text-xs font-bold text-on-surface-variant">$3,900</span>
+<span class="material-symbols-outlined text-[16px] text-primary" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+</div>
+<div class="group">
+<div class="relative aspect-[3/4] overflow-hidden rounded-xl mb-3 bg-surface-container-low">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="All-white modern kitchen with high-gloss cabinets and integrated appliances in a bright open-plan space" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAlRaaA2KjYV-B16rOCw2g_TNAWGuIKuHLPpxSYX53vN6_0kZRGo7Rh4775g3Ff3WJRmnBizHi_moKRWYuE9Dgq3zjpK0aka34cLIplS8zp6PjDbUlImOw5UDcMCKuVSGIL_56yKzbSSf2mx67kN-_rnR-yFY_74wfBa2EjVkZm_KRQFLSrMILRXsWv_Hu_a-716HNG98qmneAua_MRD-OSN4xrkX54IQy8B9ToN4b5GAWuuLpCBC3dH9mNLGMHoHJKAfcAAYz_QdEy"/>
+<button class="absolute bottom-3 right-3 w-10 h-10 bg-surface-container-lowest/90 backdrop-blur-md rounded-full flex items-center justify-center text-primary shadow-lg active:scale-90 transition-transform">
+<span class="material-symbols-outlined" data-icon="add_shopping_cart">add_shopping_cart</span>
+</button>
+</div>
+<h3 class="font-headline text-sm font-bold text-primary mb-1">Arctic Gloss</h3>
+<div class="flex justify-between items-center">
+<span class="text-xs font-bold text-on-surface-variant">$6,100</span>
+<span class="material-symbols-outlined text-[16px] text-primary" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+</div>
+<div class="group">
+<div class="relative aspect-[3/4] overflow-hidden rounded-xl mb-3 bg-surface-container-low">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Rustic reclaimed wood kitchen cabinets with iron hardware in a warm cozy mountain cabin setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAafOLL96iISksy_ZaTfU_0o8yJJQIIbJPYiFh2vYjjmR8PvNTq5WlUgLfbzi-DV_IycoKz66MdEYUEj0-tsV9AQsFJAHz8gusjyq7DADslhP7bOMPg-QeNgO3QrUeKPC-NFwsXzXfoDLhmbZ11oZEMr_e08ieewOkkVHtnln2KCMCDpm0LB3Zxtmcqlf5QDTuTzT0Yuur_sbmjOK2FdqpcWxgcx6nrCSWKbzDXDdAOrH4wQqVfg4-3wwMJvPpdVDiged2hn0f9mcEh"/>
+<button class="absolute bottom-3 right-3 w-10 h-10 bg-surface-container-lowest/90 backdrop-blur-md rounded-full flex items-center justify-center text-primary shadow-lg active:scale-90 transition-transform">
+<span class="material-symbols-outlined" data-icon="add_shopping_cart">add_shopping_cart</span>
+</button>
+</div>
+<h3 class="font-headline text-sm font-bold text-primary mb-1">Reclaimed Cedar</h3>
+<div class="flex justify-between items-center">
+<span class="text-xs font-bold text-on-surface-variant">$5,200</span>
+<span class="material-symbols-outlined text-[16px] text-primary" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+</div>
+<div class="group">
+<div class="relative aspect-[3/4] overflow-hidden rounded-xl mb-3 bg-surface-container-low">
+<img class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="Modern mid-century kitchen with walnut cabinetry and subway tile backsplash in soft evening light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC141-v4VVhx6eZQT0Ga2lqkjW-sCtg9HiGqBDifnaaD0UpC5-wJEEAq0cMBcTJNE2EtiWL4n32U9unpH1Vjyv3-anRSFUr_1mXBiEX6XXwRz-cb8j4kArDwYjiWj64ZhrtR76-7GIRPdbRTsEgmTqFCZeHTV0qDCQ0SsgW6Rxj7GeneQk9P-BCZ4GBzmPsm-XUx7N8tba_Omd2bVMQZwiuO4F6jEeNH_qZntrF2rK2NCx16sq72lkbqQyf42aSrj4R0_m8aYRk17Bf"/>
+<div class="absolute top-3 left-3 bg-primary-container text-white px-2 py-1 rounded text-[10px] font-bold uppercase tracking-widest">New</div>
+<button class="absolute bottom-3 right-3 w-10 h-10 bg-surface-container-lowest/90 backdrop-blur-md rounded-full flex items-center justify-center text-primary shadow-lg active:scale-90 transition-transform">
+<span class="material-symbols-outlined" data-icon="add_shopping_cart">add_shopping_cart</span>
+</button>
+</div>
+<h3 class="font-headline text-sm font-bold text-primary mb-1">Walnut Mid-Mod</h3>
+<div class="flex justify-between items-center">
+<span class="text-xs font-bold text-on-surface-variant">$7,400</span>
+<span class="material-symbols-outlined text-[16px] text-primary" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+</div>
+</div>
+<section class="mt-12 bg-surface-container-low p-6 rounded-2xl">
+<h2 class="font-headline text-xl font-bold text-primary mb-4">Material Samples</h2>
+<div class="flex gap-4 overflow-x-auto pb-4 scrollbar-hide">
+<div class="flex-shrink-0 w-24 text-center">
+<div class="w-24 h-24 rounded-full bg-stone-300 mb-2 border-4 border-white shadow-sm overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Close up texture of light oak wood grain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBkrMa_GFRgvQy6wzIboct4fcXUCFpg7Tx9Idd2XANB3Ing7OQHXKpth-WkFXYAV2VDHR8PvVT01KfeLa3JlVbpieViJeZoOxpc0SxabNIRduKmGFt42eCxWXgMuDzX268dPciCAoC016B1tIu5FYaossWrFTnQ9_448nUOE3CqLjBvSl7e8pgA0bDQbXkZzzF2-mJgIsfxBF7i13q46bB7fkww7_dvsk9F3LsRZd5sg-_oWZsFwN8HkiginZ2ch2Cb4_s8TPdlYyse"/>
+</div>
+<span class="text-[10px] font-label font-bold uppercase tracking-wider text-on-surface-variant">Oak</span>
+</div>
+<div class="flex-shrink-0 w-24 text-center">
+<div class="w-24 h-24 rounded-full bg-stone-800 mb-2 border-4 border-white shadow-sm overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Close up texture of black granite with subtle grey flecks" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB6HQUj2lOfD8opt8pcrhCMajaNgzjaXwQJGaADsbowB7UgZDqKnyTDd0Y9SNI_NZCSpzzwDFEunb2FgmSHBQTNHIxQDXvr-olbbCj2xt5325-_Xd-pV2WoabILBn1gNMgpWNz_1xzmzImUc6Yhj7ZvSjp1yft5khFvvKQLXcPJmV4Brvmjn0tAPPKUhlQzInItAUDsigL6KM-TQq6Ta223wZqwMjR4QVCndqkmMxfFFr0Xy0imNJFoCgRE3t2z1eeZpB-mOXHD4r3X"/>
+</div>
+<span class="text-[10px] font-label font-bold uppercase tracking-wider text-on-surface-variant">Granite</span>
+</div>
+<div class="flex-shrink-0 w-24 text-center">
+<div class="w-24 h-24 rounded-full bg-stone-500 mb-2 border-4 border-white shadow-sm overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Close up texture of brushed brass metal finish" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBfjWaNTdKhjKAu9cQuq3E5S_gLPmN4diMmcDnA6DTHgZjzlggUt-P_AdLIhs8Qdblr1x_W9qcG-apS89D3bgL1OMw7V3h-B3yDWYdagrX762R-z2zeFNYc1zGushUpViI8YKUkGkZTaEFvi77qqQH_vFx4woEyuAXqF8CqGAEURBUe9xd_oQ3Lg3ZX0yl3CxrG1F-4TogeXqL6l_bcJYxSXWMs7Z7RZSH7lY29FRtI6Hz_tU6i7pJT_t-jH4dgIXIiHnchyveOoQVA"/>
+</div>
+<span class="text-[10px] font-label font-bold uppercase tracking-wider text-on-surface-variant">Brass</span>
+</div>
+<div class="flex-shrink-0 w-24 text-center">
+<div class="w-24 h-24 rounded-full bg-stone-200 mb-2 border-4 border-white shadow-sm overflow-hidden">
+<img class="w-full h-full object-cover" data-alt="Close up texture of white calacatta marble with gold veining" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBDBGnun1PnTL-SgvFMmGusCFGE0I6tBayBx2caHmD33FpgxayXUHhKzc_-ZtAq6uTSrUZ0-hN32_AuqvAyT6gpWJUiDq_AQjFidcBIo9iZFwcgiTAGeRIG_h6E8bwJF1VZD_P81Bqh74AjO_2itMR--EhnXTHnyCkYRMQB8kflVhQiE3m226K8ig4ovV5j6hVlcapDVsrjdE8S5Sdz8HKta2VHLq-YRPpPoTIDAGALI_DDBHYe1VeKSiQPMxcEsPCGsaZ3IyRq9e_1"/>
+</div>
+<span class="text-[10px] font-label font-bold uppercase tracking-wider text-on-surface-variant">Marble</span>
+</div>
+</div>
+</section>
+</main>
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-4 pb-safe pt-2 bg-[#FCF9F7]/90 dark:bg-stone-900/90 backdrop-blur-md shadow-[0_-4px_24px_rgba(85,55,34,0.06)] z-50">
+<a class="flex flex-col items-center justify-center text-[#553722]/50 active:bg-[#6F4E37]/10 transition-transform tap-scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest mt-1">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#553722]/50 active:bg-[#6F4E37]/10 transition-transform tap-scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="architecture">architecture</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest mt-1">Projects</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#6F4E37] bg-[#6F4E37]/5 rounded-xl px-3 py-1 active:bg-[#6F4E37]/10 transition-transform tap-scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="menu_book" style="font-variation-settings: 'FILL' 1;">menu_book</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest mt-1">Catalog</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#553722]/50 active:bg-[#6F4E37]/10 transition-transform tap-scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="chat_bubble">chat_bubble</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest mt-1">Consult</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#553722]/50 active:bg-[#6F4E37]/10 transition-transform tap-scale-90" href="#">
+<span class="material-symbols-outlined" data-icon="menu">menu</span>
+<span class="font-['Manrope'] text-[10px] font-bold uppercase tracking-widest mt-1">Menu</span>
+</a>
+</nav>
+</body></html>

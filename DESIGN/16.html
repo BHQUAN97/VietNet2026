@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>VietNet Admin Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;700&amp;family=Manrope:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "tertiary": "#24434b",
+              "background": "#fcf9f7",
+              "surface-container-highest": "#e5e2e0",
+              "surface-container-high": "#eae8e6",
+              "error": "#ba1a1a",
+              "on-primary": "#ffffff",
+              "error-container": "#ffdad6",
+              "secondary": "#6d5b4f",
+              "on-tertiary-container": "#b0d0db",
+              "on-secondary-container": "#736155",
+              "tertiary-container": "#3c5a63",
+              "on-secondary": "#ffffff",
+              "primary-fixed-dim": "#eabda0",
+              "primary-fixed": "#ffdcc6",
+              "outline": "#82746d",
+              "on-background": "#1b1c1b",
+              "surface-container-low": "#f6f3f1",
+              "on-tertiary-fixed-variant": "#2d4b54",
+              "secondary-container": "#f7decf",
+              "secondary-fixed": "#f7decf",
+              "surface-container": "#f0edeb",
+              "surface": "#fcf9f7",
+              "inverse-surface": "#30302f",
+              "on-error-container": "#93000a",
+              "tertiary-fixed-dim": "#acccd6",
+              "on-primary-container": "#eec1a4",
+              "tertiary-fixed": "#c8e8f3",
+              "on-secondary-fixed-variant": "#544339",
+              "surface-tint": "#79573f",
+              "outline-variant": "#d4c3ba",
+              "on-surface": "#1b1c1b",
+              "primary-container": "#6f4e37",
+              "on-secondary-fixed": "#261910",
+              "on-tertiary": "#ffffff",
+              "on-tertiary-fixed": "#001f27",
+              "surface-bright": "#fcf9f7",
+              "on-surface-variant": "#50453e",
+              "inverse-primary": "#eabda0",
+              "on-primary-fixed-variant": "#5f402a",
+              "on-error": "#ffffff",
+              "inverse-on-surface": "#f3f0ee",
+              "primary": "#553722",
+              "on-primary-fixed": "#2d1604",
+              "surface-variant": "#e5e2e0",
+              "surface-container-lowest": "#ffffff",
+              "secondary-fixed-dim": "#dac2b4",
+              "surface-dim": "#dcd9d8"
+            },
+            fontFamily: {
+              "headline": ["Noto Serif"],
+              "body": ["Manrope"],
+              "label": ["Manrope"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            line-height: 1;
+            text-transform: none;
+            letter-spacing: normal;
+            word-wrap: normal;
+            white-space: nowrap;
+            direction: ltr;
+        }
+        body {
+            font-family: 'Manrope', sans-serif;
+            background-color: #fcf9f7;
+            color: #1b1c1b;
+        }
+        .serif-headline {
+            font-family: 'Noto Serif', serif;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-surface">
+<!-- TopAppBar Shell -->
+<header class="fixed top-0 w-full z-50 bg-[#FCF9F7]/80 backdrop-blur-xl shadow-sm shadow-[#553722]/5 flex justify-between items-center px-6 h-16">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-[#553722]" data-icon="menu">menu</span>
+<h1 class="text-2xl font-bold text-[#553722] uppercase tracking-widest font-serif">VietNet</h1>
+</div>
+<div class="relative">
+<span class="material-symbols-outlined text-[#553722]" data-icon="shopping_bag">shopping_bag</span>
+<span class="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary-container text-[10px] text-white">3</span>
+</div>
+</header>
+<main class="pt-20 pb-24 px-6 max-w-lg mx-auto">
+<!-- Welcome Section -->
+<section class="mb-8">
+<span class="text-xs font-label uppercase tracking-[0.2em] text-secondary font-bold">Admin Portal</span>
+<h2 class="text-3xl serif-headline font-bold text-primary mt-1">Hello, VietNet Admin</h2>
+<p class="text-sm text-on-surface-variant mt-2">Here is what's happening today at the atelier.</p>
+</section>
+<!-- Metrics Bento Grid -->
+<section class="grid grid-cols-2 gap-4 mb-8">
+<!-- Large Metric -->
+<div class="col-span-2 bg-surface-container-low p-6 rounded-2xl flex flex-col justify-between h-32 relative overflow-hidden">
+<div class="z-10">
+<span class="text-[10px] font-label uppercase tracking-widest text-secondary font-bold">Total Visits</span>
+<div class="text-4xl font-headline font-bold text-primary mt-1">12.4k</div>
+</div>
+<div class="z-10 flex items-center text-xs text-tertiary-container font-bold">
+<span class="material-symbols-outlined text-sm mr-1" data-icon="trending_up">trending_up</span>
+                    +14% from last week
+                </div>
+<!-- Abstract Texture -->
+<div class="absolute right-0 top-0 h-full w-1/3 opacity-10 pointer-events-none">
+<div class="h-full w-full bg-gradient-to-l from-primary-container to-transparent"></div>
+</div>
+</div>
+<!-- Lead Metric -->
+<div class="bg-surface-container-highest p-5 rounded-2xl flex flex-col gap-1">
+<span class="material-symbols-outlined text-primary mb-2" data-icon="person_search">person_search</span>
+<span class="text-[10px] font-label uppercase tracking-widest text-secondary font-bold">Leads</span>
+<div class="text-2xl font-headline font-bold text-primary">84</div>
+</div>
+<!-- Post Metric -->
+<div class="bg-primary-container p-5 rounded-2xl flex flex-col gap-1 text-white">
+<span class="material-symbols-outlined text-white/80 mb-2" data-icon="article">article</span>
+<span class="text-[10px] font-label uppercase tracking-widest text-white/70 font-bold">Active Posts</span>
+<div class="text-2xl font-headline font-bold">126</div>
+</div>
+</section>
+<!-- Quick Actions -->
+<section class="mb-8">
+<h3 class="text-sm font-label uppercase tracking-widest text-secondary mb-4 font-bold">Quick Actions</h3>
+<div class="flex flex-col gap-3">
+<button class="flex items-center justify-between w-full bg-primary-container text-white px-6 py-4 rounded-xl shadow-lg shadow-primary-container/20 active:scale-95 transition-transform">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined" data-icon="add_circle">add_circle</span>
+<span class="font-bold tracking-tight">Create Post</span>
+</div>
+<span class="material-symbols-outlined" data-icon="chevron_right">chevron_right</span>
+</button>
+<button class="flex items-center justify-between w-full bg-surface-container-low text-primary px-6 py-4 rounded-xl active:scale-95 transition-transform">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined" data-icon="event_note">event_note</span>
+<span class="font-bold tracking-tight text-secondary">Manage Consultation</span>
+</div>
+<span class="material-symbols-outlined text-secondary/40" data-icon="chevron_right">chevron_right</span>
+</button>
+</div>
+</section>
+<!-- Activity Feed -->
+<section class="mb-4">
+<div class="flex justify-between items-end mb-6">
+<h3 class="text-sm font-label uppercase tracking-widest text-secondary font-bold">Recent Activity</h3>
+<a class="text-xs text-primary font-bold underline underline-offset-4" href="#">View All</a>
+</div>
+<div class="space-y-6 relative before:content-[''] before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[1px] before:bg-outline-variant/30">
+<!-- Activity Item 1 -->
+<div class="relative pl-10">
+<div class="absolute left-0 top-1 w-6 h-6 rounded-full bg-surface flex items-center justify-center ring-4 ring-surface">
+<span class="material-symbols-outlined text-primary text-sm" data-icon="chat_bubble" style="font-variation-settings: 'FILL' 1;">chat_bubble</span>
+</div>
+<div>
+<p class="text-sm font-bold text-on-surface">New Consultation Request</p>
+<p class="text-xs text-on-surface-variant">Client: Nguyen Van A — Villa Project</p>
+<span class="text-[10px] text-outline mt-1 block">2 hours ago</span>
+</div>
+</div>
+<!-- Activity Item 2 -->
+<div class="relative pl-10">
+<div class="absolute left-0 top-1 w-6 h-6 rounded-full bg-surface flex items-center justify-center ring-4 ring-surface">
+<span class="material-symbols-outlined text-primary text-sm" data-icon="image">image</span>
+</div>
+<div class="flex gap-4 items-start">
+<div class="flex-1">
+<p class="text-sm font-bold text-on-surface">Updated Project Gallery</p>
+<p class="text-xs text-on-surface-variant">3 new photos added to "Modern Loft"</p>
+<span class="text-[10px] text-outline mt-1 block">5 hours ago</span>
+</div>
+<img class="w-12 h-12 rounded-lg object-cover" data-alt="minimalist modern interior design with natural wood elements and soft ambient lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB6lJOyWF_MhcUU_p0CKZZe9_Oh_NJiBILjroyN0ptjKF1ppCNk_5dR2w_3n5jgwlzOAdiqCoZqNNQQLPWAjD4-kzdhPYGZnJJUIU1COsaf0TLcAsqXeWOYF_Q4VA9qe70q0awQ7DDOj5w0H6JkDTy5tjnhLoIXR5Sj1NjZbKZNPrALA_zPZlNoEaSvXHmL4twcb6599pgk_aZXH0J0Q_5Bvc7KYqbiyeRqviZGsfxCeH1jS4csiyjPUQEh_oInH6avKdAsAgN26FGz"/>
+</div>
+</div>
+<!-- Activity Item 3 -->
+<div class="relative pl-10">
+<div class="absolute left-0 top-1 w-6 h-6 rounded-full bg-surface flex items-center justify-center ring-4 ring-surface">
+<span class="material-symbols-outlined text-primary text-sm" data-icon="security">security</span>
+</div>
+<div>
+<p class="text-sm font-bold text-on-surface">Admin Login Detected</p>
+<p class="text-xs text-on-surface-variant">Successful login from IP: 192.168.1.1</p>
+<span class="text-[10px] text-outline mt-1 block">Yesterday</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- NavigationDrawer Mock (Hidden) -->
+<div class="fixed inset-0 z-[60] pointer-events-none opacity-0 transition-opacity duration-300" id="drawer">
+<div class="absolute inset-0 bg-on-background/20 backdrop-blur-sm"></div>
+<aside class="h-full w-80 bg-[#FCF9F7] shadow-2xl shadow-[#553722]/10 flex flex-col py-8 gap-2 transition-transform -translate-x-full duration-300">
+<div class="px-6 mb-8 flex items-center gap-4">
+<div class="w-12 h-12 rounded-full overflow-hidden bg-surface-container-high">
+<img class="w-full h-full object-cover" data-alt="professional male portrait with warm studio lighting and neutral background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCja41QNyYSk6UW09-xk3GPG4oeTiQtnv5m013Or9D2B2LmME4rb1Y9Qw8pAfkzF56Tf6V7Ezrctlu2jW6yW5gqIX2T1d7rOAHpa2vAibeXk2zUNz3vq8hW11r0TJd6NWp1FNSUkdDZfN2pYJr8LeqG6rqJrXC1dEGBIlV-xTV_QZ5ARtzHF0NFUaXc6-a10VkHhEekQV7_x2BGPIOxMoU22QGliYAswOVfgYWKe8TeekYxlp1viUqQ8O6XNHQzN2DcMEhtAyKJviFL"/>
+</div>
+<div>
+<h4 class="font-serif text-[#553722] text-lg font-bold">VietNet Admin</h4>
+<p class="text-stone-500 text-xs font-sans">Project Lead</p>
+</div>
+</div>
+<nav class="flex flex-col gap-1">
+<div class="bg-[#6F4E37] text-white rounded-lg mx-2 px-4 py-3 flex items-center gap-4">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="text-sm font-sans tracking-normal">Dashboard</span>
+</div>
+<div class="text-stone-600 mx-2 px-4 py-3 flex items-center gap-4 hover:bg-[#6F4E37]/5 transition-colors">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="text-sm font-sans tracking-normal">Analytics</span>
+</div>
+<div class="text-stone-600 mx-2 px-4 py-3 flex items-center gap-4 hover:bg-[#6F4E37]/5 transition-colors">
+<span class="material-symbols-outlined" data-icon="edit_note">edit_note</span>
+<span class="text-sm font-sans tracking-normal">Project Management</span>
+</div>
+<div class="text-stone-600 mx-2 px-4 py-3 flex items-center gap-4 hover:bg-[#6F4E37]/5 transition-colors">
+<span class="material-symbols-outlined" data-icon="inventory_2">inventory_2</span>
+<span class="text-sm font-sans tracking-normal">Inventory</span>
+</div>
+<div class="text-stone-600 mx-2 px-4 py-3 flex items-center gap-4 hover:bg-[#6F4E37]/5 transition-colors mt-auto">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="text-sm font-sans tracking-normal">Settings</span>
+</div>
+</nav>
+</aside>
+</div>
+<!-- BottomNavBar Shell -->
+<nav class="fixed bottom-0 w-full z-50 rounded-t-3xl bg-[#FCF9F7] shadow-[0_-4px_24px_rgba(85,55,34,0.06)] flex justify-around items-center h-20 pb-safe px-4">
+<!-- Home (Active) -->
+<a class="flex flex-col items-center justify-center text-[#6F4E37] bg-[#6F4E37]/10 rounded-xl px-3 py-1 active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="home" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-sans text-[10px] uppercase tracking-[0.1em] font-medium mt-1">Home</span>
+</a>
+<!-- Projects -->
+<a class="flex flex-col items-center justify-center text-stone-400 hover:text-[#553722] active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="architecture">architecture</span>
+<span class="font-sans text-[10px] uppercase tracking-[0.1em] font-medium mt-1">Posts</span>
+</a>
+<!-- Catalog -->
+<a class="flex flex-col items-center justify-center text-stone-400 hover:text-[#553722] active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-sans text-[10px] uppercase tracking-[0.1em] font-medium mt-1">Users</span>
+</a>
+<!-- Contact -->
+<a class="flex flex-col items-center justify-center text-stone-400 hover:text-[#553722] active:scale-90 transition-transform" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-sans text-[10px] uppercase tracking-[0.1em] font-medium mt-1">Settings</span>
+</a>
+</nav>
+<!-- Footer Shell -->
+<footer class="w-full py-12 px-6 mb-20 bg-stone-100 flex flex-col items-center gap-6 text-center">
+<div class="font-serif italic text-lg text-[#553722]">VietNet Interior</div>
+<div class="flex gap-6">
+<a class="text-stone-500 font-sans text-xs tracking-wider" href="#">About</a>
+<a class="text-stone-500 font-sans text-xs tracking-wider" href="#">Privacy</a>
+<a class="text-stone-500 font-sans text-xs tracking-wider" href="#">Terms</a>
+</div>
+<p class="font-sans text-xs tracking-wider text-stone-500">© 2024 VietNet Interior. The Curated Atelier.</p>
+</footer>
+</body></html>
