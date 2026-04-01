@@ -1,10 +1,65 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { Plus, AlertTriangle, Pencil, Trash2, Eye, EyeOff } from 'lucide-react'
+import Image from 'next/image'
+import {
+  Plus,
+  AlertTriangle,
+  Pencil,
+  Trash2,
+  Eye,
+  Search,
+  SlidersHorizontal,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { Badge } from '@/components/ui/Badge'
+import { StatusBadge } from '@/components/admin/StatusBadge'
 import api from '@/lib/api'
 import type { Project, Category, ApiResponse, PaginationMeta } from '@/types'
+
+// ─── Table row skeleton ────────────────────────────────────────
+
+function ProjectRowSkeleton() {
+  return (
+    <tr>
+      <td className="px-4 py-4">
+        <div className="flex items-center gap-3">
+          <div className="h-12 w-16 rounded-lg bg-surface-container animate-pulse" />
+          <div>
+            <div className="h-4 w-40 rounded bg-surface-container animate-pulse" />
+            <div className="mt-1.5 h-3 w-20 rounded bg-surface-container animate-pulse" />
+          </div>
+        </div>
+      </td>
+      <td className="px-4 py-4"><div className="h-5 w-20 rounded-full bg-surface-container animate-pulse" /></td>
+      <td className="px-4 py-4"><div className="h-4 w-24 rounded bg-surface-container animate-pulse" /></td>
+      <td className="px-4 py-4"><div className="h-5 w-16 rounded-full bg-surface-container animate-pulse" /></td>
+      <td className="px-4 py-4"><div className="h-4 w-8 rounded bg-surface-container animate-pulse" /></td>
+    </tr>
+  )
+}
+
+// ─── Category Badge ────────────────────────────────────────────
+
+const CATEGORY_VARIANTS: Record<string, 'primary' | 'secondary' | 'tertiary' | 'neutral'> = {
+  residential: 'primary',
+  commercial: 'secondary',
+  hospitality: 'tertiary',
+}
+
+function CategoryBadge({ name }: { name: string }) {
+  const key = name.toLowerCase()
+  const variant = CATEGORY_VARIANTS[key] || 'neutral'
+  return (
+    <Badge variant={variant} size="sm">
+      {name}
+    </Badge>
+  )
+}
+
+// ─── Main Page ─────────────────────────────────────────────────
 
 export default function AdminProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([])
@@ -12,6 +67,7 @@ export default function AdminProjectsPage() {
   const [meta, setMeta] = useState<PaginationMeta | null>(null)
   const [page, setPage] = useState(1)
   const [statusFilter, setStatusFilter] = useState('')
+  const [searchQuery, setSearchQuery] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -53,6 +109,7 @@ export default function AdminProjectsPage() {
     try {
       const params: Record<string, string | number> = { page, limit: LIMIT }
       if (statusFilter) params.status = statusFilter
+      if (searchQuery) params.search = searchQuery
       const res = await api.get('/projects/admin/list', { params }) as unknown as ApiResponse<Project[]>
       setProjects(res.data || [])
       setMeta(res.meta || null)
@@ -61,7 +118,7 @@ export default function AdminProjectsPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [page, statusFilter])
+  }, [page, statusFilter, searchQuery])
 
   useEffect(() => {
     fetchCategories()
@@ -162,18 +219,49 @@ export default function AdminProjectsPage() {
 
   return (
     <div className="py-4">
-      {/* Header */}
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="font-headline text-headline-lg text-on-surface">Quản lý dự án</h1>
-          <p className="mt-1 text-body-md text-on-surface-variant">
-            {meta && <span>{meta.total} dự án</span>}
-          </p>
+      {/* Header — matching design 19.html */}
+      <div className="mb-8">
+        <p className="font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
+          Project Library
+        </p>
+        <div className="mt-2 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <h1 className="font-headline text-headline-lg text-primary md:text-display-sm">
+            Post Management
+          </h1>
+          <Button variant="primary" size="md" onClick={openCreate}>
+            <Plus className="mr-2 h-4 w-4" />
+            New Project
+          </Button>
         </div>
-        <Button variant="primary" size="md" onClick={openCreate}>
-          <Plus className="mr-2 h-4 w-4" />
-          Thêm dự án
-        </Button>
+
+        {/* Search & Filter bar */}
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
+          <div className="relative flex-1">
+            <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-on-surface-variant" />
+            <input
+              type="text"
+              placeholder="Search projects..."
+              value={searchQuery}
+              onChange={(e) => { setSearchQuery(e.target.value); setPage(1) }}
+              className="w-full rounded-xl bg-surface-container-low py-2.5 pl-10 pr-4 text-body-md text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary/30"
+            />
+          </div>
+          <div className="flex gap-2">
+            {['', 'draft', 'published'].map((s) => (
+              <button
+                key={s}
+                onClick={() => { setStatusFilter(s); setPage(1) }}
+                className={`rounded-xl px-4 py-2.5 text-body-sm font-medium transition-colors ${
+                  statusFilter === s
+                    ? 'bg-primary-container text-on-primary shadow-ambient-sm'
+                    : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
+                }`}
+              >
+                {s === '' ? 'All' : s === 'draft' ? 'Draft' : 'Published'}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {error && (
@@ -186,27 +274,23 @@ export default function AdminProjectsPage() {
         </div>
       )}
 
-      {/* Filters */}
-      <div className="mb-6 flex gap-2">
-        {['', 'draft', 'published'].map((s) => (
-          <button
-            key={s}
-            onClick={() => { setStatusFilter(s); setPage(1) }}
-            className={`rounded-full px-4 py-2 text-body-sm font-medium transition-colors ${
-              statusFilter === s
-                ? 'bg-primary-container text-on-primary-container'
-                : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
-            }`}
-          >
-            {s === '' ? 'Tất cả' : s === 'draft' ? 'Nháp' : 'Đã xuất bản'}
-          </button>
-        ))}
-      </div>
-
-      {/* Table */}
+      {/* Table — design 19.html: thumbnail + title + category badge + status + actions on hover */}
       {isLoading ? (
-        <div className="flex min-h-[40vh] items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <div className="overflow-x-auto rounded-xl bg-surface-container-lowest">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="bg-surface-container-low">
+                <th className="px-4 py-3 font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">Project Information</th>
+                <th className="px-4 py-3 font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">Category</th>
+                <th className="px-4 py-3 font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">Date Created</th>
+                <th className="px-4 py-3 text-center font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">Status</th>
+                <th className="px-4 py-3 font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {Array.from({ length: 4 }).map((_, i) => <ProjectRowSkeleton key={i} />)}
+            </tbody>
+          </table>
         </div>
       ) : (
         <div className="overflow-x-auto rounded-xl bg-surface-container-lowest">
@@ -214,19 +298,19 @@ export default function AdminProjectsPage() {
             <thead>
               <tr className="bg-surface-container-low">
                 <th className="px-4 py-3 font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                  Tiêu đề
+                  Project Information
                 </th>
                 <th className="px-4 py-3 font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                  Danh mục
+                  Category
                 </th>
                 <th className="px-4 py-3 font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                  Trạng thái
+                  Date Created
+                </th>
+                <th className="px-4 py-3 text-center font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
+                  Status
                 </th>
                 <th className="px-4 py-3 font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                  Lượt xem
-                </th>
-                <th className="px-4 py-3 font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                  Thao tác
+                  Actions
                 </th>
               </tr>
             </thead>
@@ -239,37 +323,65 @@ export default function AdminProjectsPage() {
                 </tr>
               ) : (
                 projects.map((project) => (
-                  <tr key={project.id} className="transition-colors hover:bg-surface-container-low/50">
-                    <td className="px-4 py-3">
-                      <div>
-                        <p className="text-body-md font-medium text-on-surface">{project.title}</p>
-                        <p className="text-body-sm text-on-surface-variant">/{project.slug}</p>
+                  <tr
+                    key={project.id}
+                    className="group transition-colors hover:bg-surface-container-low/50"
+                  >
+                    {/* Project info with thumbnail */}
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="relative h-12 w-16 shrink-0 overflow-hidden rounded-lg bg-surface-container">
+                          {project.cover_image?.preview_url ? (
+                            <Image
+                              src={project.cover_image.preview_url}
+                              alt={project.title}
+                              fill
+                              className="object-cover"
+                              sizes="64px"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center text-on-surface-variant/30">
+                              <span className="text-lg">&#9633;</span>
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-body-md font-medium text-on-surface">
+                            {project.title}
+                          </p>
+                          <p className="mt-0.5 text-body-sm text-on-surface-variant">
+                            REF-{project.id.slice(0, 8).toUpperCase()}
+                          </p>
+                        </div>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-body-sm text-on-surface-variant">
-                      {project.category?.name || '-'}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span
-                        className={`inline-flex rounded-full px-2.5 py-0.5 font-label text-label-sm uppercase ${
-                          project.status === 'published'
-                            ? 'bg-success-bg text-success-text'
-                            : 'bg-warning-bg text-warning-text'
-                        }`}
-                      >
-                        {project.status === 'published' ? 'Xuất bản' : 'Nháp'}
-                      </span>
-                      {project.is_featured && (
-                        <span className="ml-1 inline-flex rounded-full bg-primary-fixed px-2 py-0.5 font-label text-label-sm text-on-primary-fixed">
-                          Featured
-                        </span>
+
+                    {/* Category badge */}
+                    <td className="px-4 py-4">
+                      {project.category ? (
+                        <CategoryBadge name={project.category.name} />
+                      ) : (
+                        <span className="text-body-sm text-on-surface-variant">-</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-body-sm text-on-surface-variant">
-                      {project.view_count}
+
+                    {/* Date */}
+                    <td className="px-4 py-4 text-body-sm text-on-surface-variant">
+                      {new Date(project.created_at).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
                     </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-1">
+
+                    {/* Status */}
+                    <td className="px-4 py-4 text-center">
+                      <StatusBadge status={project.status} />
+                    </td>
+
+                    {/* Actions — visible on hover (design 19.html) */}
+                    <td className="px-4 py-4">
+                      <div className="flex items-center gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                         {project.status === 'draft' && (
                           <button
                             onClick={() => handlePublish(project)}
@@ -303,18 +415,46 @@ export default function AdminProjectsPage() {
         </div>
       )}
 
-      {/* Pagination */}
-      {!isLoading && totalPages > 1 && (
-        <div className="mt-6 flex items-center justify-center gap-2">
-          <Button variant="ghost" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>
-            Trước
-          </Button>
-          <span className="px-4 text-body-md text-on-surface-variant">
-            {page} / {totalPages}
-          </span>
-          <Button variant="ghost" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>
-            Sau
-          </Button>
+      {/* Pagination — design 19.html style */}
+      {!isLoading && meta && (
+        <div className="mt-6 flex flex-col items-center justify-between gap-4 sm:flex-row">
+          <p className="text-body-sm text-on-surface-variant">
+            Showing {projects.length} of {meta.total} boutique projects
+          </p>
+          {totalPages > 1 && (
+            <div className="flex items-center gap-1">
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page <= 1}
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-on-surface-variant transition-colors hover:bg-surface-container-high disabled:opacity-30"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              {Array.from({ length: Math.min(totalPages, 5) }).map((_, i) => {
+                const pageNum = i + 1
+                return (
+                  <button
+                    key={pageNum}
+                    onClick={() => setPage(pageNum)}
+                    className={`flex h-9 w-9 items-center justify-center rounded-lg font-label text-label-md transition-all ${
+                      page === pageNum
+                        ? 'bg-primary-container text-on-primary shadow-ambient-sm'
+                        : 'text-on-surface-variant hover:bg-surface-container-high'
+                    }`}
+                  >
+                    {pageNum}
+                  </button>
+                )
+              })}
+              <button
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page >= totalPages}
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-on-surface-variant transition-colors hover:bg-surface-container-high disabled:opacity-30"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          )}
         </div>
       )}
 

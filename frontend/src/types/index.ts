@@ -231,7 +231,9 @@ export interface AboutConfig {
   label: string
   title: string
   description: string
+  quote?: string
   stats: Array<{ value: string; label: string }>
+  images?: string[]
 }
 
 export interface LatestArticlesConfig {
@@ -245,6 +247,9 @@ export interface ContactCtaConfig {
   description: string
   cta_text: string
   cta_link: string
+  phone?: string
+  email?: string
+  show_form?: boolean
 }
 
 export interface TestimonialsConfig {

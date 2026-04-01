@@ -1,5 +1,5 @@
 import type { Metadata } from 'next'
-import { Noto_Serif, Be_Vietnam_Pro } from 'next/font/google'
+import { Noto_Serif, Manrope } from 'next/font/google'
 import './globals.css'
 import { GlassNav } from '@/components/layout/GlassNav'
 import { Footer } from '@/components/layout/Footer'
@@ -14,10 +14,10 @@ const notoSerif = Noto_Serif({
   display: 'swap',
 })
 
-const beVietnamPro = Be_Vietnam_Pro({
+const manrope = Manrope({
   subsets: ['latin', 'vietnamese'],
   weight: ['400', '500', '600', '700'],
-  variable: '--font-be-vietnam-pro',
+  variable: '--font-manrope',
   display: 'swap',
 })
 
@@ -44,7 +44,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="vi" className={`${notoSerif.variable} ${beVietnamPro.variable}`}>
+    <html lang="vi" className={`${notoSerif.variable} ${manrope.variable}`}>
       <head>
         {/* Preconnect to R2 CDN for faster image loading */}
         <link rel="preconnect" href="https://pub-vietnet.r2.dev" crossOrigin="anonymous" />

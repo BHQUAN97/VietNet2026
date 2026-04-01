@@ -92,8 +92,8 @@ const config: Config = {
 
       fontFamily: {
         'headline': ['"Noto Serif"', 'Georgia', 'serif'],
-        'body':     ['"Be Vietnam Pro"', 'system-ui', 'sans-serif'],
-        'label':    ['"Be Vietnam Pro"', 'system-ui', 'sans-serif'],
+        'body':     ['"Manrope"', 'system-ui', 'sans-serif'],
+        'label':    ['"Manrope"', 'system-ui', 'sans-serif'],
       },
 
       fontSize: {

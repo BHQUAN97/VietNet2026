@@ -24,7 +24,7 @@
   --color-surface: #FCF9F7;
   --color-surface-bright: #FCF9F7;
   --color-surface-dim: #DCD9D8;
-  --color-surface-container-lowest: #FFFBF8;
+  --color-surface-container-lowest: #FFFFFF;
   --color-surface-container-low: #F6F3F1;
   --color-surface-container: #F0EDEB;
   --color-surface-container-high: #EAE8E6;
@@ -107,8 +107,8 @@
   /* -- TYPOGRAPHY ------------------------------------------- */
   --font-display: 'Noto Serif', serif;
   --font-headline: 'Noto Serif', serif;
-  --font-body: 'Be Vietnam Pro', sans-serif;
-  --font-label: 'Be Vietnam Pro', sans-serif;
+  --font-body: 'Manrope', sans-serif;
+  --font-label: 'Manrope', sans-serif;
   --font-icon: 'Material Symbols Outlined';
 
   /* Display Large -- page hero titles */

@@ -1,7 +1,5 @@
-import Image from 'next/image'
-import { PageContainer } from '@/components/layout/PageContainer'
 import { ScrollReveal } from '@/components/ui/ScrollReveal'
-import { Quote } from 'lucide-react'
+import { Star } from 'lucide-react'
 import type { TestimonialsConfig } from '@/types'
 
 interface Props {
@@ -10,16 +8,16 @@ interface Props {
 
 export function TestimonialsSection({ config }: Props) {
   return (
-    <section className="bg-surface py-16 md:py-24">
-      <PageContainer>
-        <ScrollReveal className="mb-10 md:mb-14 text-center">
-          <p className="font-label text-label-md uppercase tracking-[0.08em] text-primary/70">
+    <section className="py-20 md:py-32 px-4 md:px-8 overflow-hidden">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <ScrollReveal className="text-center mb-16 md:mb-20">
+          <span className="font-label text-label-sm tracking-[0.2em] text-primary uppercase mb-4 block">
             {config.label}
-          </p>
-          <h2 className="mt-3 font-headline text-headline-md text-on-surface md:text-headline-lg">
+          </span>
+          <h2 className="font-headline text-headline-lg md:text-display-md text-primary font-bold">
             {config.title}
           </h2>
-          <span className="deco-line deco-line-center mt-4" />
         </ScrollReveal>
 
         {!config.items || config.items.length === 0 ? (
@@ -27,43 +25,35 @@ export function TestimonialsSection({ config }: Props) {
             <p className="text-body-md text-on-surface-variant">Chưa có đánh giá nào.</p>
           </div>
         ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
             {config.items.map((item, i) => (
-              <ScrollReveal key={i} delay={i * 0.1}>
-                <div className="card-premium relative rounded-2xl bg-surface-container-low p-6 md:p-8">
+              <ScrollReveal key={i} delay={i * 0.15}>
+                <div className="bg-surface-container-lowest p-8 md:p-12 rounded-2xl shadow-2xl relative">
                   {/* Quote icon decorative */}
-                  <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-lg bg-primary/5">
-                    <Quote className="h-4 w-4 text-primary/40" />
+                  <span className="absolute top-6 right-6 md:top-8 md:right-8 text-primary/15 text-5xl md:text-6xl font-headline select-none">
+                    &ldquo;
+                  </span>
+
+                  {/* Stars */}
+                  <div className="flex gap-1 mb-6 text-primary">
+                    {[...Array(5)].map((_, j) => (
+                      <Star key={j} className="h-4 w-4 fill-primary" />
+                    ))}
                   </div>
 
-                  <p className="text-body-sm leading-relaxed text-on-surface-variant md:text-body-md">
+                  {/* Quote content */}
+                  <p className="text-on-surface-variant text-body-lg md:text-title-lg leading-relaxed italic mb-8">
                     &ldquo;{item.content}&rdquo;
                   </p>
 
-                  {/* Divider */}
-                  <div className="mt-5 mb-4 h-[1px] bg-gradient-to-r from-outline-variant/30 via-outline-variant/10 to-transparent" />
-
-                  <div className="flex items-center gap-3">
-                    {item.avatar_url ? (
-                      <Image
-                        src={item.avatar_url}
-                        alt={item.name}
-                        width={40}
-                        height={40}
-                        className="rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/8 font-headline text-title-md text-primary">
-                        {item.name.charAt(0)}
-                      </div>
-                    )}
+                  {/* Author info */}
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-primary-container/10 flex items-center justify-center text-primary font-headline font-bold text-title-md">
+                      {item.name.split(' ').map(w => w[0]).join('').slice(0, 2)}
+                    </div>
                     <div>
-                      <p className="font-headline text-body-md font-semibold text-on-surface">
-                        {item.name}
-                      </p>
-                      <p className="text-body-sm text-on-surface-variant">
-                        {item.role}
-                      </p>
+                      <h4 className="font-bold text-primary text-body-md">{item.name}</h4>
+                      <p className="text-on-surface-variant text-body-sm">{item.role}</p>
                     </div>
                   </div>
                 </div>
@@ -71,7 +61,7 @@ export function TestimonialsSection({ config }: Props) {
             ))}
           </div>
         )}
-      </PageContainer>
+      </div>
     </section>
   )
 }

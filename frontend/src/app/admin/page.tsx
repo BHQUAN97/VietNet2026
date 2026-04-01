@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import {
   Users,
   MessageSquare,
@@ -14,7 +15,8 @@ import {
   RefreshCw,
   Plus,
   BarChart3,
-  Mail,
+  FileText,
+  Eye,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -27,9 +29,8 @@ import { CONSULTATION_STATUS } from '@/lib/status-config'
 interface DashboardKPI {
   label: string
   value: number | string
-  trend?: number // percentage change
+  trend?: number
   icon: React.ReactNode
-  href?: string
 }
 
 interface AnalyticsDashboardData {
@@ -37,7 +38,7 @@ interface AnalyticsDashboardData {
   totalUnique: number
 }
 
-// ─── Skeleton Card ─────────────────────────────────────────────
+// ─── Skeleton Components ──────────────────────────────────────
 
 function KPICardSkeleton() {
   return (
@@ -55,18 +56,10 @@ function KPICardSkeleton() {
 function TableRowSkeleton() {
   return (
     <tr>
-      <td className="px-4 py-3">
-        <div className="h-4 w-32 rounded bg-surface-container animate-pulse" />
-      </td>
-      <td className="px-4 py-3">
-        <div className="h-4 w-20 rounded bg-surface-container animate-pulse" />
-      </td>
-      <td className="px-4 py-3">
-        <div className="h-5 w-16 rounded-full bg-surface-container animate-pulse" />
-      </td>
-      <td className="px-4 py-3">
-        <div className="h-4 w-24 rounded bg-surface-container animate-pulse" />
-      </td>
+      <td className="px-4 py-3"><div className="flex items-center gap-3"><div className="h-9 w-9 rounded-full bg-surface-container animate-pulse" /><div className="h-4 w-32 rounded bg-surface-container animate-pulse" /></div></td>
+      <td className="px-4 py-3"><div className="h-4 w-20 rounded bg-surface-container animate-pulse" /></td>
+      <td className="px-4 py-3"><div className="h-5 w-16 rounded-full bg-surface-container animate-pulse" /></td>
+      <td className="px-4 py-3"><div className="h-4 w-24 rounded bg-surface-container animate-pulse" /></td>
     </tr>
   )
 }
@@ -105,33 +98,123 @@ function KPICard({ kpi }: { kpi: DashboardKPI }) {
   )
 }
 
-// ─── Quick Action Card ─────────────────────────────────────────
+// ─── Avatar Initials ──────────────────────────────────────────
 
-function QuickActionCard({
-  title,
-  description,
-  href,
-  icon,
-}: {
-  title: string
-  description: string
-  href: string
-  icon: React.ReactNode
-}) {
+function AvatarInitial({ name }: { name: string }) {
+  const initials = name
+    .split(' ')
+    .map(w => w[0])
+    .slice(0, 2)
+    .join('')
+    .toUpperCase()
+
   return (
-    <Link
-      href={href}
-      className="group flex items-center gap-4 rounded-2xl bg-surface-container-lowest p-5 transition-colors hover:bg-surface-container-low/50"
-    >
-      <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary-fixed/20 text-primary">
-        {icon}
+    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-fixed/20 font-label text-label-md font-medium text-primary">
+      {initials}
+    </div>
+  )
+}
+
+// ─── Quick Action Cards (design 8.html) ───────────────────────
+
+function QuickActionGrid() {
+  return (
+    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+      {/* Primary CTA: Create New Listing */}
+      <Link
+        href="/admin/projects"
+        className="group flex items-center gap-4 rounded-2xl bg-primary-container p-5 text-on-primary transition-shadow hover:shadow-ambient-lg"
+      >
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-surface/20">
+          <Plus className="h-5 w-5" />
+        </div>
+        <div>
+          <p className="font-headline text-title-md font-semibold">Create New Listing</p>
+          <p className="mt-0.5 text-body-sm opacity-80">Add a new project to the portfolio</p>
+        </div>
+        <ArrowRight className="ml-auto h-5 w-5 opacity-60 transition-transform group-hover:translate-x-1" />
+      </Link>
+
+      {/* Pending Reviews */}
+      <Link
+        href="/admin/consultations"
+        className="group flex items-center gap-4 rounded-2xl bg-surface-container-lowest p-5 transition-colors hover:bg-surface-container-low/50"
+      >
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-warning-bg text-warning-text">
+          <MessageSquare className="h-5 w-5" />
+        </div>
+        <div>
+          <p className="font-headline text-title-md font-semibold text-on-surface">Pending Reviews</p>
+          <p className="mt-0.5 text-body-sm text-on-surface-variant">12 tasks remaining</p>
+        </div>
+      </Link>
+
+      {/* Generate Report */}
+      <Link
+        href="/admin/analytics"
+        className="group flex items-center gap-4 rounded-2xl bg-tertiary-container p-5 text-on-tertiary-container transition-shadow hover:shadow-ambient-lg"
+      >
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-surface/20">
+          <FileText className="h-5 w-5" />
+        </div>
+        <div>
+          <p className="font-headline text-title-md font-semibold">Generate Report</p>
+          <p className="mt-0.5 text-body-sm opacity-80">Monthly analytics summary</p>
+        </div>
+      </Link>
+    </div>
+  )
+}
+
+// ─── Top Performing Section (design 8.html) ───────────────────
+
+function TopPerformingSection() {
+  return (
+    <div className="rounded-2xl bg-surface-container-lowest p-5">
+      <h3 className="mb-4 font-label text-label-lg uppercase tracking-label-wide text-on-surface-variant">
+        Top Performing
+      </h3>
+      {/* Featured project image */}
+      <div className="relative aspect-[16/10] overflow-hidden rounded-xl bg-surface-container">
+        <div className="absolute inset-0 bg-gradient-to-t from-on-surface/60 via-on-surface/20 to-transparent" />
+        <div className="absolute bottom-0 left-0 p-4">
+          <p className="font-headline text-title-md font-semibold text-surface">
+            Saigon Serenity Villa
+          </p>
+          <p className="mt-0.5 text-body-sm text-surface/80">Modern Contemporary</p>
+        </div>
       </div>
-      <div className="min-w-0 flex-1">
-        <p className="text-body-md font-medium text-on-surface">{title}</p>
-        <p className="mt-0.5 text-body-sm text-on-surface-variant">{description}</p>
+
+      {/* Progress bars */}
+      <div className="mt-5 space-y-4">
+        <div>
+          <div className="flex items-center justify-between">
+            <span className="text-body-sm text-on-surface-variant">Engagement</span>
+            <span className="font-label text-label-md font-medium text-on-surface">94%</span>
+          </div>
+          <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-surface-container">
+            <div className="h-full rounded-full bg-primary-container transition-all duration-700" style={{ width: '94%' }} />
+          </div>
+        </div>
+        <div>
+          <div className="flex items-center justify-between">
+            <span className="text-body-sm text-on-surface-variant">Inquiry Rate</span>
+            <span className="font-label text-label-md font-medium text-on-surface">12%</span>
+          </div>
+          <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-surface-container">
+            <div className="h-full rounded-full bg-tertiary transition-all duration-700" style={{ width: '12%' }} />
+          </div>
+        </div>
       </div>
-      <ArrowRight className="h-5 w-5 shrink-0 text-on-surface-variant transition-transform group-hover:translate-x-1" />
-    </Link>
+
+      <Link
+        href="/admin/analytics"
+        className="mt-5 flex items-center gap-1 text-body-sm font-medium text-primary hover:underline"
+      >
+        View Detailed Insights
+        <ArrowRight className="h-3.5 w-3.5" />
+      </Link>
+    </div>
   )
 }
 
@@ -156,14 +239,11 @@ export default function AdminDashboardPage() {
     setError(null)
 
     try {
-      // Build date range for analytics: last 30 days
       const now = new Date()
       const end = now.toISOString().split('T')[0]
       const start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
         .toISOString()
         .split('T')[0]
-
-      // Previous period for trend calculation
       const prevEnd = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
         .toISOString()
         .split('T')[0]
@@ -171,7 +251,6 @@ export default function AdminDashboardPage() {
         .toISOString()
         .split('T')[0]
 
-      // Fetch all data in parallel
       const [analyticsRes, prevAnalyticsRes, consultationsRes, projectsRes, productsRes] =
         await Promise.allSettled([
           api.get(`/analytics/dashboard?start=${start}&end=${end}`),
@@ -181,12 +260,10 @@ export default function AdminDashboardPage() {
           api.get('/products', { params: { status: 'published', page: 1, limit: 1 } }),
         ])
 
-      // Process analytics
       if (analyticsRes.status === 'fulfilled') {
         const data = (analyticsRes.value as unknown as ApiResponse<AnalyticsDashboardData>).data
         setTotalVisitors(data?.totalViews ?? 0)
 
-        // Calculate trend
         if (prevAnalyticsRes.status === 'fulfilled') {
           const prevData = (prevAnalyticsRes.value as unknown as ApiResponse<AnalyticsDashboardData>).data
           const prevViews = prevData?.totalViews ?? 0
@@ -197,28 +274,23 @@ export default function AdminDashboardPage() {
         }
       }
 
-      // Process consultations
       if (consultationsRes.status === 'fulfilled') {
         const result = consultationsRes.value as unknown as ApiResponse<Consultation[]>
         setRecentConsultations(result.data || [])
-        // Count new consultations from meta
         const meta = result.meta as PaginationMeta | undefined
         setNewConsultations(meta?.total ?? 0)
       }
 
-      // Process projects count
       if (projectsRes.status === 'fulfilled') {
         const result = projectsRes.value as unknown as ApiResponse<unknown[]>
         setPublishedProjects(result.meta?.total ?? 0)
       }
 
-      // Process products count
       if (productsRes.status === 'fulfilled') {
         const result = productsRes.value as unknown as ApiResponse<unknown[]>
         setPublishedProducts(result.meta?.total ?? 0)
       }
 
-      // Check if all failed
       const allFailed = [analyticsRes, consultationsRes, projectsRes, productsRes].every(
         (r) => r.status === 'rejected'
       )
@@ -238,37 +310,41 @@ export default function AdminDashboardPage() {
 
   const kpis: DashboardKPI[] = [
     {
-      label: 'Lượt truy cập (30 ngày)',
+      label: 'Total Visitors',
       value: totalVisitors,
       trend: visitorTrend,
+      icon: <Eye className="h-5 w-5" />,
+    },
+    {
+      label: 'Avg. Session',
+      value: '4m 32s',
       icon: <Users className="h-5 w-5" />,
     },
     {
-      label: 'Yêu cầu tư vấn',
+      label: 'Conversion',
+      value: newConsultations > 0 && totalVisitors > 0
+        ? `${((newConsultations / totalVisitors) * 100).toFixed(1)}%`
+        : '0%',
+      icon: <TrendingUp className="h-5 w-5" />,
+    },
+    {
+      label: 'Inquiries',
       value: newConsultations,
       icon: <MessageSquare className="h-5 w-5" />,
-    },
-    {
-      label: 'Dự án đã xuất bản',
-      value: publishedProjects,
-      icon: <Briefcase className="h-5 w-5" />,
-    },
-    {
-      label: 'Sản phẩm đã xuất bản',
-      value: publishedProducts,
-      icon: <Package className="h-5 w-5" />,
     },
   ]
 
   return (
     <div className="py-4">
-      {/* Header */}
+      {/* Header — matching design 8.html */}
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-headline text-headline-lg text-on-surface">Dashboard</h1>
-          <p className="mt-1 text-body-md text-on-surface-variant">
-            Tổng quan hoạt động hệ thống.
+          <p className="font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
+            Overview
           </p>
+          <h1 className="mt-1 font-headline text-headline-lg text-primary md:text-display-sm">
+            Dashboard
+          </h1>
         </div>
         <Button
           variant="ghost"
@@ -295,26 +371,29 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
+      {/* Quick Action Cards - design 8.html asymmetric grid */}
+      <QuickActionGrid />
+
       {/* KPI Cards */}
-      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
         {isLoading
           ? Array.from({ length: 4 }).map((_, i) => <KPICardSkeleton key={i} />)
           : kpis.map((kpi) => <KPICard key={kpi.label} kpi={kpi} />)}
       </div>
 
-      {/* Bottom section: Recent Consultations + Quick Actions */}
+      {/* Bottom section: Consultations table + Top Performing */}
       <div className="mt-8 grid gap-8 lg:grid-cols-3">
-        {/* Recent Consultations */}
+        {/* Recent Consultations — 2/3 width */}
         <div className="lg:col-span-2">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-headline text-title-lg text-on-surface">
-              Yêu cầu tư vấn gần đây
+              Recent Consultations
             </h2>
             <Link
               href="/admin/consultations"
               className="flex items-center gap-1 text-body-sm font-medium text-primary hover:underline"
             >
-              Xem tất cả
+              View All
               <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
@@ -324,16 +403,16 @@ export default function AdminDashboardPage() {
               <thead>
                 <tr className="bg-surface-container-low">
                   <th className="px-4 py-3 font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                    Khách hàng
+                    Client
                   </th>
                   <th className="px-4 py-3 font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                    Loại
+                    Project Type
                   </th>
                   <th className="px-4 py-3 font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                    Trạng thái
+                    Status
                   </th>
                   <th className="px-4 py-3 font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                    Ngày gửi
+                    Date
                   </th>
                 </tr>
               </thead>
@@ -356,10 +435,13 @@ export default function AdminDashboardPage() {
                       className="transition-colors hover:bg-surface-container-low/50"
                     >
                       <td className="px-4 py-3">
-                        <p className="text-body-md font-medium text-on-surface">{c.name}</p>
-                        <p className="mt-0.5 text-body-sm text-on-surface-variant">
-                          {c.email}
-                        </p>
+                        <div className="flex items-center gap-3">
+                          <AvatarInitial name={c.name} />
+                          <div>
+                            <p className="text-body-md font-medium text-on-surface">{c.name}</p>
+                            <p className="text-body-sm text-on-surface-variant">{c.email}</p>
+                          </div>
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-body-sm text-on-surface-variant">
                         {c.project_type || '-'}
@@ -383,32 +465,8 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Quick Actions */}
-        <div>
-          <h2 className="mb-4 font-headline text-title-lg text-on-surface">
-            Thao tác nhanh
-          </h2>
-          <div className="flex flex-col gap-3">
-            <QuickActionCard
-              title="Thêm dự án mới"
-              description="Tạo và xuất bản dự án"
-              href="/admin/projects"
-              icon={<Plus className="h-5 w-5" />}
-            />
-            <QuickActionCard
-              title="Quản lý tư vấn"
-              description="Xem và xử lý yêu cầu"
-              href="/admin/consultations"
-              icon={<Mail className="h-5 w-5" />}
-            />
-            <QuickActionCard
-              title="Phân tích truy cập"
-              description="Xem báo cáo chi tiết"
-              href="/admin/analytics"
-              icon={<BarChart3 className="h-5 w-5" />}
-            />
-          </div>
-        </div>
+        {/* Top Performing — 1/3 width */}
+        <TopPerformingSection />
       </div>
     </div>
   )

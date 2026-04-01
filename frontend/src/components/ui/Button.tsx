@@ -17,7 +17,7 @@ const buttonVariants = cva(
         ghost:
           'bg-transparent text-on-surface-variant hover:bg-surface-container hover:text-on-surface active:bg-surface-container-high',
         outline:
-          'bg-transparent border border-outline-variant text-on-surface hover:border-primary hover:text-primary hover:bg-primary/5 active:scale-[0.97]',
+          'bg-transparent border border-outline-variant/10 text-on-surface hover:border-primary/20 hover:text-primary hover:bg-primary/5 active:scale-[0.97]',
         danger:
           'bg-error-container text-on-error-container hover:bg-error hover:text-on-error active:scale-[0.97]',
       },
