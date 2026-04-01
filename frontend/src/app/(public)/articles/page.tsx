@@ -53,7 +53,7 @@ function ArticlesContent() {
       setArticles(res.data || [])
       setMeta(res.meta || null)
     } catch {
-      setError('Khong the tai bai viet. Vui long thu lai.')
+      setError('Không thể tải bài viết. Vui lòng thử lại.')
     } finally {
       setLoading(false)
     }
@@ -71,15 +71,15 @@ function ArticlesContent() {
             Blog
           </p>
           <h1 className="mt-3 font-headline text-display-md text-on-surface md:text-display-lg">
-            Tin tuc & Cam hung
+            Tin tức & Cảm hứng
           </h1>
           <p className="mt-4 max-w-2xl text-body-lg text-on-surface-variant">
-            Cap nhat xu huong thiet ke noi that va chia se cam hung khong gian song.
+            Cập nhật xu hướng thiết kế nội thất và chia sẻ cảm hứng không gian sống.
           </p>
         </div>
 
         {loading && (
-          <div className="flex min-h-[40vh] items-center justify-center" role="status" aria-label="Dang tai">
+          <div className="flex min-h-[40vh] items-center justify-center" role="status" aria-label="Đang tải">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
           </div>
         )}
@@ -88,14 +88,14 @@ function ArticlesContent() {
           <div className="flex min-h-[40vh] flex-col items-center justify-center text-center">
             <p className="text-body-lg text-error">{error}</p>
             <Button variant="ghost" className="mt-4" onClick={fetchArticles}>
-              Thu lai
+              Thử lại
             </Button>
           </div>
         )}
 
         {!loading && !error && articles.length === 0 && (
           <div className="flex min-h-[40vh] items-center justify-center">
-            <p className="text-body-lg text-on-surface-variant">Chua co bai viet nao.</p>
+            <p className="text-body-lg text-on-surface-variant">Chưa có bài viết nào.</p>
           </div>
         )}
 
@@ -155,7 +155,7 @@ function ArticlesContent() {
                   disabled={currentPage <= 1}
                   onClick={() => router.push(`/articles?page=${currentPage - 1}`)}
                 >
-                  Truoc
+                  Trước
                 </Button>
                 <span className="px-4 text-body-md text-on-surface-variant">
                   {currentPage} / {meta.totalPages}

@@ -5,12 +5,14 @@ import { DEFAULT_HOMEPAGE_CONFIG } from '@/lib/default-homepage'
 import { SectionRenderer } from '@/components/sections/SectionRenderer'
 import type { PageConfigData } from '@/types'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'
+import { getServerApiUrl } from '@/lib/api-url'
+
+const API_URL = getServerApiUrl()
 
 export const metadata: Metadata = {
-  title: 'VietNet Interior | Noi that cao cap',
+  title: 'VietNet Interior | Nội thất cao cấp',
   description:
-    'Noi that cao cap cho khong gian song tinh te. Thiet ke - Thi cong - Noi that tron goi.',
+    'Nội thất cao cấp cho không gian sống tinh tế. Thiết kế - Thi công - Nội thất trọn gói.',
   alternates: {
     canonical: 'https://bhquan.site',
   },
@@ -55,9 +57,9 @@ export default async function HomePage() {
       />
       {isDraft && (
         <div className="fixed left-0 right-0 top-0 z-50 bg-warning-bg px-4 py-2 text-center text-sm font-medium text-warning-text">
-          Che do xem truoc (Draft Mode) —{' '}
+          Chế độ xem trước (Draft Mode) —{' '}
           <a href="/api/draft/disable" className="underline">
-            Thoat xem truoc
+            Thoát xem trước
           </a>
         </div>
       )}

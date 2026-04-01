@@ -6,18 +6,20 @@ import { Loader2 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center font-label font-semibold uppercase tracking-label-wide transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+  'inline-flex items-center justify-center font-label font-semibold uppercase tracking-label-wide transition-all duration-300 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
   {
     variants: {
       variant: {
         primary:
-          'bg-primary text-on-primary hover:bg-primary-container hover:text-on-primary-container active:scale-[0.98] shadow-ambient-sm hover:shadow-hero-cta',
+          'bg-primary-container text-on-primary hover:bg-primary hover:shadow-ambient-md active:scale-[0.97] active:shadow-ambient-sm shadow-ambient-sm',
         secondary:
-          'bg-secondary-container text-on-secondary-container hover:bg-secondary hover:text-on-secondary active:scale-[0.98]',
+          'bg-surface-container-high text-on-surface hover:bg-surface-container-highest hover:shadow-ambient-sm active:scale-[0.97]',
         ghost:
-          'bg-transparent text-on-surface hover:bg-surface-container-high active:bg-surface-container-highest',
+          'bg-transparent text-on-surface-variant hover:bg-surface-container hover:text-on-surface active:bg-surface-container-high',
+        outline:
+          'bg-transparent border border-outline-variant text-on-surface hover:border-primary hover:text-primary hover:bg-primary/5 active:scale-[0.97]',
         danger:
-          'bg-error text-on-error hover:bg-error/90 active:scale-[0.98]',
+          'bg-error-container text-on-error-container hover:bg-error hover:text-on-error active:scale-[0.97]',
       },
       size: {
         sm: 'h-9 px-4 text-label-sm rounded-full',

@@ -1,204 +1,220 @@
 import type { Metadata } from 'next'
 import { PageContainer } from '@/components/layout/PageContainer'
 import { AnimatedCounter } from '@/components/ui/AnimatedCounter'
+import { ScrollReveal } from '@/components/ui/ScrollReveal'
+import { Shield, TreePine, CheckCheck } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: 'Gioi thieu',
+  title: 'Giới thiệu',
   description:
-    'VietNet Interior - Cong ty thiet ke va thi cong noi that cao cap voi hon 15 nam kinh nghiem. Chat luong go nhap khau, vat lieu an toan, bao hanh dai han.',
+    'VietNet Interior - Công ty thiết kế và thi công nội thất cao cấp với hơn 15 năm kinh nghiệm. Chất lượng gỗ nhập khẩu, vật liệu an toàn, bảo hành dài hạn.',
   alternates: {
     canonical: 'https://bhquan.site/about',
   },
   openGraph: {
-    title: 'Gioi thieu | VietNet Interior',
+    title: 'Giới thiệu | VietNet Interior',
     description:
-      'VietNet Interior - Cong ty thiet ke va thi cong noi that cao cap voi hon 15 nam kinh nghiem.',
+      'VietNet Interior - Công ty thiết kế và thi công nội thất cao cấp với hơn 15 năm kinh nghiệm.',
   },
 }
 
 const stats = [
-  { target: 150, suffix: '+', label: 'Du an hoan thanh' },
-  { target: 15, suffix: '+', label: 'Nam kinh nghiem' },
-  { target: 500, suffix: '+', label: 'Khach hang tin tuong' },
-  { target: 12, suffix: '', label: 'Giai thuong' },
+  { target: 150, suffix: '+', label: 'Dự án hoàn thành' },
+  { target: 15, suffix: '+', label: 'Năm kinh nghiệm' },
+  { target: 500, suffix: '+', label: 'Khách hàng tin tưởng' },
+  { target: 12, suffix: '', label: 'Giải thưởng' },
 ]
+
+const COMMITMENT_ICONS = [TreePine, Shield, CheckCheck]
 
 const commitments = [
   {
-    title: 'Go nhap khau chat luong cao',
+    title: 'Gỗ nhập khẩu chất lượng cao',
     description:
-      'Su dung go tu nhien nhap khau tu cac nuoc co chung chi FSC, dam bao nguon goc ro rang va chat luong vuot troi.',
-    icon: '🪵',
+      'Sử dụng gỗ tự nhiên nhập khẩu từ các nước có chứng chỉ FSC, đảm bảo nguồn gốc rõ ràng và chất lượng vượt trội.',
   },
   {
-    title: 'Vat lieu an toan, khong doc hai',
+    title: 'Vật liệu an toàn, không độc hại',
     description:
-      'Tat ca vat lieu su dung deu dat chuan E1/E0, khong chua formaldehyde vuot muc cho phep, an toan cho suc khoe gia dinh.',
-    icon: '🛡️',
+      'Tất cả vật liệu sử dụng đều đạt chuẩn E1/E0, không chứa formaldehyde vượt mức cho phép, an toàn cho sức khỏe gia đình.',
   },
   {
-    title: 'Kiem soat chat luong 100%',
+    title: 'Kiểm soát chất lượng 100%',
     description:
-      'Quy trinh QA nghiem ngat tu khau thiet ke, san xuat den lap dat. Moi san pham deu duoc kiem tra truoc khi ban giao.',
-    icon: '✅',
+      'Quy trình QA nghiêm ngặt từ khâu thiết kế, sản xuất đến lắp đặt. Mỗi sản phẩm đều được kiểm tra trước khi bàn giao.',
   },
 ]
 
 const warrantyData = [
-  { product: 'Go tu nhien', period: '36 thang' },
-  { product: 'Go cong nghiep', period: '24 thang' },
-  { product: 'Phu kien (ban le, ray truot...)', period: '12 thang' },
+  { product: 'Gỗ tự nhiên', period: '36 tháng' },
+  { product: 'Gỗ công nghiệp', period: '24 tháng' },
+  { product: 'Phụ kiện (bản lề, ray trượt...)', period: '12 tháng' },
 ]
 
 export default function AboutPage() {
   return (
     <>
-      {/* ── A6.1: Company Story ── */}
+      {/* Company Story */}
       <section className="bg-surface py-16 md:py-24">
         <PageContainer>
-          <div className="mx-auto max-w-3xl text-center">
-            <p className="font-label text-label-lg uppercase tracking-[0.2em] text-primary">
-              Ve chung toi
+          <ScrollReveal className="mx-auto max-w-3xl text-center">
+            <p className="font-label text-label-md uppercase tracking-[0.08em] text-primary/70">
+              Về chúng tôi
             </p>
-            <h1 className="mt-4 font-headline text-display-md text-on-surface md:text-display-lg">
-              Kien tao khong gian song tinh te
+            <h1 className="mt-4 font-headline text-headline-lg text-gradient-primary md:text-display-md">
+              Kiến tạo không gian sống tinh tế
             </h1>
-            <p className="mt-8 font-body text-body-lg text-on-surface-variant">
-              VietNet Interior duoc thanh lap voi su menh mang den nhung khong gian noi that
-              cao cap, phan anh ca tinh va phong cach song cua moi gia chu. Chung toi tin
-              rang ngoi nha khong chi la noi de o, ma con la noi luu giu nhung gia tri va
-              cam xuc cua gia dinh.
+            <span className="deco-line deco-line-center mt-5" />
+            <p className="mt-8 font-body text-body-md leading-relaxed text-on-surface-variant md:text-body-lg">
+              VietNet Interior được thành lập với sứ mệnh mang đến những không gian nội thất
+              cao cấp, phản ánh cá tính và phong cách sống của mỗi gia chủ. Chúng tôi tin
+              rằng ngôi nhà không chỉ là nơi để ở, mà còn là nơi lưu giữ những giá trị và
+              cảm xúc của gia đình.
             </p>
-            <p className="mt-6 font-body text-body-lg text-on-surface-variant">
-              Voi hon 15 nam kinh nghiem, doi ngu kien truc su va tho tay nghe cao cua chung
-              toi da hoan thanh hang tram du an — tu can ho chung cu den biet thu, tu khong
-              gian lam viec den showroom thuong mai. Moi du an la mot cau chuyen thiet ke
-              rieng biet, duoc thuc hien voi su tan tam va chu y tung chi tiet.
+            <p className="mt-5 font-body text-body-md leading-relaxed text-on-surface-variant md:text-body-lg">
+              Với hơn 15 năm kinh nghiệm, đội ngũ kiến trúc sư và thợ tay nghề cao của chúng
+              tôi đã hoàn thành hàng trăm dự án — từ căn hộ chung cư đến biệt thự, từ không
+              gian làm việc đến showroom thương mại. Mỗi dự án là một câu chuyện thiết kế
+              riêng biệt, được thực hiện với sự tận tâm và chú ý từng chi tiết.
             </p>
-          </div>
+          </ScrollReveal>
 
           {/* Mission / Vision */}
-          <div className="mx-auto mt-16 grid max-w-4xl gap-8 md:grid-cols-2">
-            <div className="rounded-2xl bg-surface-container-low p-8 md:p-10">
-              <h2 className="font-headline text-headline-sm text-primary">Su menh</h2>
-              <p className="mt-4 font-body text-body-md text-on-surface-variant">
-                Kien tao nhung khong gian song ben vung, tham my va toi uu cong nang — noi
-                moi gia dinh cam nhan duoc su an yeu va hanh phuc moi ngay.
-              </p>
-            </div>
-            <div className="rounded-2xl bg-surface-container-low p-8 md:p-10">
-              <h2 className="font-headline text-headline-sm text-primary">Tam nhin</h2>
-              <p className="mt-4 font-body text-body-md text-on-surface-variant">
-                Tro thanh thuong hieu noi that duoc tin tuong hang dau tai Viet Nam, noi tieng
-                voi chat luong vuot troi va dich vu tron goi tu thiet ke den thi cong.
-              </p>
-            </div>
+          <div className="mx-auto mt-16 grid max-w-4xl gap-6 md:grid-cols-2">
+            <ScrollReveal direction="left">
+              <div className="relative rounded-2xl bg-surface-container-low p-6 md:p-8">
+                <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-lg bg-primary/5">
+                  <span className="font-headline text-title-md text-primary">M</span>
+                </div>
+                <h2 className="font-headline text-headline-sm text-primary">Sứ mệnh</h2>
+                <p className="mt-3 font-body text-body-sm leading-relaxed text-on-surface-variant md:text-body-md">
+                  Kiến tạo những không gian sống bền vững, thẩm mỹ và tối ưu công năng — nơi
+                  mỗi gia đình cảm nhận được sự an yêu và hạnh phúc mỗi ngày.
+                </p>
+              </div>
+            </ScrollReveal>
+            <ScrollReveal direction="right">
+              <div className="relative rounded-2xl bg-surface-container-low p-6 md:p-8">
+                <div className="mb-4 flex h-9 w-9 items-center justify-center rounded-lg bg-primary/5">
+                  <span className="font-headline text-title-md text-primary">V</span>
+                </div>
+                <h2 className="font-headline text-headline-sm text-primary">Tầm nhìn</h2>
+                <p className="mt-3 font-body text-body-sm leading-relaxed text-on-surface-variant md:text-body-md">
+                  Trở thành thương hiệu nội thất được tin tưởng hàng đầu tại Việt Nam, nổi tiếng
+                  với chất lượng vượt trội và dịch vụ trọn gói từ thiết kế đến thi công.
+                </p>
+              </div>
+            </ScrollReveal>
           </div>
         </PageContainer>
       </section>
 
-      {/* ── A6.3: Stats Counter ── */}
-      <section className="bg-surface-container py-16 md:py-20">
-        <PageContainer>
-          <div className="grid grid-cols-2 gap-8 md:grid-cols-4 md:gap-12">
-            {stats.map((stat) => (
-              <div key={stat.label} className="text-center">
+      {/* Stats Counter */}
+      <section className="relative overflow-hidden bg-primary-container py-16 md:py-20">
+        {/* Decorative circles */}
+        <div className="absolute -left-16 -top-16 h-48 w-48 rounded-full bg-on-primary/[0.04]" />
+        <div className="absolute -right-12 -bottom-12 h-64 w-64 rounded-full bg-on-primary/[0.04]" />
+
+        <PageContainer className="relative">
+          <div className="grid grid-cols-2 gap-6 md:grid-cols-4 md:gap-10">
+            {stats.map((stat, index) => (
+              <ScrollReveal key={stat.label} delay={index * 0.1} className="text-center">
                 <AnimatedCounter
                   target={stat.target}
                   suffix={stat.suffix}
-                  className="font-headline text-display-md text-primary md:text-display-lg"
+                  className="font-headline text-headline-lg text-on-primary md:text-display-md"
                 />
-                <p className="mt-2 font-label text-label-lg uppercase tracking-[0.2em] text-on-surface-variant">
+                <p className="mt-2 font-label text-label-md uppercase tracking-[0.06em] text-on-primary/60">
                   {stat.label}
                 </p>
-              </div>
+              </ScrollReveal>
             ))}
           </div>
         </PageContainer>
       </section>
 
-      {/* ── A6.4: Quality Commitment ── */}
+      {/* Quality Commitment */}
       <section className="bg-surface py-16 md:py-24">
         <PageContainer>
-          <div className="mx-auto max-w-3xl text-center">
-            <p className="font-label text-label-lg uppercase tracking-[0.2em] text-primary">
-              Cam ket chat luong
+          <ScrollReveal className="mx-auto max-w-3xl text-center">
+            <p className="font-label text-label-md uppercase tracking-[0.08em] text-primary/70">
+              Cam kết chất lượng
             </p>
-            <h2 className="mt-4 font-headline text-headline-lg text-on-surface md:text-display-md">
-              Chat luong la nen tang cua moi du an
+            <h2 className="mt-3 font-headline text-headline-md text-on-surface md:text-headline-lg">
+              Chất lượng là nền tảng của mọi dự án
             </h2>
-          </div>
+            <span className="deco-line deco-line-center mt-4" />
+          </ScrollReveal>
 
-          <div className="mx-auto mt-12 grid max-w-5xl gap-8 md:grid-cols-3">
-            {commitments.map((item) => (
-              <div
-                key={item.title}
-                className="rounded-2xl bg-surface-container-low p-8 transition-shadow duration-300 hover:shadow-ambient"
-              >
-                <span className="text-4xl" role="img" aria-hidden="true">
-                  {item.icon}
-                </span>
-                <h3 className="mt-4 font-headline text-headline-sm text-on-surface">
-                  {item.title}
-                </h3>
-                <p className="mt-3 font-body text-body-md text-on-surface-variant">
-                  {item.description}
-                </p>
-              </div>
-            ))}
+          <div className="mx-auto mt-12 grid max-w-5xl gap-6 md:grid-cols-3">
+            {commitments.map((item, index) => {
+              const Icon = COMMITMENT_ICONS[index]
+              return (
+                <ScrollReveal key={item.title} delay={index * 0.12}>
+                  <div className="card-premium rounded-2xl bg-surface-container-low p-6 md:p-8">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/5">
+                      <Icon className="h-5 w-5 text-primary" />
+                    </div>
+                    <h3 className="mt-4 font-headline text-headline-sm text-on-surface">
+                      {item.title}
+                    </h3>
+                    <p className="mt-2 font-body text-body-sm leading-relaxed text-on-surface-variant md:text-body-md">
+                      {item.description}
+                    </p>
+                  </div>
+                </ScrollReveal>
+              )
+            })}
           </div>
         </PageContainer>
       </section>
 
-      {/* ── A6.5: Warranty Policy ── */}
+      {/* Warranty Policy */}
       <section className="bg-surface-container-low py-16 md:py-24">
         <PageContainer>
-          <div className="mx-auto max-w-3xl text-center">
-            <p className="font-label text-label-lg uppercase tracking-[0.2em] text-primary">
-              Chinh sach bao hanh
+          <ScrollReveal className="mx-auto max-w-3xl text-center">
+            <p className="font-label text-label-md uppercase tracking-[0.08em] text-primary/70">
+              Chính sách bảo hành
             </p>
-            <h2 className="mt-4 font-headline text-headline-lg text-on-surface md:text-display-md">
-              An tam voi bao hanh dai han
+            <h2 className="mt-3 font-headline text-headline-md text-on-surface md:text-headline-lg">
+              An tâm với bảo hành dài hạn
             </h2>
-            <p className="mt-4 font-body text-body-lg text-on-surface-variant">
-              Chung toi cam ket bao hanh san pham theo tung loai vat lieu, dam bao quyen loi
-              toi da cho khach hang.
+            <p className="mt-4 font-body text-body-md text-on-surface-variant md:text-body-lg">
+              Chúng tôi cam kết bảo hành sản phẩm theo từng loại vật liệu, đảm bảo quyền lợi
+              tối đa cho khách hàng.
             </p>
-          </div>
+            <span className="deco-line deco-line-center mt-5" />
+          </ScrollReveal>
 
-          <div className="mx-auto mt-12 max-w-2xl overflow-hidden rounded-2xl bg-surface">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-surface-container">
-                  <th className="px-6 py-4 text-left font-headline text-title-md text-on-surface">
-                    Loai san pham
-                  </th>
-                  <th className="px-6 py-4 text-right font-headline text-title-md text-on-surface">
-                    Thoi gian bao hanh
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {warrantyData.map((row, index) => (
-                  <tr
+          <ScrollReveal className="mx-auto mt-10 max-w-2xl">
+            <div className="overflow-hidden rounded-2xl bg-surface shadow-ambient-sm">
+              <div className="bg-surface-container px-5 py-3 md:px-8">
+                <div className="flex items-center justify-between">
+                  <span className="font-headline text-body-md font-semibold text-on-surface">
+                    Loại sản phẩm
+                  </span>
+                  <span className="font-headline text-body-md font-semibold text-on-surface">
+                    Thời gian bảo hành
+                  </span>
+                </div>
+              </div>
+              <div className="divide-y divide-surface-container-high">
+                {warrantyData.map((row) => (
+                  <div
                     key={row.product}
-                    className={
-                      index < warrantyData.length - 1
-                        ? 'bg-surface'
-                        : 'bg-surface'
-                    }
+                    className="flex items-center justify-between px-5 py-4 transition-colors duration-200 hover:bg-surface-container-low md:px-8"
                   >
-                    <td className="px-6 py-5 font-body text-body-lg text-on-surface">
+                    <span className="font-body text-body-md text-on-surface">
                       {row.product}
-                    </td>
-                    <td className="px-6 py-5 text-right font-headline text-title-lg text-primary">
+                    </span>
+                    <span className="font-headline text-title-md text-primary">
                       {row.period}
-                    </td>
-                  </tr>
+                    </span>
+                  </div>
                 ))}
-              </tbody>
-            </table>
-          </div>
+              </div>
+            </div>
+          </ScrollReveal>
         </PageContainer>
       </section>
     </>

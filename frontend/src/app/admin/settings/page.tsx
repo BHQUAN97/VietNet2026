@@ -25,8 +25,8 @@ type TabId = 'site' | 'seo'
 // ─── Tab definition ────────────────────────────────────────────
 
 const TABS: { id: TabId; label: string; icon: React.ReactNode }[] = [
-  { id: 'site', label: 'Cai dat chung', icon: <Globe className="h-4 w-4" /> },
-  { id: 'seo', label: 'SEO mac dinh', icon: <Search className="h-4 w-4" /> },
+  { id: 'site', label: 'Cài đặt chung', icon: <Globe className="h-4 w-4" /> },
+  { id: 'seo', label: 'SEO mặc định', icon: <Search className="h-4 w-4" /> },
 ]
 
 // ─── Site settings fields ──────────────────────────────────────
@@ -37,19 +37,19 @@ const SITE_FIELDS: {
   placeholder: string
   type?: 'text' | 'textarea' | 'email' | 'tel' | 'url'
 }[] = [
-  { key: 'company_name', label: 'Ten cong ty', placeholder: 'VietNet Interior' },
-  { key: 'slogan', label: 'Slogan', placeholder: 'Noi that tinh te - Khong gian hoan hao' },
+  { key: 'company_name', label: 'Tên công ty', placeholder: 'VietNet Interior' },
+  { key: 'slogan', label: 'Slogan', placeholder: 'Nội thất tinh tế - Không gian hoàn hảo' },
   {
     key: 'address',
-    label: 'Dia chi',
-    placeholder: '123 Nguyen Hue, Quan 1, TP.HCM',
+    label: 'Địa chỉ',
+    placeholder: '123 Nguyễn Huệ, Quận 1, TP.HCM',
     type: 'textarea',
   },
-  { key: 'phone', label: 'So dien thoai', placeholder: '0901234567', type: 'tel' },
+  { key: 'phone', label: 'Số điện thoại', placeholder: '0901234567', type: 'tel' },
   { key: 'email', label: 'Email', placeholder: 'contact@bhquan.site', type: 'email' },
   {
     key: 'working_hours',
-    label: 'Gio lam viec',
+    label: 'Giờ làm việc',
     placeholder: 'T2-T7: 8:00 - 17:30',
   },
   {
@@ -88,24 +88,24 @@ const SEO_FIELDS: {
 }[] = [
   {
     key: 'seo_title_template',
-    label: 'Template tieu de SEO',
+    label: 'Template tiêu đề SEO',
     placeholder: '{title} | VietNet Interior',
-    help: 'Su dung {title} de chen tieu de trang. VD: {title} | VietNet Interior',
+    help: 'Sử dụng {title} để chèn tiêu đề trang. VD: {title} | VietNet Interior',
   },
   {
     key: 'seo_default_description',
-    label: 'Mo ta SEO mac dinh',
-    placeholder: 'VietNet Interior - Thiet ke noi that cao cap...',
+    label: 'Mô tả SEO mặc định',
+    placeholder: 'VietNet Interior - Thiết kế nội thất cao cấp...',
     type: 'textarea',
     maxLength: 160,
-    help: 'Toi da 160 ky tu. Hien thi khi trang khong co mo ta rieng.',
+    help: 'Tối đa 160 ký tự. Hiển thị khi trang không có mô tả riêng.',
   },
   {
     key: 'seo_default_og_image',
-    label: 'Anh OG mac dinh (URL)',
+    label: 'Ảnh OG mặc định (URL)',
     placeholder: 'https://cdn.bhquan.site/og-default.jpg',
     type: 'url',
-    help: 'Kich thuoc khuyen nghi: 1200x630px. Su dung khi trang khong co anh rieng.',
+    help: 'Kích thước khuyến nghị: 1200x630px. Sử dụng khi trang không có ảnh riêng.',
   },
 ]
 
@@ -158,7 +158,7 @@ export default function AdminSettingsPage() {
       setSettings(map)
       setOriginalSettings(map)
     } catch {
-      setError('Khong the tai cai dat. Vui long thu lai.')
+      setError('Không thể tải cài đặt. Vui lòng thử lại.')
     } finally {
       setIsLoading(false)
     }
@@ -208,9 +208,9 @@ export default function AdminSettingsPage() {
         return updated
       })
 
-      setToastMessage('Da luu cai dat thanh cong!')
+      setToastMessage('Đã lưu cài đặt thành công!')
     } catch {
-      setError('Khong the luu cai dat. Vui long thu lai.')
+      setError('Không thể lưu cài đặt. Vui lòng thử lại.')
     } finally {
       setIsSaving(false)
     }
@@ -220,9 +220,9 @@ export default function AdminSettingsPage() {
     <div className="py-4">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="font-headline text-headline-lg text-on-surface">Cai dat</h1>
+        <h1 className="font-headline text-headline-lg text-on-surface">Cài đặt</h1>
         <p className="mt-1 text-body-md text-on-surface-variant">
-          Cau hinh he thong va tuy chinh.
+          Cấu hình hệ thống và tùy chỉnh.
         </p>
       </div>
 
@@ -235,7 +235,7 @@ export default function AdminSettingsPage() {
             onClick={() => setError(null)}
             className="ml-auto text-body-sm text-on-error-container underline"
           >
-            Dong
+            Đóng
           </button>
         </div>
       )}
@@ -248,7 +248,7 @@ export default function AdminSettingsPage() {
             onClick={() => setActiveTab(tab.id)}
             className={`flex items-center gap-2 rounded-full px-4 py-2 text-body-sm font-medium transition-colors ${
               activeTab === tab.id
-                ? 'bg-primary text-on-primary'
+                ? 'bg-primary-container text-on-primary-container'
                 : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
             }`}
           >
@@ -319,7 +319,7 @@ export default function AdminSettingsPage() {
           <div className="mt-8 flex items-center justify-end gap-3">
             {isDirty && (
               <p className="text-body-sm text-on-surface-variant">
-                Co thay doi chua luu.
+                Có thay đổi chưa lưu.
               </p>
             )}
             <Button
@@ -330,10 +330,10 @@ export default function AdminSettingsPage() {
               {isSaving ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Dang luu...
+                  Đang lưu...
                 </>
               ) : (
-                'Luu cai dat'
+                'Lưu cài đặt'
               )}
             </Button>
           </div>

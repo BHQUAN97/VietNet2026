@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { Phone, Mail, MapPin, Clock, CheckCircle, AlertTriangle } from 'lucide-react'
+import { Phone, Mail, MapPin, Clock, CheckCircle, AlertTriangle, Send } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
 import api from '@/lib/api'
@@ -24,27 +24,27 @@ interface FormErrors {
 }
 
 const PROJECT_TYPES = [
-  { value: '', label: 'Chon loai du an' },
-  { value: 'residential', label: 'Nha o' },
-  { value: 'commercial', label: 'Thuong mai' },
-  { value: 'hospitality', label: 'Khach san / Resort' },
-  { value: 'renovation', label: 'Cai tao' },
-  { value: 'other', label: 'Khac' },
+  { value: '', label: 'Chọn loại dự án' },
+  { value: 'residential', label: 'Nhà ở' },
+  { value: 'commercial', label: 'Thương mại' },
+  { value: 'hospitality', label: 'Khách sạn / Resort' },
+  { value: 'renovation', label: 'Cải tạo' },
+  { value: 'other', label: 'Khác' },
 ]
 
 const BUDGET_RANGES = [
-  { value: '', label: 'Chon ngan sach du kien' },
-  { value: 'under_500m', label: 'Duoi 500 trieu' },
-  { value: '500m_1b', label: '500 trieu - 1 ty' },
-  { value: '1b_3b', label: '1 ty - 3 ty' },
-  { value: '3b_5b', label: '3 ty - 5 ty' },
-  { value: 'above_5b', label: 'Tren 5 ty' },
+  { value: '', label: 'Chọn ngân sách dự kiến' },
+  { value: 'under_500m', label: 'Dưới 500 triệu' },
+  { value: '500m_1b', label: '500 triệu - 1 tỷ' },
+  { value: '1b_3b', label: '1 tỷ - 3 tỷ' },
+  { value: '3b_5b', label: '3 tỷ - 5 tỷ' },
+  { value: 'above_5b', label: 'Trên 5 tỷ' },
 ]
 
 const CONTACT_INFO = [
   {
     icon: Phone,
-    label: 'Dien thoai',
+    label: 'Điện thoại',
     value: '0909 123 456',
     href: 'tel:0909123456',
   },
@@ -56,13 +56,13 @@ const CONTACT_INFO = [
   },
   {
     icon: MapPin,
-    label: 'Dia chi',
-    value: 'Quan 1, TP. Ho Chi Minh',
+    label: 'Địa chỉ',
+    value: 'Quận 1, TP. Hồ Chí Minh',
     href: null,
   },
   {
     icon: Clock,
-    label: 'Gio lam viec',
+    label: 'Giờ làm việc',
     value: 'T2 - T7: 8:00 - 18:00',
     href: null,
   },
@@ -73,9 +73,9 @@ function validateEmail(email: string): boolean {
 }
 
 const inputBaseClasses =
-  'w-full rounded-xl bg-surface-container-low px-4 py-3 text-body-md text-on-surface placeholder:text-on-surface-variant/50 outline-none transition-all duration-300 focus:bg-surface-container focus:ring-2 focus:ring-primary/20 min-h-[44px]'
+  'w-full rounded-xl bg-surface-container-low px-4 py-3 text-body-sm text-on-surface placeholder:text-on-surface-variant/40 outline-none transition-all duration-300 focus:bg-surface focus:shadow-ambient-sm focus:ring-2 focus:ring-primary/15 min-h-[44px] md:text-body-md md:py-3.5 md:min-h-[48px]'
 
-const labelClasses = 'block font-label text-label-lg tracking-label-wide text-on-surface-variant mb-2'
+const labelClasses = 'block font-label text-label-md tracking-[0.06em] text-on-surface-variant mb-2'
 
 export function ConsultationForm() {
   const [formData, setFormData] = useState<FormData>({
@@ -108,15 +108,15 @@ export function ConsultationForm() {
     const newErrors: FormErrors = {}
 
     if (!formData.name.trim()) {
-      newErrors.name = 'Vui long nhap ho ten'
+      newErrors.name = 'Vui lòng nhập họ tên'
     }
     if (!formData.email.trim()) {
-      newErrors.email = 'Vui long nhap email'
+      newErrors.email = 'Vui lòng nhập email'
     } else if (!validateEmail(formData.email)) {
-      newErrors.email = 'Email khong hop le'
+      newErrors.email = 'Email không hợp lệ'
     }
     if (!formData.message.trim()) {
-      newErrors.message = 'Vui long nhap noi dung'
+      newErrors.message = 'Vui lòng nhập nội dung'
     }
 
     setErrors(newErrors)
@@ -141,7 +141,7 @@ export function ConsultationForm() {
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-        'Co loi xay ra. Vui long thu lai sau.'
+        'Có lỗi xảy ra. Vui lòng thử lại sau.'
       setApiError(message)
     } finally {
       setIsSubmitting(false)
@@ -150,20 +150,20 @@ export function ConsultationForm() {
 
   if (isSuccess) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-2xl bg-surface-container-low px-8 py-16 text-center">
-        <div className="mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 animate-[scale-in_0.5s_ease-out]">
-          <CheckCircle className="h-10 w-10 text-primary" />
+      <div className="flex flex-col items-center justify-center rounded-2xl bg-surface-container-low px-6 py-16 text-center md:px-8 md:py-20">
+        <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/8 animate-scale-in md:h-20 md:w-20">
+          <CheckCircle className="h-8 w-8 text-primary md:h-10 md:w-10" />
         </div>
-        <h3 className="font-headline text-headline-md text-on-surface">
-          Cam on ban da lien he!
+        <h3 className="font-headline text-headline-sm text-on-surface md:text-headline-md">
+          Cảm ơn bạn đã liên hệ!
         </h3>
-        <p className="mt-3 max-w-md text-body-md text-on-surface-variant">
-          Chung toi da nhan duoc yeu cau tu van cua ban. Doi ngu VietNet Interior se lien he lai
-          trong vong 24 gio lam viec.
+        <p className="mt-3 max-w-md text-body-sm leading-relaxed text-on-surface-variant md:text-body-md">
+          Chúng tôi đã nhận được yêu cầu tư vấn của bạn. Đội ngũ VietNet Interior sẽ liên hệ lại
+          trong vòng 24 giờ làm việc.
         </p>
         <Button
           variant="ghost"
-          className="mt-8"
+          className="mt-6"
           onClick={() => {
             setIsSuccess(false)
             setFormData({
@@ -178,36 +178,36 @@ export function ConsultationForm() {
             })
           }}
         >
-          Gui yeu cau khac
+          Gửi yêu cầu khác
         </Button>
       </div>
     )
   }
 
   return (
-    <div className="grid gap-12 lg:grid-cols-5 lg:gap-16">
+    <div className="grid gap-10 lg:grid-cols-5 lg:gap-16">
       {/* Left: Contact Info */}
       <div className="lg:col-span-2">
-        <h2 className="font-headline text-headline-md text-on-surface">
-          Thong tin lien he
+        <h2 className="font-headline text-headline-sm text-on-surface md:text-headline-md">
+          Thông tin liên hệ
         </h2>
-        <p className="mt-3 text-body-md text-on-surface-variant">
-          Lien he truc tiep hoac de lai thong tin, chung toi se lien he lai trong thoi gian som nhat.
+        <p className="mt-3 text-body-sm leading-relaxed text-on-surface-variant md:text-body-md">
+          Liên hệ trực tiếp hoặc để lại thông tin, chúng tôi sẽ liên hệ lại trong thời gian sớm nhất.
         </p>
 
-        <div className="mt-10 space-y-6">
+        <div className="mt-8 space-y-3">
           {CONTACT_INFO.map((item) => {
             const Icon = item.icon
             const content = (
-              <div className="flex items-start gap-4 group">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/5 transition-colors duration-300 group-hover:bg-primary/10">
-                  <Icon className="h-5 w-5 text-primary" />
+              <div className="flex items-center gap-3 group">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/5 transition-all duration-300 group-hover:bg-primary/10 group-hover:shadow-ambient-sm">
+                  <Icon className="h-4 w-4 text-primary" />
                 </div>
                 <div>
-                  <p className="font-label text-label-lg tracking-label-wide text-on-surface-variant">
+                  <p className="font-label text-label-md tracking-[0.06em] text-on-surface-variant">
                     {item.label}
                   </p>
-                  <p className="mt-1 text-body-md text-on-surface font-medium">
+                  <p className="text-body-sm font-medium text-on-surface">
                     {item.value}
                   </p>
                 </div>
@@ -219,25 +219,35 @@ export function ConsultationForm() {
                 <a
                   key={item.label}
                   href={item.href}
-                  className="block rounded-xl p-2 -m-2 transition-colors duration-300 hover:bg-surface-container-low"
+                  className="block rounded-xl p-2.5 -m-2.5 transition-colors duration-300 hover:bg-surface-container-low"
                 >
                   {content}
                 </a>
               )
             }
 
-            return <div key={item.label}>{content}</div>
+            return <div key={item.label} className="p-2.5 -m-2.5">{content}</div>
           })}
+        </div>
+
+        {/* Decorative element */}
+        <div className="mt-10 hidden rounded-2xl bg-surface-container-low p-5 lg:block">
+          <p className="font-headline text-body-lg italic text-primary">
+            &ldquo;Mỗi không gian đều bắt đầu từ một cuộc trò chuyện.&rdquo;
+          </p>
+          <p className="mt-2 font-label text-label-md tracking-[0.06em] text-on-surface-variant">
+            — Đội ngũ VietNet Interior
+          </p>
         </div>
       </div>
 
       {/* Right: Form */}
       <div className="lg:col-span-3">
-        <form onSubmit={handleSubmit} className="rounded-2xl bg-surface-container-low p-6 md:p-8" noValidate>
+        <form onSubmit={handleSubmit} className="rounded-2xl bg-surface-container-low p-5 shadow-ambient-sm md:p-8" noValidate>
           {apiError && (
-            <div className="mb-6 flex items-center gap-3 rounded-xl bg-error-container px-4 py-3">
-              <AlertTriangle className="h-5 w-5 shrink-0 text-on-error-container" />
-              <p className="text-body-sm text-on-error-container">{apiError}</p>
+            <div className="mb-5 flex items-center gap-3 rounded-xl bg-error-container/30 px-4 py-3">
+              <AlertTriangle className="h-4 w-4 shrink-0 text-error" />
+              <p className="text-body-sm text-error">{apiError}</p>
             </div>
           )}
 
@@ -245,7 +255,7 @@ export function ConsultationForm() {
             {/* Name */}
             <div>
               <label htmlFor="name" className={labelClasses}>
-                Ho ten <span className="text-error">*</span>
+                Họ tên <span className="text-error">*</span>
               </label>
               <input
                 id="name"
@@ -253,8 +263,8 @@ export function ConsultationForm() {
                 type="text"
                 value={formData.name}
                 onChange={handleChange}
-                placeholder="Nguyen Van A"
-                className={cn(inputBaseClasses, errors.name && 'ring-2 ring-error/30')}
+                placeholder="Nguyễn Văn A"
+                className={cn(inputBaseClasses, errors.name && 'ring-2 ring-error/20')}
               />
               {errors.name && (
                 <p className="mt-1.5 text-body-sm text-error">{errors.name}</p>
@@ -273,7 +283,7 @@ export function ConsultationForm() {
                 value={formData.email}
                 onChange={handleChange}
                 placeholder="email@example.com"
-                className={cn(inputBaseClasses, errors.email && 'ring-2 ring-error/30')}
+                className={cn(inputBaseClasses, errors.email && 'ring-2 ring-error/20')}
               />
               {errors.email && (
                 <p className="mt-1.5 text-body-sm text-error">{errors.email}</p>
@@ -283,7 +293,7 @@ export function ConsultationForm() {
             {/* Phone */}
             <div>
               <label htmlFor="phone" className={labelClasses}>
-                Dien thoai
+                Điện thoại
               </label>
               <input
                 id="phone"
@@ -299,7 +309,7 @@ export function ConsultationForm() {
             {/* Project Type */}
             <div>
               <label htmlFor="project_type" className={labelClasses}>
-                Loai du an
+                Loại dự án
               </label>
               <select
                 id="project_type"
@@ -319,7 +329,7 @@ export function ConsultationForm() {
             {/* Area */}
             <div>
               <label htmlFor="area" className={labelClasses}>
-                Dien tich (m2)
+                Diện tích (m²)
               </label>
               <input
                 id="area"
@@ -335,7 +345,7 @@ export function ConsultationForm() {
             {/* Budget Range */}
             <div>
               <label htmlFor="budget_range" className={labelClasses}>
-                Ngan sach du kien
+                Ngân sách dự kiến
               </label>
               <select
                 id="budget_range"
@@ -356,16 +366,16 @@ export function ConsultationForm() {
           {/* Message */}
           <div className="mt-5">
             <label htmlFor="message" className={labelClasses}>
-              Noi dung yeu cau <span className="text-error">*</span>
+              Nội dung yêu cầu <span className="text-error">*</span>
             </label>
             <textarea
               id="message"
               name="message"
-              rows={5}
+              rows={4}
               value={formData.message}
               onChange={handleChange}
-              placeholder="Mo ta yeu cau thiet ke, phong cach mong muon, thoi gian du kien..."
-              className={cn(inputBaseClasses, 'resize-none', errors.message && 'ring-2 ring-error/30')}
+              placeholder="Mô tả yêu cầu thiết kế, phong cách mong muốn, thời gian dự kiến..."
+              className={cn(inputBaseClasses, 'resize-none', errors.message && 'ring-2 ring-error/20')}
             />
             {errors.message && (
               <p className="mt-1.5 text-body-sm text-error">{errors.message}</p>
@@ -389,9 +399,10 @@ export function ConsultationForm() {
             variant="primary"
             size="lg"
             loading={isSubmitting}
-            className="mt-8 w-full md:w-auto"
+            className="mt-6 w-full gap-2 md:w-auto"
           >
-            Gui yeu cau tu van
+            <Send className="h-4 w-4" />
+            Gửi yêu cầu tư vấn
           </Button>
         </form>
       </div>

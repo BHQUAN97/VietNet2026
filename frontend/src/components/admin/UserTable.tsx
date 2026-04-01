@@ -1,9 +1,10 @@
 'use client'
 
 import { User } from '@/types'
-import { cn } from '@/lib/utils'
 import { Pencil, Trash2, Search } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { Badge } from '@/components/ui/Badge'
+import { USER_ROLE, USER_STATUS } from '@/lib/status-config'
 
 interface UserTableProps {
   users: User[]
@@ -12,32 +13,6 @@ interface UserTableProps {
   onSearchChange: (query: string) => void
   onEdit: (user: User) => void
   onDelete: (user: User) => void
-}
-
-const ROLE_STYLES: Record<User['role'], string> = {
-  super_admin: 'bg-primary/10 text-primary',
-  admin: 'bg-primary-container/20 text-on-primary-container',
-  editor: 'bg-secondary-container/40 text-on-secondary-container',
-  viewer: 'bg-surface-container-high text-on-surface-variant',
-}
-
-const ROLE_LABELS: Record<User['role'], string> = {
-  super_admin: 'Super Admin',
-  admin: 'Admin',
-  editor: 'Editor',
-  viewer: 'Viewer',
-}
-
-const STATUS_STYLES: Record<User['status'], string> = {
-  active: 'bg-[var(--color-success-bg)] text-[var(--color-success-text)]',
-  inactive: 'bg-[var(--color-warning-bg)] text-[var(--color-warning-text)]',
-  banned: 'bg-error-container text-on-error-container',
-}
-
-const STATUS_LABELS: Record<User['status'], string> = {
-  active: 'Active',
-  inactive: 'Inactive',
-  banned: 'Banned',
 }
 
 function SkeletonRow() {
@@ -83,7 +58,7 @@ export function UserTable({
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-on-surface-variant/50" />
           <input
             type="text"
-            placeholder="Tim kiem theo ten hoac email..."
+            placeholder="Tìm kiếm theo tên hoặc email..."
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
             className="w-full rounded-xl bg-surface-container-low py-3 pl-10 pr-4 text-body-sm text-on-surface placeholder:text-on-surface-variant/50 outline-none transition-all duration-300 focus:bg-surface-container focus:ring-2 focus:ring-primary/20 min-h-[44px]"
@@ -97,22 +72,22 @@ export function UserTable({
           <thead>
             <tr className="bg-surface-container">
               <th className="px-4 py-3 font-label text-label-lg tracking-label-wide text-on-surface-variant">
-                Ho ten
+                Họ tên
               </th>
               <th className="px-4 py-3 font-label text-label-lg tracking-label-wide text-on-surface-variant">
                 Email
               </th>
               <th className="px-4 py-3 font-label text-label-lg tracking-label-wide text-on-surface-variant">
-                Vai tro
+                Vai trò
               </th>
               <th className="px-4 py-3 font-label text-label-lg tracking-label-wide text-on-surface-variant">
-                Trang thai
+                Trạng thái
               </th>
               <th className="px-4 py-3 font-label text-label-lg tracking-label-wide text-on-surface-variant">
-                Dang nhap cuoi
+                Đăng nhập cuối
               </th>
               <th className="px-4 py-3 font-label text-label-lg tracking-label-wide text-on-surface-variant">
-                Hanh dong
+                Hành động
               </th>
             </tr>
           </thead>
@@ -124,8 +99,8 @@ export function UserTable({
                 <td colSpan={6} className="px-4 py-16 text-center">
                   <p className="text-body-md text-on-surface-variant">
                     {searchQuery
-                      ? 'Khong tim thay nguoi dung phu hop.'
-                      : 'Chua co nguoi dung nao.'}
+                      ? 'Không tìm thấy người dùng phù hợp.'
+                      : 'Chưa có người dùng nào.'}
                   </p>
                 </td>
               </tr>
@@ -144,24 +119,21 @@ export function UserTable({
                     <p className="text-body-sm text-on-surface-variant">{user.email}</p>
                   </td>
                   <td className="px-4 py-4">
-                    <span
-                      className={cn(
-                        'inline-block rounded-full px-3 py-1 text-label-lg tracking-label-wide',
-                        ROLE_STYLES[user.role]
-                      )}
+                    <Badge
+                      variant={USER_ROLE[user.role]?.variant}
+                      size="md"
                     >
-                      {ROLE_LABELS[user.role]}
-                    </span>
+                      {USER_ROLE[user.role]?.label || user.role}
+                    </Badge>
                   </td>
                   <td className="px-4 py-4">
-                    <span
-                      className={cn(
-                        'inline-block rounded-full px-3 py-1 text-label-lg tracking-label-wide',
-                        STATUS_STYLES[user.status]
-                      )}
+                    <Badge
+                      variant={USER_STATUS[user.status]?.variant}
+                      dot={USER_STATUS[user.status]?.dot}
+                      size="md"
                     >
-                      {STATUS_LABELS[user.status]}
-                    </span>
+                      {USER_STATUS[user.status]?.label || user.status}
+                    </Badge>
                   </td>
                   <td className="px-4 py-4">
                     <p className="text-body-sm text-on-surface-variant">
@@ -174,7 +146,7 @@ export function UserTable({
                         variant="ghost"
                         size="sm"
                         onClick={() => onEdit(user)}
-                        aria-label={`Sua ${user.full_name}`}
+                        aria-label={`Sửa ${user.full_name}`}
                         className="h-10 w-10 p-0"
                       >
                         <Pencil className="h-4 w-4" />
@@ -183,7 +155,7 @@ export function UserTable({
                         variant="ghost"
                         size="sm"
                         onClick={() => onDelete(user)}
-                        aria-label={`Xoa ${user.full_name}`}
+                        aria-label={`Xóa ${user.full_name}`}
                         className="h-10 w-10 p-0 text-error hover:bg-error-container/30"
                       >
                         <Trash2 className="h-4 w-4" />

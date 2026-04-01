@@ -9,7 +9,9 @@ import { projectJsonLd } from '@/lib/jsonld'
 import { sanitizeHtml } from '@/lib/sanitize'
 import { ArrowLeft } from 'lucide-react'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'
+import { getServerApiUrl } from '@/lib/api-url'
+
+const API_URL = getServerApiUrl()
 
 async function getProject(slug: string) {
   try {
@@ -46,7 +48,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params
   const project = await getProject(slug)
-  if (!project) return { title: 'Du an khong ton tai' }
+  if (!project) return { title: 'Dự án không tồn tại' }
 
   const imageUrl = project.og_image?.preview_url || project.cover_image?.preview_url || ''
 
@@ -98,7 +100,7 @@ export default async function ProjectDetailPage({
           {/* Breadcrumb */}
           <Breadcrumb
             items={[
-              { label: 'Du an', href: '/projects' },
+              { label: 'Dự án', href: '/projects' },
               { label: project.title },
             ]}
             className="mb-6"
@@ -110,7 +112,7 @@ export default async function ProjectDetailPage({
             className="mb-8 inline-flex items-center gap-2 text-body-md text-on-surface-variant transition-colors hover:text-primary"
           >
             <ArrowLeft className="h-4 w-4" />
-            Tat ca du an
+            Tất cả dự án
           </Link>
 
           {/* Header */}
@@ -135,7 +137,7 @@ export default async function ProjectDetailPage({
             {project.style && (
               <div>
                 <p className="font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                  Phong cach
+                  Phong cách
                 </p>
                 <p className="mt-1 text-body-md text-on-surface">{project.style}</p>
               </div>
@@ -143,7 +145,7 @@ export default async function ProjectDetailPage({
             {project.area && (
               <div>
                 <p className="font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                  Dien tich
+                  Diện tích
                 </p>
                 <p className="mt-1 text-body-md text-on-surface">{project.area}</p>
               </div>
@@ -151,7 +153,7 @@ export default async function ProjectDetailPage({
             {project.location && (
               <div>
                 <p className="font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                  Dia diem
+                  Địa điểm
                 </p>
                 <p className="mt-1 text-body-md text-on-surface">{project.location}</p>
               </div>
@@ -159,7 +161,7 @@ export default async function ProjectDetailPage({
             {project.duration && (
               <div>
                 <p className="font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                  Thoi gian
+                  Thời gian
                 </p>
                 <p className="mt-1 text-body-md text-on-surface">{project.duration}</p>
               </div>
@@ -167,7 +169,7 @@ export default async function ProjectDetailPage({
             {project.year_completed && (
               <div>
                 <p className="font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                  Nam hoan thanh
+                  Năm hoàn thành
                 </p>
                 <p className="mt-1 text-body-md text-on-surface">{project.year_completed}</p>
               </div>
@@ -175,7 +177,7 @@ export default async function ProjectDetailPage({
             {Array.isArray(project.materials) && project.materials.length > 0 && (
               <div>
                 <p className="font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                  Vat lieu
+                  Vật liệu
                 </p>
                 <p className="mt-1 text-body-md text-on-surface">
                   {project.materials.join(', ')}
@@ -210,7 +212,7 @@ export default async function ProjectDetailPage({
           {project.gallery && project.gallery.length > 0 && (
             <div className="mt-16">
               <h2 className="mb-8 font-headline text-headline-md text-on-surface">
-                Thu vien hinh anh
+                Thư viện hình ảnh
               </h2>
               <GalleryWithLightbox items={project.gallery} />
             </div>
@@ -220,7 +222,7 @@ export default async function ProjectDetailPage({
           {relatedProjects.length > 0 && (
             <div className="mt-20">
               <h2 className="mb-8 text-center font-headline text-headline-md text-on-surface">
-                Du an lien quan
+                Dự án liên quan
               </h2>
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
                 {relatedProjects.map((rp: any) => (

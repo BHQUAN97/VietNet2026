@@ -96,17 +96,17 @@ export function UserFormModal({ open, onOpenChange, user, onSuccess }: UserFormM
     const newErrors: FormErrors = {}
 
     if (!formData.full_name.trim()) {
-      newErrors.full_name = 'Vui long nhap ho ten'
+      newErrors.full_name = 'Vui lòng nhập họ tên'
     }
     if (!formData.email.trim()) {
-      newErrors.email = 'Vui long nhap email'
+      newErrors.email = 'Vui lòng nhập email'
     } else if (!validateEmail(formData.email)) {
-      newErrors.email = 'Email khong hop le'
+      newErrors.email = 'Email không hợp lệ'
     }
     if (!isEdit && !formData.password.trim()) {
-      newErrors.password = 'Vui long nhap mat khau'
+      newErrors.password = 'Vui lòng nhập mật khẩu'
     } else if (!isEdit && formData.password.length < 8) {
-      newErrors.password = 'Mat khau toi thieu 8 ky tu'
+      newErrors.password = 'Mật khẩu tối thiểu 8 ký tự'
     }
 
     setErrors(newErrors)
@@ -133,7 +133,7 @@ export function UserFormModal({ open, onOpenChange, user, onSuccess }: UserFormM
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-        'Co loi xay ra. Vui long thu lai.'
+        'Có lỗi xảy ra. Vui lòng thử lại.'
       setApiError(message)
     } finally {
       setIsSubmitting(false)
@@ -147,12 +147,12 @@ export function UserFormModal({ open, onOpenChange, user, onSuccess }: UserFormM
         <Dialog.Content className="fixed left-1/2 top-1/2 z-[var(--z-modal)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-surface p-6 shadow-ambient-lg md:p-8 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]">
           <div className="flex items-center justify-between mb-6">
             <Dialog.Title className="font-headline text-headline-sm text-on-surface">
-              {isEdit ? 'Chinh sua nguoi dung' : 'Them nguoi dung moi'}
+              {isEdit ? 'Chỉnh sửa người dùng' : 'Thêm người dùng mới'}
             </Dialog.Title>
             <Dialog.Close asChild>
               <button
                 className="flex h-10 w-10 items-center justify-center rounded-xl text-on-surface-variant transition-colors duration-200 hover:bg-surface-container-high"
-                aria-label="Dong"
+                aria-label="Đóng"
               >
                 <X className="h-5 w-5" />
               </button>
@@ -170,7 +170,7 @@ export function UserFormModal({ open, onOpenChange, user, onSuccess }: UserFormM
             {/* Full Name */}
             <div>
               <label htmlFor="modal-full_name" className={labelClasses}>
-                Ho ten <span className="text-error">*</span>
+                Họ tên <span className="text-error">*</span>
               </label>
               <input
                 id="modal-full_name"
@@ -178,7 +178,7 @@ export function UserFormModal({ open, onOpenChange, user, onSuccess }: UserFormM
                 type="text"
                 value={formData.full_name}
                 onChange={handleChange}
-                placeholder="Nguyen Van A"
+                placeholder="Nguyễn Văn A"
                 className={cn(inputBaseClasses, errors.full_name && 'ring-2 ring-error/30')}
               />
               {errors.full_name && (
@@ -208,10 +208,10 @@ export function UserFormModal({ open, onOpenChange, user, onSuccess }: UserFormM
             {/* Password */}
             <div>
               <label htmlFor="modal-password" className={labelClasses}>
-                Mat khau {!isEdit && <span className="text-error">*</span>}
+                Mật khẩu {!isEdit && <span className="text-error">*</span>}
                 {isEdit && (
                   <span className="ml-1 text-body-sm text-on-surface-variant font-normal normal-case tracking-normal">
-                    (de trong neu khong thay doi)
+                    (để trống nếu không thay đổi)
                   </span>
                 )}
               </label>
@@ -221,7 +221,7 @@ export function UserFormModal({ open, onOpenChange, user, onSuccess }: UserFormM
                 type="password"
                 value={formData.password}
                 onChange={handleChange}
-                placeholder={isEdit ? 'De trong neu khong thay doi' : 'Toi thieu 8 ky tu'}
+                placeholder={isEdit ? 'Để trống nếu không thay đổi' : 'Tối thiểu 8 ký tự'}
                 className={cn(inputBaseClasses, errors.password && 'ring-2 ring-error/30')}
               />
               {errors.password && (
@@ -232,7 +232,7 @@ export function UserFormModal({ open, onOpenChange, user, onSuccess }: UserFormM
             {/* Phone */}
             <div>
               <label htmlFor="modal-phone" className={labelClasses}>
-                Dien thoai
+                Điện thoại
               </label>
               <input
                 id="modal-phone"
@@ -248,7 +248,7 @@ export function UserFormModal({ open, onOpenChange, user, onSuccess }: UserFormM
             {/* Role */}
             <div>
               <label htmlFor="modal-role" className={labelClasses}>
-                Vai tro
+                Vai trò
               </label>
               <select
                 id="modal-role"
@@ -269,11 +269,11 @@ export function UserFormModal({ open, onOpenChange, user, onSuccess }: UserFormM
             <div className="flex items-center justify-end gap-3 pt-2">
               <Dialog.Close asChild>
                 <Button variant="ghost" type="button">
-                  Huy
+                  Hủy
                 </Button>
               </Dialog.Close>
               <Button type="submit" variant="primary" loading={isSubmitting}>
-                {isEdit ? 'Cap nhat' : 'Tao nguoi dung'}
+                {isEdit ? 'Cập nhật' : 'Tạo người dùng'}
               </Button>
             </div>
           </form>

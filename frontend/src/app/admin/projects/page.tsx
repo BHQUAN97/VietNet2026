@@ -57,7 +57,7 @@ export default function AdminProjectsPage() {
       setProjects(res.data || [])
       setMeta(res.meta || null)
     } catch {
-      setError('Khong the tai danh sach du an.')
+      setError('Không thể tải danh sách dự án.')
     } finally {
       setIsLoading(false)
     }
@@ -127,7 +127,7 @@ export default function AdminProjectsPage() {
       setModalOpen(false)
       fetchProjects()
     } catch (err: unknown) {
-      const message = (err as any)?.response?.data?.message || 'Khong the luu du an.'
+      const message = (err as any)?.response?.data?.message || 'Không thể lưu dự án.'
       setError(message)
     } finally {
       setSaving(false)
@@ -139,7 +139,7 @@ export default function AdminProjectsPage() {
       await api.patch(`/projects/${project.id}/publish`)
       fetchProjects()
     } catch {
-      setError('Khong the xuat ban du an.')
+      setError('Không thể xuất bản dự án.')
     }
   }
 
@@ -151,7 +151,7 @@ export default function AdminProjectsPage() {
       setDeletingProject(null)
       fetchProjects()
     } catch {
-      setError('Khong the xoa du an.')
+      setError('Không thể xóa dự án.')
       setDeletingProject(null)
     } finally {
       setIsDeleting(false)
@@ -165,14 +165,14 @@ export default function AdminProjectsPage() {
       {/* Header */}
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="font-headline text-headline-lg text-on-surface">Quan ly du an</h1>
+          <h1 className="font-headline text-headline-lg text-on-surface">Quản lý dự án</h1>
           <p className="mt-1 text-body-md text-on-surface-variant">
-            {meta && <span>{meta.total} du an</span>}
+            {meta && <span>{meta.total} dự án</span>}
           </p>
         </div>
         <Button variant="primary" size="md" onClick={openCreate}>
           <Plus className="mr-2 h-4 w-4" />
-          Them du an
+          Thêm dự án
         </Button>
       </div>
 
@@ -181,7 +181,7 @@ export default function AdminProjectsPage() {
           <AlertTriangle className="h-5 w-5 shrink-0 text-on-error-container" />
           <p className="text-body-sm text-on-error-container">{error}</p>
           <button onClick={() => setError(null)} className="ml-auto text-body-sm underline">
-            Dong
+            Đóng
           </button>
         </div>
       )}
@@ -194,11 +194,11 @@ export default function AdminProjectsPage() {
             onClick={() => { setStatusFilter(s); setPage(1) }}
             className={`rounded-full px-4 py-2 text-body-sm font-medium transition-colors ${
               statusFilter === s
-                ? 'bg-primary text-on-primary'
+                ? 'bg-primary-container text-on-primary-container'
                 : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
             }`}
           >
-            {s === '' ? 'Tat ca' : s === 'draft' ? 'Nhap' : 'Da xuat ban'}
+            {s === '' ? 'Tất cả' : s === 'draft' ? 'Nháp' : 'Đã xuất bản'}
           </button>
         ))}
       </div>
@@ -214,19 +214,19 @@ export default function AdminProjectsPage() {
             <thead>
               <tr className="bg-surface-container-low">
                 <th className="px-4 py-3 font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                  Tieu de
+                  Tiêu đề
                 </th>
                 <th className="px-4 py-3 font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                  Danh muc
+                  Danh mục
                 </th>
                 <th className="px-4 py-3 font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                  Trang thai
+                  Trạng thái
                 </th>
                 <th className="px-4 py-3 font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                  Luot xem
+                  Lượt xem
                 </th>
                 <th className="px-4 py-3 font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                  Thao tac
+                  Thao tác
                 </th>
               </tr>
             </thead>
@@ -234,7 +234,7 @@ export default function AdminProjectsPage() {
               {projects.length === 0 ? (
                 <tr>
                   <td colSpan={5} className="px-4 py-12 text-center text-body-md text-on-surface-variant">
-                    Chua co du an nao.
+                    Chưa có dự án nào.
                   </td>
                 </tr>
               ) : (
@@ -257,7 +257,7 @@ export default function AdminProjectsPage() {
                             : 'bg-warning-bg text-warning-text'
                         }`}
                       >
-                        {project.status === 'published' ? 'Xuat ban' : 'Nhap'}
+                        {project.status === 'published' ? 'Xuất bản' : 'Nháp'}
                       </span>
                       {project.is_featured && (
                         <span className="ml-1 inline-flex rounded-full bg-primary-fixed px-2 py-0.5 font-label text-label-sm text-on-primary-fixed">
@@ -274,7 +274,7 @@ export default function AdminProjectsPage() {
                           <button
                             onClick={() => handlePublish(project)}
                             className="rounded-lg p-2 text-on-surface-variant hover:bg-surface-container-high"
-                            title="Xuat ban"
+                            title="Xuất bản"
                           >
                             <Eye className="h-4 w-4" />
                           </button>
@@ -282,14 +282,14 @@ export default function AdminProjectsPage() {
                         <button
                           onClick={() => openEdit(project)}
                           className="rounded-lg p-2 text-on-surface-variant hover:bg-surface-container-high"
-                          title="Chinh sua"
+                          title="Chỉnh sửa"
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => setDeletingProject(project)}
                           className="rounded-lg p-2 text-error hover:bg-error-container"
-                          title="Xoa"
+                          title="Xóa"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -307,7 +307,7 @@ export default function AdminProjectsPage() {
       {!isLoading && totalPages > 1 && (
         <div className="mt-6 flex items-center justify-center gap-2">
           <Button variant="ghost" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>
-            Truoc
+            Trước
           </Button>
           <span className="px-4 text-body-md text-on-surface-variant">
             {page} / {totalPages}
@@ -323,12 +323,12 @@ export default function AdminProjectsPage() {
         <div className="fixed inset-0 z-[var(--z-modal-backdrop)] flex items-center justify-center bg-on-surface/30 backdrop-blur-sm">
           <div className="mx-4 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-surface p-6 shadow-ambient-lg md:p-8">
             <h3 className="font-headline text-headline-sm text-on-surface">
-              {editingProject ? 'Chinh sua du an' : 'Them du an moi'}
+              {editingProject ? 'Chỉnh sửa dự án' : 'Thêm dự án mới'}
             </h3>
             <form onSubmit={handleSave} className="mt-6 space-y-4">
               <div>
                 <label className="mb-1 block font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                  Tieu de *
+                  Tiêu đề *
                 </label>
                 <input
                   type="text"
@@ -340,7 +340,7 @@ export default function AdminProjectsPage() {
               </div>
               <div>
                 <label className="mb-1 block font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                  Mo ta ngan
+                  Mô tả ngắn
                 </label>
                 <textarea
                   rows={2}
@@ -352,14 +352,14 @@ export default function AdminProjectsPage() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label className="mb-1 block font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                    Danh muc
+                    Danh mục
                   </label>
                   <select
                     value={formData.category_id}
                     onChange={(e) => setFormData(f => ({ ...f, category_id: e.target.value }))}
                     className="w-full rounded-xl bg-surface-container px-4 py-3 text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
                   >
-                    <option value="">-- Chon danh muc --</option>
+                    <option value="">-- Chọn danh mục --</option>
                     {categories.map((cat) => (
                       <option key={cat.id} value={cat.id}>{cat.name}</option>
                     ))}
@@ -367,7 +367,7 @@ export default function AdminProjectsPage() {
                 </div>
                 <div>
                   <label className="mb-1 block font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                    Phong cach
+                    Phong cách
                   </label>
                   <input
                     type="text"
@@ -381,7 +381,7 @@ export default function AdminProjectsPage() {
               <div className="grid gap-4 sm:grid-cols-3">
                 <div>
                   <label className="mb-1 block font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                    Dien tich
+                    Diện tích
                   </label>
                   <input
                     type="text"
@@ -393,7 +393,7 @@ export default function AdminProjectsPage() {
                 </div>
                 <div>
                   <label className="mb-1 block font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                    Dia diem
+                    Địa điểm
                   </label>
                   <input
                     type="text"
@@ -404,7 +404,7 @@ export default function AdminProjectsPage() {
                 </div>
                 <div>
                   <label className="mb-1 block font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                    Nam
+                    Năm
                   </label>
                   <input
                     type="number"
@@ -417,7 +417,7 @@ export default function AdminProjectsPage() {
               </div>
               <div>
                 <label className="mb-1 block font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                  Noi dung chi tiet
+                  Nội dung chi tiết
                 </label>
                 <textarea
                   rows={6}
@@ -457,14 +457,14 @@ export default function AdminProjectsPage() {
                   onChange={(e) => setFormData(f => ({ ...f, is_featured: e.target.checked }))}
                   className="h-4 w-4 rounded"
                 />
-                <span className="text-body-md text-on-surface">Du an noi bat (hien thi trang chu)</span>
+                <span className="text-body-md text-on-surface">Dự án nổi bật (hiển thị trang chủ)</span>
               </label>
               <div className="flex items-center justify-end gap-3 pt-4">
                 <Button variant="ghost" type="button" onClick={() => setModalOpen(false)} disabled={saving}>
-                  Huy
+                  Hủy
                 </Button>
                 <Button type="submit" loading={saving}>
-                  {editingProject ? 'Cap nhat' : 'Tao du an'}
+                  {editingProject ? 'Cập nhật' : 'Tạo dự án'}
                 </Button>
               </div>
             </form>
@@ -476,17 +476,17 @@ export default function AdminProjectsPage() {
       {deletingProject && (
         <div className="fixed inset-0 z-[var(--z-modal-backdrop)] flex items-center justify-center bg-on-surface/30 backdrop-blur-sm">
           <div className="mx-4 w-full max-w-md rounded-2xl bg-surface p-6 shadow-ambient-lg md:p-8">
-            <h3 className="font-headline text-headline-sm text-on-surface">Xac nhan xoa</h3>
+            <h3 className="font-headline text-headline-sm text-on-surface">Xác nhận xóa</h3>
             <p className="mt-3 text-body-md text-on-surface-variant">
-              Ban co chac chan muon xoa du an{' '}
+              Bạn có chắc chắn muốn xóa dự án{' '}
               <span className="font-semibold text-on-surface">{deletingProject.title}</span>?
             </p>
             <div className="mt-6 flex items-center justify-end gap-3">
               <Button variant="ghost" onClick={() => setDeletingProject(null)} disabled={isDeleting}>
-                Huy
+                Hủy
               </Button>
               <Button variant="danger" onClick={handleDeleteConfirm} loading={isDeleting}>
-                Xoa du an
+                Xóa dự án
               </Button>
             </div>
           </div>

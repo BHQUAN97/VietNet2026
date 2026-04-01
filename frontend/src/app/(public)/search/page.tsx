@@ -24,9 +24,9 @@ interface Meta {
 }
 
 const TYPE_LABELS: Record<string, string> = {
-  project: 'Du an',
-  product: 'San pham',
-  article: 'Bai viet',
+  project: 'Dự án',
+  product: 'Sản phẩm',
+  article: 'Bài viết',
 }
 
 const TYPE_PATHS: Record<string, string> = {
@@ -95,10 +95,10 @@ function SearchContent() {
       <PageContainer>
         <div className="mb-12">
           <h1 className="font-headline text-display-md text-on-surface md:text-display-lg">
-            Tim kiem
+            Tìm kiếm
           </h1>
           <p className="mt-4 text-body-lg text-on-surface-variant">
-            Tim kiem du an, san pham va bai viet.
+            Tìm kiếm dự án, sản phẩm và bài viết.
           </p>
         </div>
 
@@ -110,7 +110,7 @@ function SearchContent() {
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Nhap tu khoa tim kiem..."
+              placeholder="Nhập từ khóa tìm kiếm..."
               className="w-full rounded-xl bg-surface-container py-4 pl-12 pr-4 text-body-lg text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
@@ -127,7 +127,7 @@ function SearchContent() {
         {!loading && query && results.length === 0 && (
           <div className="flex min-h-[30vh] items-center justify-center">
             <p className="text-body-lg text-on-surface-variant">
-              Khong tim thay ket qua cho &quot;{query}&quot;
+              Không tìm thấy kết quả cho &quot;{query}&quot;
             </p>
           </div>
         )}
@@ -135,7 +135,7 @@ function SearchContent() {
         {!loading && results.length > 0 && (
           <>
             <p className="mb-6 text-body-md text-on-surface-variant">
-              Tim thay {meta?.total || results.length} ket qua cho &quot;{query}&quot;
+              Tìm thấy {meta?.total || results.length} kết quả cho &quot;{query}&quot;
             </p>
             <div className="space-y-4">
               {results.map((item) => (
@@ -174,7 +174,7 @@ function SearchContent() {
                     router.push(`/search?q=${encodeURIComponent(query)}&page=${currentPage - 1}`)
                   }
                 >
-                  Truoc
+                  Trước
                 </Button>
                 <span className="px-4 text-body-md text-on-surface-variant">
                   {currentPage} / {meta.totalPages}

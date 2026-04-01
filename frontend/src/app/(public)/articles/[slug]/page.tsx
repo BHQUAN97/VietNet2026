@@ -8,7 +8,9 @@ import { articleJsonLd } from '@/lib/jsonld'
 import { sanitizeHtml } from '@/lib/sanitize'
 import { ArrowLeft } from 'lucide-react'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'
+import { getServerApiUrl } from '@/lib/api-url'
+
+const API_URL = getServerApiUrl()
 
 async function getArticle(slug: string) {
   try {
@@ -43,7 +45,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params
   const article = await getArticle(slug)
-  if (!article) return { title: 'Bai viet khong ton tai' }
+  if (!article) return { title: 'Bài viết không tồn tại' }
 
   const imageUrl = article.og_image?.preview_url || article.cover_image?.preview_url || ''
 
@@ -94,7 +96,7 @@ export default async function ArticleDetailPage({
           {/* Breadcrumb */}
           <Breadcrumb
             items={[
-              { label: 'Bai viet', href: '/articles' },
+              { label: 'Bài viết', href: '/articles' },
               { label: article.title },
             ]}
             className="mb-6"
@@ -106,7 +108,7 @@ export default async function ArticleDetailPage({
             className="mb-8 inline-flex items-center gap-2 text-body-md text-on-surface-variant transition-colors hover:text-primary"
           >
             <ArrowLeft className="h-4 w-4" />
-            Tat ca bai viet
+            Tất cả bài viết
           </Link>
 
           {/* Header */}
@@ -135,7 +137,7 @@ export default async function ArticleDetailPage({
                 </time>
               )}
               {article.view_count > 0 && (
-                <span>{article.view_count} luot xem</span>
+                <span>{article.view_count} lượt xem</span>
               )}
             </div>
           </header>
@@ -168,7 +170,7 @@ export default async function ArticleDetailPage({
           {related.length > 0 && (
             <div className="mt-20">
               <h2 className="mb-8 text-center font-headline text-headline-md text-on-surface">
-                Bai viet lien quan
+                Bài viết liên quan
               </h2>
               <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
                 {related.map((item: any) => (

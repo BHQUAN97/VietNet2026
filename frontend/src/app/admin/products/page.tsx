@@ -16,8 +16,8 @@ const MATERIAL_TYPES = [
 ]
 
 const MATERIAL_LABELS: Record<string, string> = {
-  'go-tu-nhien': 'Go tu nhien',
-  'go-cong-nghiep': 'Go cong nghiep',
+  'go-tu-nhien': 'Gỗ tự nhiên',
+  'go-cong-nghiep': 'Gỗ công nghiệp',
   laminate: 'Laminate',
   acrylic: 'Acrylic',
   melamine: 'Melamine',
@@ -79,7 +79,7 @@ export default function AdminProductsPage() {
       setProducts(res.data || [])
       setMeta(res.meta || null)
     } catch {
-      setError('Khong the tai danh sach san pham.')
+      setError('Không thể tải danh sách sản phẩm.')
     } finally {
       setIsLoading(false)
     }
@@ -153,7 +153,7 @@ export default function AdminProductsPage() {
       fetchProducts()
     } catch (err: unknown) {
       const message =
-        (err as any)?.response?.data?.message || 'Khong the luu san pham.'
+        (err as any)?.response?.data?.message || 'Không thể lưu sản phẩm.'
       setError(message)
     } finally {
       setSaving(false)
@@ -165,7 +165,7 @@ export default function AdminProductsPage() {
       await api.patch(`/products/${product.id}/publish`)
       fetchProducts()
     } catch {
-      setError('Khong the xuat ban san pham.')
+      setError('Không thể xuất bản sản phẩm.')
     }
   }
 
@@ -177,7 +177,7 @@ export default function AdminProductsPage() {
       setDeletingProduct(null)
       fetchProducts()
     } catch {
-      setError('Khong the xoa san pham.')
+      setError('Không thể xóa sản phẩm.')
       setDeletingProduct(null)
     } finally {
       setIsDeleting(false)
@@ -192,15 +192,15 @@ export default function AdminProductsPage() {
       <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="font-headline text-headline-lg text-on-surface">
-            Quan ly san pham
+            Quản lý sản phẩm
           </h1>
           <p className="mt-1 text-body-md text-on-surface-variant">
-            {meta && <span>{meta.total} san pham</span>}
+            {meta && <span>{meta.total} sản phẩm</span>}
           </p>
         </div>
         <Button variant="primary" size="md" onClick={openCreate}>
           <Plus className="mr-2 h-4 w-4" />
-          Them san pham
+          Thêm sản phẩm
         </Button>
       </div>
 
@@ -212,7 +212,7 @@ export default function AdminProductsPage() {
             onClick={() => setError(null)}
             className="ml-auto text-body-sm underline"
           >
-            Dong
+            Đóng
           </button>
         </div>
       )}
@@ -230,11 +230,11 @@ export default function AdminProductsPage() {
               }}
               className={`rounded-full px-4 py-2 text-body-sm font-medium transition-colors ${
                 statusFilter === s
-                  ? 'bg-primary text-on-primary'
+                  ? 'bg-primary-container text-on-primary-container'
                   : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
               }`}
             >
-              {s === '' ? 'Tat ca' : s === 'draft' ? 'Nhap' : 'Da xuat ban'}
+              {s === '' ? 'Tất cả' : s === 'draft' ? 'Nháp' : 'Đã xuất bản'}
             </button>
           ))}
         </div>
@@ -248,7 +248,7 @@ export default function AdminProductsPage() {
           }}
           className="rounded-xl bg-surface-container px-3 py-2 text-body-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
         >
-          <option value="">Tat ca vat lieu</option>
+          <option value="">Tất cả vật liệu</option>
           {MATERIAL_TYPES.map((m) => (
             <option key={m} value={m}>
               {MATERIAL_LABELS[m] || m}
@@ -268,22 +268,22 @@ export default function AdminProductsPage() {
             <thead>
               <tr className="bg-surface-container-low">
                 <th className="px-4 py-3 font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                  San pham
+                  Sản phẩm
                 </th>
                 <th className="px-4 py-3 font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                  Danh muc
+                  Danh mục
                 </th>
                 <th className="px-4 py-3 font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                  Vat lieu
+                  Vật liệu
                 </th>
                 <th className="px-4 py-3 font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                  Gia
+                  Giá
                 </th>
                 <th className="px-4 py-3 font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                  Trang thai
+                  Trạng thái
                 </th>
                 <th className="px-4 py-3 font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                  Thao tac
+                  Thao tác
                 </th>
               </tr>
             </thead>
@@ -295,7 +295,7 @@ export default function AdminProductsPage() {
                     className="px-4 py-12 text-center text-body-md text-on-surface-variant"
                   >
                     <Package className="mx-auto mb-2 h-8 w-8 opacity-40" />
-                    Chua co san pham nao.
+                    Chưa có sản phẩm nào.
                   </td>
                 </tr>
               ) : (
@@ -335,8 +335,8 @@ export default function AdminProductsPage() {
                         }`}
                       >
                         {product.status === 'published'
-                          ? 'Xuat ban'
-                          : 'Nhap'}
+                          ? 'Xuất bản'
+                          : 'Nháp'}
                       </span>
                       {product.is_featured && (
                         <span className="ml-1 inline-flex rounded-full bg-primary-fixed px-2 py-0.5 font-label text-label-sm text-on-primary-fixed">
@@ -355,7 +355,7 @@ export default function AdminProductsPage() {
                           <button
                             onClick={() => handlePublish(product)}
                             className="rounded-lg p-2 text-on-surface-variant hover:bg-surface-container-high"
-                            title="Xuat ban"
+                            title="Xuất bản"
                           >
                             <Eye className="h-4 w-4" />
                           </button>
@@ -363,14 +363,14 @@ export default function AdminProductsPage() {
                         <button
                           onClick={() => openEdit(product)}
                           className="rounded-lg p-2 text-on-surface-variant hover:bg-surface-container-high"
-                          title="Chinh sua"
+                          title="Chỉnh sửa"
                         >
                           <Pencil className="h-4 w-4" />
                         </button>
                         <button
                           onClick={() => setDeletingProduct(product)}
                           className="rounded-lg p-2 text-error hover:bg-error-container"
-                          title="Xoa"
+                          title="Xóa"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
@@ -393,7 +393,7 @@ export default function AdminProductsPage() {
             disabled={page <= 1}
             onClick={() => setPage((p) => p - 1)}
           >
-            Truoc
+            Trước
           </Button>
           <span className="px-4 text-body-md text-on-surface-variant">
             {page} / {totalPages}
@@ -414,12 +414,12 @@ export default function AdminProductsPage() {
         <div className="fixed inset-0 z-[var(--z-modal-backdrop)] flex items-center justify-center bg-on-surface/30 backdrop-blur-sm">
           <div className="mx-4 max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-surface p-6 shadow-ambient-lg md:p-8">
             <h3 className="font-headline text-headline-sm text-on-surface">
-              {editingProduct ? 'Chinh sua san pham' : 'Them san pham moi'}
+              {editingProduct ? 'Chỉnh sửa sản phẩm' : 'Thêm sản phẩm mới'}
             </h3>
             <form onSubmit={handleSave} className="mt-6 space-y-4">
               <div>
                 <label className="mb-1 block font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                  Ten san pham *
+                  Tên sản phẩm *
                 </label>
                 <input
                   type="text"
@@ -433,7 +433,7 @@ export default function AdminProductsPage() {
               </div>
               <div>
                 <label className="mb-1 block font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                  Mo ta
+                  Mô tả
                 </label>
                 <textarea
                   rows={3}
@@ -447,7 +447,7 @@ export default function AdminProductsPage() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label className="mb-1 block font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                    Danh muc
+                    Danh mục
                   </label>
                   <select
                     value={formData.category_id}
@@ -459,7 +459,7 @@ export default function AdminProductsPage() {
                     }
                     className="w-full rounded-xl bg-surface-container px-4 py-3 text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
                   >
-                    <option value="">-- Chon danh muc --</option>
+                    <option value="">-- Chọn danh mục --</option>
                     {categories.map((cat) => (
                       <option key={cat.id} value={cat.id}>
                         {cat.name}
@@ -469,7 +469,7 @@ export default function AdminProductsPage() {
                 </div>
                 <div>
                   <label className="mb-1 block font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                    Vat lieu
+                    Vật liệu
                   </label>
                   <select
                     value={formData.material_type}
@@ -481,7 +481,7 @@ export default function AdminProductsPage() {
                     }
                     className="w-full rounded-xl bg-surface-container px-4 py-3 text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
                   >
-                    <option value="">-- Chon vat lieu --</option>
+                    <option value="">-- Chọn vật liệu --</option>
                     {MATERIAL_TYPES.map((m) => (
                       <option key={m} value={m}>
                         {MATERIAL_LABELS[m] || m}
@@ -493,7 +493,7 @@ export default function AdminProductsPage() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label className="mb-1 block font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                    Hoan thien
+                    Hoàn thiện
                   </label>
                   <input
                     type="text"
@@ -502,12 +502,12 @@ export default function AdminProductsPage() {
                       setFormData((f) => ({ ...f, finish: e.target.value }))
                     }
                     className="w-full rounded-xl bg-surface-container px-4 py-3 text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
-                    placeholder="Matt, Bong, Son PU..."
+                    placeholder="Matt, Bóng, Sơn PU..."
                   />
                 </div>
                 <div>
                   <label className="mb-1 block font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                    Khoang gia
+                    Khoảng giá
                   </label>
                   <input
                     type="text"
@@ -519,7 +519,7 @@ export default function AdminProductsPage() {
                       }))
                     }
                     className="w-full rounded-xl bg-surface-container px-4 py-3 text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
-                    placeholder="15-25 trieu"
+                    placeholder="15-25 triệu"
                   />
                 </div>
               </div>
@@ -568,7 +568,7 @@ export default function AdminProductsPage() {
                     className="h-4 w-4 rounded"
                   />
                   <span className="text-body-md text-on-surface">
-                    San pham noi bat
+                    Sản phẩm nổi bật
                   </span>
                 </label>
                 <label className="flex items-center gap-2">
@@ -584,7 +584,7 @@ export default function AdminProductsPage() {
                     className="h-4 w-4 rounded"
                   />
                   <span className="text-body-md text-on-surface">
-                    San pham moi
+                    Sản phẩm mới
                   </span>
                 </label>
               </div>
@@ -595,10 +595,10 @@ export default function AdminProductsPage() {
                   onClick={() => setModalOpen(false)}
                   disabled={saving}
                 >
-                  Huy
+                  Hủy
                 </Button>
                 <Button type="submit" loading={saving}>
-                  {editingProduct ? 'Cap nhat' : 'Tao san pham'}
+                  {editingProduct ? 'Cập nhật' : 'Tạo sản phẩm'}
                 </Button>
               </div>
             </form>
@@ -611,10 +611,10 @@ export default function AdminProductsPage() {
         <div className="fixed inset-0 z-[var(--z-modal-backdrop)] flex items-center justify-center bg-on-surface/30 backdrop-blur-sm">
           <div className="mx-4 w-full max-w-md rounded-2xl bg-surface p-6 shadow-ambient-lg md:p-8">
             <h3 className="font-headline text-headline-sm text-on-surface">
-              Xac nhan xoa
+              Xác nhận xóa
             </h3>
             <p className="mt-3 text-body-md text-on-surface-variant">
-              Ban co chac chan muon xoa san pham{' '}
+              Bạn có chắc chắn muốn xóa sản phẩm{' '}
               <span className="font-semibold text-on-surface">
                 {deletingProduct.name}
               </span>
@@ -626,14 +626,14 @@ export default function AdminProductsPage() {
                 onClick={() => setDeletingProduct(null)}
                 disabled={isDeleting}
               >
-                Huy
+                Hủy
               </Button>
               <Button
                 variant="danger"
                 onClick={handleDeleteConfirm}
                 loading={isDeleting}
               >
-                Xoa san pham
+                Xóa sản phẩm
               </Button>
             </div>
           </div>

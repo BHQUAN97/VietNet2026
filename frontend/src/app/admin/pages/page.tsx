@@ -34,52 +34,52 @@ import { DEFAULT_HOMEPAGE_CONFIG } from '@/lib/default-homepage'
 
 const SECTION_TYPE_LABELS: Record<PageSectionType, string> = {
   hero: 'Hero Banner',
-  featured_projects: 'Du an tieu bieu',
-  about: 'Ve chung toi',
-  latest_articles: 'Bai viet moi nhat',
-  contact_cta: 'Lien he CTA',
-  testimonials: 'Danh gia khach hang',
-  custom_html: 'HTML tu do',
+  featured_projects: 'Dự án tiêu biểu',
+  about: 'Về chúng tôi',
+  latest_articles: 'Bài viết mới nhất',
+  contact_cta: 'Liên hệ CTA',
+  testimonials: 'Đánh giá khách hàng',
+  custom_html: 'HTML tự do',
 }
 
 const NEW_SECTION_DEFAULTS: Record<PageSectionType, unknown> = {
   hero: {
-    title: 'Tieu de',
-    subtitle: 'Mo ta ngan',
-    label: 'Nhan',
-    cta_primary_text: 'Hanh dong',
+    title: 'Tiêu đề',
+    subtitle: 'Mô tả ngắn',
+    label: 'Nhãn',
+    cta_primary_text: 'Hành động',
     cta_primary_link: '/',
     cta_secondary_text: '',
     cta_secondary_link: '',
     bg_image_url: null,
   } as HeroConfig,
   featured_projects: {
-    label: 'Du an',
-    title: 'Du an tieu bieu',
+    label: 'Dự án',
+    title: 'Dự án tiêu biểu',
     limit: 6,
-    cta_text: 'Xem tat ca',
+    cta_text: 'Xem tất cả',
     cta_link: '/projects',
   } as FeaturedProjectsConfig,
   about: {
-    label: 'Ve chung toi',
-    title: 'Gioi thieu',
-    description: 'Mo ta ve cong ty.',
+    label: 'Về chúng tôi',
+    title: 'Giới thiệu',
+    description: 'Mô tả về công ty.',
     stats: [],
   } as AboutConfig,
   latest_articles: {
-    label: 'Tin tuc',
-    title: 'Bai viet moi nhat',
+    label: 'Tin tức',
+    title: 'Bài viết mới nhất',
     limit: 3,
   } as LatestArticlesConfig,
   contact_cta: {
-    title: 'Lien he ngay',
-    description: 'Lien he de duoc tu van.',
-    cta_text: 'Lien he',
+    title: 'Liên hệ ngay',
+    description: 'Liên hệ để được tư vấn.',
+    cta_text: 'Liên hệ',
     cta_link: '/contact',
   } as ContactCtaConfig,
   testimonials: {
-    label: 'Danh gia',
-    title: 'Khach hang noi gi',
+    label: 'Đánh giá',
+    title: 'Khách hàng nói gì',
     items: [],
   } as TestimonialsConfig,
   custom_html: { html: '' },
@@ -117,7 +117,7 @@ export default function AdminPagesPage() {
         // Page config doesn't exist yet, use defaults
         setSections(DEFAULT_HOMEPAGE_CONFIG.sections)
       } else {
-        setError('Khong the tai cau hinh trang.')
+        setError('Không thể tải cấu hình trang.')
       }
     } finally {
       setIsLoading(false)
@@ -144,10 +144,10 @@ export default function AdminPagesPage() {
         }) as any
         setPageConfig(res.data)
       }
-      setSaveStatus('Da luu ban nhap')
+      setSaveStatus('Đã lưu bản nháp')
       setTimeout(() => setSaveStatus(null), 3000)
     } catch {
-      setError('Luu ban nhap that bai.')
+      setError('Lưu bản nháp thất bại.')
     } finally {
       setIsSaving(false)
     }
@@ -173,10 +173,10 @@ export default function AdminPagesPage() {
 
       const res = await api.post(`/pages/${PAGE_SLUG}/publish`) as any
       setPageConfig(res.data)
-      setSaveStatus('Da xuat ban thanh cong!')
+      setSaveStatus('Đã xuất bản thành công!')
       setTimeout(() => setSaveStatus(null), 3000)
     } catch {
-      setError('Xuat ban that bai.')
+      setError('Xuất bản thất bại.')
     } finally {
       setIsPublishing(false)
     }
@@ -188,7 +188,7 @@ export default function AdminPagesPage() {
       setHistory(res.data || [])
       setShowHistory(true)
     } catch {
-      setError('Khong the tai lich su.')
+      setError('Không thể tải lịch sử.')
     }
   }
 
@@ -199,10 +199,10 @@ export default function AdminPagesPage() {
       const draft = (res.data.config_draft as PageConfigData) || { sections: [] }
       setSections(draft.sections)
       setShowHistory(false)
-      setSaveStatus(`Da khoi phuc ban nhap ve phien ban ${version}`)
+      setSaveStatus(`Đã khôi phục bản nháp về phiên bản ${version}`)
       setTimeout(() => setSaveStatus(null), 3000)
     } catch {
-      setError('Khoi phuc that bai.')
+      setError('Khôi phục thất bại.')
     }
   }
 
@@ -269,9 +269,9 @@ export default function AdminPagesPage() {
             Page Builder
           </h1>
           <p className="mt-1 text-body-sm text-on-surface-variant">
-            Trang chu — Phien ban {pageConfig?.version || 0}
+            Trang chủ — Phiên bản {pageConfig?.version || 0}
             {pageConfig?.published_at && (
-              <> — Xuat ban luc {new Date(pageConfig.published_at).toLocaleString('vi-VN')}</>
+              <> — Xuất bản lúc {new Date(pageConfig.published_at).toLocaleString('vi-VN')}</>
             )}
           </p>
         </div>
@@ -286,7 +286,7 @@ export default function AdminPagesPage() {
             disabled={!pageConfig}
           >
             <History className="mr-2 h-4 w-4" />
-            Lich su
+            Lịch sử
           </Button>
           <a
             href={`/api/draft/enable?secret=${encodeURIComponent(
@@ -297,7 +297,7 @@ export default function AdminPagesPage() {
           >
             <Button variant="ghost" size="sm">
               <Eye className="mr-2 h-4 w-4" />
-              Xem truoc
+              Xem trước
             </Button>
           </a>
           <Button variant="secondary" size="sm" onClick={saveDraft} disabled={isSaving}>
@@ -306,7 +306,7 @@ export default function AdminPagesPage() {
             ) : (
               <Save className="mr-2 h-4 w-4" />
             )}
-            Luu nhap
+            Lưu nháp
           </Button>
           <Button size="sm" onClick={publishConfig} disabled={isPublishing}>
             {isPublishing ? (
@@ -314,7 +314,7 @@ export default function AdminPagesPage() {
             ) : (
               <Upload className="mr-2 h-4 w-4" />
             )}
-            Xuat ban
+            Xuất bản
           </Button>
         </div>
       </div>
@@ -330,15 +330,15 @@ export default function AdminPagesPage() {
         <div className="rounded-xl bg-surface-container-low p-6">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-headline text-title-lg text-on-surface">
-              Lich su phien ban
+              Lịch sử phiên bản
             </h2>
             <Button variant="ghost" size="sm" onClick={() => setShowHistory(false)}>
-              Dong
+              Đóng
             </Button>
           </div>
           {history.length === 0 ? (
             <p className="text-body-sm text-on-surface-variant">
-              Chua co lich su phien ban nao.
+              Chưa có lịch sử phiên bản nào.
             </p>
           ) : (
             <div className="space-y-2">
@@ -349,7 +349,7 @@ export default function AdminPagesPage() {
                 >
                   <div>
                     <span className="font-label text-label-lg text-on-surface">
-                      Phien ban {h.version}
+                      Phiên bản {h.version}
                     </span>
                     <span className="ml-3 text-body-sm text-on-surface-variant">
                       {h.published_at
@@ -363,7 +363,7 @@ export default function AdminPagesPage() {
                     onClick={() => rollbackToVersion(h.version)}
                   >
                     <Undo2 className="mr-1 h-4 w-4" />
-                    Khoi phuc
+                    Khôi phục
                   </Button>
                 </div>
               ))}
@@ -391,7 +391,7 @@ export default function AdminPagesPage() {
                   {SECTION_TYPE_LABELS[section.type]}
                 </span>
                 {!section.visible && (
-                  <span className="ml-2 text-body-sm text-on-surface-variant">(An)</span>
+                  <span className="ml-2 text-body-sm text-on-surface-variant">(Ẩn)</span>
                 )}
               </div>
               <div className="flex items-center gap-1">
@@ -459,7 +459,7 @@ export default function AdminPagesPage() {
       {/* Add section */}
       <div className="rounded-xl border-2 border-dashed border-outline-variant/30 p-6">
         <p className="mb-3 text-center font-label text-label-lg text-on-surface-variant">
-          Them section moi
+          Thêm section mới
         </p>
         <div className="flex flex-wrap justify-center gap-2">
           {(Object.keys(SECTION_TYPE_LABELS) as PageSectionType[]).map((type) => (
@@ -553,17 +553,17 @@ function SectionConfigEditor({ section, index, onUpdate }: ConfigEditorProps) {
     case 'hero':
       return (
         <div className="grid gap-4 sm:grid-cols-2">
-          <FieldInput label="Nhan" value={config.label || ''} onChange={(v) => onUpdate(index, 'label', v)} />
-          <FieldInput label="Tieu de" value={config.title || ''} onChange={(v) => onUpdate(index, 'title', v)} />
+          <FieldInput label="Nhãn" value={config.label || ''} onChange={(v) => onUpdate(index, 'label', v)} />
+          <FieldInput label="Tiêu đề" value={config.title || ''} onChange={(v) => onUpdate(index, 'title', v)} />
           <div className="sm:col-span-2">
-            <FieldInput label="Mo ta" value={config.subtitle || ''} onChange={(v) => onUpdate(index, 'subtitle', v)} multiline />
+            <FieldInput label="Mô tả" value={config.subtitle || ''} onChange={(v) => onUpdate(index, 'subtitle', v)} multiline />
           </div>
-          <FieldInput label="Nut chinh - Text" value={config.cta_primary_text || ''} onChange={(v) => onUpdate(index, 'cta_primary_text', v)} />
-          <FieldInput label="Nut chinh - Link" value={config.cta_primary_link || ''} onChange={(v) => onUpdate(index, 'cta_primary_link', v)} />
-          <FieldInput label="Nut phu - Text" value={config.cta_secondary_text || ''} onChange={(v) => onUpdate(index, 'cta_secondary_text', v)} />
-          <FieldInput label="Nut phu - Link" value={config.cta_secondary_link || ''} onChange={(v) => onUpdate(index, 'cta_secondary_link', v)} />
+          <FieldInput label="Nút chính - Text" value={config.cta_primary_text || ''} onChange={(v) => onUpdate(index, 'cta_primary_text', v)} />
+          <FieldInput label="Nút chính - Link" value={config.cta_primary_link || ''} onChange={(v) => onUpdate(index, 'cta_primary_link', v)} />
+          <FieldInput label="Nút phụ - Text" value={config.cta_secondary_text || ''} onChange={(v) => onUpdate(index, 'cta_secondary_text', v)} />
+          <FieldInput label="Nút phụ - Link" value={config.cta_secondary_link || ''} onChange={(v) => onUpdate(index, 'cta_secondary_link', v)} />
           <div className="sm:col-span-2">
-            <FieldInput label="URL anh nen" value={config.bg_image_url || ''} onChange={(v) => onUpdate(index, 'bg_image_url', v || null)} />
+            <FieldInput label="URL ảnh nền" value={config.bg_image_url || ''} onChange={(v) => onUpdate(index, 'bg_image_url', v || null)} />
           </div>
         </div>
       )
@@ -571,9 +571,9 @@ function SectionConfigEditor({ section, index, onUpdate }: ConfigEditorProps) {
     case 'featured_projects':
       return (
         <div className="grid gap-4 sm:grid-cols-2">
-          <FieldInput label="Nhan" value={config.label || ''} onChange={(v) => onUpdate(index, 'label', v)} />
-          <FieldInput label="Tieu de" value={config.title || ''} onChange={(v) => onUpdate(index, 'title', v)} />
-          <FieldNumber label="So luong" value={config.limit || 6} onChange={(v) => onUpdate(index, 'limit', v)} />
+          <FieldInput label="Nhãn" value={config.label || ''} onChange={(v) => onUpdate(index, 'label', v)} />
+          <FieldInput label="Tiêu đề" value={config.title || ''} onChange={(v) => onUpdate(index, 'title', v)} />
+          <FieldNumber label="Số lượng" value={config.limit || 6} onChange={(v) => onUpdate(index, 'limit', v)} />
           <FieldInput label="CTA text" value={config.cta_text || ''} onChange={(v) => onUpdate(index, 'cta_text', v)} />
           <FieldInput label="CTA link" value={config.cta_link || ''} onChange={(v) => onUpdate(index, 'cta_link', v)} />
         </div>
@@ -583,13 +583,13 @@ function SectionConfigEditor({ section, index, onUpdate }: ConfigEditorProps) {
       return (
         <div className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
-            <FieldInput label="Nhan" value={config.label || ''} onChange={(v) => onUpdate(index, 'label', v)} />
-            <FieldInput label="Tieu de" value={config.title || ''} onChange={(v) => onUpdate(index, 'title', v)} />
+            <FieldInput label="Nhãn" value={config.label || ''} onChange={(v) => onUpdate(index, 'label', v)} />
+            <FieldInput label="Tiêu đề" value={config.title || ''} onChange={(v) => onUpdate(index, 'title', v)} />
           </div>
-          <FieldInput label="Mo ta" value={config.description || ''} onChange={(v) => onUpdate(index, 'description', v)} multiline />
+          <FieldInput label="Mô tả" value={config.description || ''} onChange={(v) => onUpdate(index, 'description', v)} multiline />
           <div>
             <label className="mb-2 block font-label text-label-md text-on-surface-variant">
-              Thong ke
+              Thống kê
             </label>
             {(config.stats || []).map((stat: any, si: number) => (
               <div key={si} className="mb-2 flex gap-2">
@@ -600,7 +600,7 @@ function SectionConfigEditor({ section, index, onUpdate }: ConfigEditorProps) {
                     newStats[si] = { ...newStats[si], value: e.target.value }
                     onUpdate(index, 'stats', newStats)
                   }}
-                  placeholder="Gia tri (vd: 10+)"
+                  placeholder="Giá trị (vd: 10+)"
                   className="w-1/3 rounded-lg bg-surface-container px-3 py-2 text-body-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/40"
                 />
                 <input
@@ -610,7 +610,7 @@ function SectionConfigEditor({ section, index, onUpdate }: ConfigEditorProps) {
                     newStats[si] = { ...newStats[si], label: e.target.value }
                     onUpdate(index, 'stats', newStats)
                   }}
-                  placeholder="Nhan (vd: Nam kinh nghiem)"
+                  placeholder="Nhãn (vd: Năm kinh nghiệm)"
                   className="flex-1 rounded-lg bg-surface-container px-3 py-2 text-body-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/40"
                 />
                 <button
@@ -633,7 +633,7 @@ function SectionConfigEditor({ section, index, onUpdate }: ConfigEditorProps) {
               }}
             >
               <Plus className="mr-1 h-4 w-4" />
-              Them thong ke
+              Thêm thống kê
             </Button>
           </div>
         </div>
@@ -642,19 +642,19 @@ function SectionConfigEditor({ section, index, onUpdate }: ConfigEditorProps) {
     case 'latest_articles':
       return (
         <div className="grid gap-4 sm:grid-cols-2">
-          <FieldInput label="Nhan" value={config.label || ''} onChange={(v) => onUpdate(index, 'label', v)} />
-          <FieldInput label="Tieu de" value={config.title || ''} onChange={(v) => onUpdate(index, 'title', v)} />
-          <FieldNumber label="So luong" value={config.limit || 3} onChange={(v) => onUpdate(index, 'limit', v)} />
+          <FieldInput label="Nhãn" value={config.label || ''} onChange={(v) => onUpdate(index, 'label', v)} />
+          <FieldInput label="Tiêu đề" value={config.title || ''} onChange={(v) => onUpdate(index, 'title', v)} />
+          <FieldNumber label="Số lượng" value={config.limit || 3} onChange={(v) => onUpdate(index, 'limit', v)} />
         </div>
       )
 
     case 'contact_cta':
       return (
         <div className="grid gap-4 sm:grid-cols-2">
-          <FieldInput label="Tieu de" value={config.title || ''} onChange={(v) => onUpdate(index, 'title', v)} />
+          <FieldInput label="Tiêu đề" value={config.title || ''} onChange={(v) => onUpdate(index, 'title', v)} />
           <FieldInput label="CTA text" value={config.cta_text || ''} onChange={(v) => onUpdate(index, 'cta_text', v)} />
           <div className="sm:col-span-2">
-            <FieldInput label="Mo ta" value={config.description || ''} onChange={(v) => onUpdate(index, 'description', v)} multiline />
+            <FieldInput label="Mô tả" value={config.description || ''} onChange={(v) => onUpdate(index, 'description', v)} multiline />
           </div>
           <FieldInput label="CTA link" value={config.cta_link || ''} onChange={(v) => onUpdate(index, 'cta_link', v)} />
         </div>
@@ -664,12 +664,12 @@ function SectionConfigEditor({ section, index, onUpdate }: ConfigEditorProps) {
       return (
         <div className="space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
-            <FieldInput label="Nhan" value={config.label || ''} onChange={(v) => onUpdate(index, 'label', v)} />
-            <FieldInput label="Tieu de" value={config.title || ''} onChange={(v) => onUpdate(index, 'title', v)} />
+            <FieldInput label="Nhãn" value={config.label || ''} onChange={(v) => onUpdate(index, 'label', v)} />
+            <FieldInput label="Tiêu đề" value={config.title || ''} onChange={(v) => onUpdate(index, 'title', v)} />
           </div>
           <div>
             <label className="mb-2 block font-label text-label-md text-on-surface-variant">
-              Danh gia
+              Đánh giá
             </label>
             {(config.items || []).map((item: any, ti: number) => (
               <div key={ti} className="mb-3 rounded-lg bg-surface p-3">
@@ -681,7 +681,7 @@ function SectionConfigEditor({ section, index, onUpdate }: ConfigEditorProps) {
                       newItems[ti] = { ...newItems[ti], name: e.target.value }
                       onUpdate(index, 'items', newItems)
                     }}
-                    placeholder="Ten"
+                    placeholder="Tên"
                     className="rounded-lg bg-surface-container px-3 py-2 text-body-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/40"
                   />
                   <input
@@ -691,7 +691,7 @@ function SectionConfigEditor({ section, index, onUpdate }: ConfigEditorProps) {
                       newItems[ti] = { ...newItems[ti], role: e.target.value }
                       onUpdate(index, 'items', newItems)
                     }}
-                    placeholder="Vai tro"
+                    placeholder="Vai trò"
                     className="rounded-lg bg-surface-container px-3 py-2 text-body-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/40"
                   />
                 </div>
@@ -702,7 +702,7 @@ function SectionConfigEditor({ section, index, onUpdate }: ConfigEditorProps) {
                     newItems[ti] = { ...newItems[ti], content: e.target.value }
                     onUpdate(index, 'items', newItems)
                   }}
-                  placeholder="Noi dung danh gia"
+                  placeholder="Nội dung đánh giá"
                   rows={2}
                   className="w-full rounded-lg bg-surface-container px-3 py-2 text-body-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/40"
                 />
@@ -731,7 +731,7 @@ function SectionConfigEditor({ section, index, onUpdate }: ConfigEditorProps) {
               }}
             >
               <Plus className="mr-1 h-4 w-4" />
-              Them danh gia
+              Thêm đánh giá
             </Button>
           </div>
         </div>
@@ -748,6 +748,6 @@ function SectionConfigEditor({ section, index, onUpdate }: ConfigEditorProps) {
       )
 
     default:
-      return <p className="text-body-sm text-on-surface-variant">Khong ho tro chinh sua section nay.</p>
+      return <p className="text-body-sm text-on-surface-variant">Không hỗ trợ chỉnh sửa section này.</p>
   }
 }

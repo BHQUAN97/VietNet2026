@@ -3,11 +3,13 @@
 # ──────────────────────────────────────────
 FROM node:20-alpine AS builder
 
+RUN apk add --no-cache python3 make g++
+
 WORKDIR /app
 
 # Install dependencies first (layer caching)
 COPY package.json package-lock.json ./
-RUN npm ci --ignore-scripts
+RUN npm ci
 
 # Copy source and build
 COPY tsconfig.json ./
@@ -15,7 +17,7 @@ COPY src ./src
 RUN npm run build
 
 # Remove dev dependencies
-RUN npm ci --omit=dev --ignore-scripts
+RUN npm ci --omit=dev
 
 # ──────────────────────────────────────────
 # Stage 2: Production

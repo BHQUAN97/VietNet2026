@@ -46,21 +46,21 @@ export function NotificationBell() {
     const diffMs = now.getTime() - date.getTime()
     const diffMin = Math.floor(diffMs / 60000)
 
-    if (diffMin < 1) return 'Vua xong'
-    if (diffMin < 60) return `${diffMin} phut truoc`
+    if (diffMin < 1) return 'Vừa xong'
+    if (diffMin < 60) return `${diffMin} phút trước`
     const diffHour = Math.floor(diffMin / 60)
-    if (diffHour < 24) return `${diffHour} gio truoc`
-    return `${Math.floor(diffHour / 24)} ngay truoc`
+    if (diffHour < 24) return `${diffHour} giờ trước`
+    return `${Math.floor(diffHour / 24)} ngày trước`
   }
 
   function getTypeLabel(type: string) {
     switch (type) {
       case 'new_consultation':
-        return 'Tu van'
+        return 'Tư vấn'
       case 'page_view_spike':
-        return 'Luot xem'
+        return 'Lượt xem'
       default:
-        return 'Thong bao'
+        return 'Thông báo'
     }
   }
 
@@ -79,37 +79,42 @@ export function NotificationBell() {
     <div className="relative" ref={panelRef}>
       <button
         onClick={handleToggle}
-        className="relative flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl p-2.5 text-on-surface-variant transition-colors hover:bg-surface-container-high"
-        aria-label="Thong bao"
+        className={cn(
+          'relative flex min-h-[40px] min-w-[40px] items-center justify-center rounded-xl p-2 text-on-surface-variant transition-all duration-200',
+          open
+            ? 'bg-surface-container-high text-primary'
+            : 'hover:bg-surface-container hover:text-on-surface active:bg-surface-container-high'
+        )}
+        aria-label="Thông báo"
       >
-        <Bell className="h-5 w-5" />
+        <Bell className="h-[18px] w-[18px]" />
         {unreadCount > 0 && (
-          <span className="absolute -right-0.5 -top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-error px-1 text-label-sm text-on-error">
+          <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-error px-0.5 text-[10px] font-bold text-on-error">
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-[var(--z-popover)] mt-2 w-80 rounded-2xl bg-surface-container-low shadow-ambient-lg">
-          <div className="flex items-center justify-between bg-surface-container px-4 py-3 rounded-t-2xl">
-            <h3 className="font-headline text-title-sm text-on-surface">
-              Thong bao
+        <div className="absolute right-0 top-full z-[var(--z-popover)] mt-1.5 w-80 rounded-2xl bg-surface-container-lowest shadow-ambient-lg">
+          <div className="flex items-center justify-between px-4 py-3">
+            <h3 className="font-headline text-body-md font-semibold text-on-surface">
+              Thông báo
             </h3>
             {notifications.length > 0 && (
               <button
                 onClick={clearNotifications}
-                className="text-label-sm text-primary hover:underline"
+                className="text-body-sm text-primary transition-opacity hover:opacity-70"
               >
-                Doc tat ca
+                Đọc tất cả
               </button>
             )}
           </div>
 
-          <div className="max-h-80 overflow-y-auto">
+          <div className="max-h-72 overflow-y-auto">
             {notifications.length === 0 ? (
               <div className="px-4 py-8 text-center text-body-sm text-on-surface-variant">
-                Chua co thong bao nao
+                Chưa có thông báo nào
               </div>
             ) : (
               <ul>
@@ -137,17 +142,17 @@ function NotificationItem({
   getTypeColor: (t: string) => string
 }) {
   return (
-    <li className="px-4 py-3 transition-colors hover:bg-surface-container">
-      <div className="flex items-start gap-3">
+    <li className="px-4 py-2.5 transition-colors hover:bg-surface-container">
+      <div className="flex items-start gap-2.5">
         <span
           className={cn(
-            'mt-0.5 inline-block rounded-lg px-2 py-0.5 text-label-sm',
+            'mt-0.5 inline-block rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase',
             getTypeColor(notification.type),
           )}
         >
           {getTypeLabel(notification.type)}
         </span>
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <p className="text-body-sm font-medium text-on-surface">
             {notification.title}
           </p>
@@ -156,7 +161,7 @@ function NotificationItem({
               {notification.body}
             </p>
           )}
-          <p className="mt-1 text-label-sm text-on-surface-variant/60">
+          <p className="mt-1 text-[11px] text-on-surface-variant/60">
             {formatTime(notification.created_at)}
           </p>
         </div>

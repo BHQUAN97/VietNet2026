@@ -53,8 +53,8 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     if (!token) return
 
     const socketUrl =
-      process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') ||
-      'http://localhost:4000'
+      process.env.NEXT_PUBLIC_SOCKET_URL ||
+      window.location.origin
 
     const socket = io(socketUrl, {
       auth: { token },

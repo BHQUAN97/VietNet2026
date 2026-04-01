@@ -1,6 +1,8 @@
 'use client'
 
+import { useState } from 'react'
 import { usePathname } from 'next/navigation'
+import { cn } from '@/lib/utils'
 
 const ZALO_URL = process.env.NEXT_PUBLIC_ZALO_URL || 'https://zalo.me/vietnetinterior'
 const MESSENGER_URL = process.env.NEXT_PUBLIC_MESSENGER_URL || 'https://m.me/vietnetinterior'
@@ -35,26 +37,26 @@ const widgets = [
     href: ZALO_URL,
     label: 'Chat Zalo',
     icon: ZaloIcon,
-    className: 'bg-[#0068FF] text-on-primary hover:bg-[#0055CC]',
+    bgClass: 'bg-[#0068FF] hover:bg-[#0055CC]',
   },
   {
     href: MESSENGER_URL,
     label: 'Chat Messenger',
     icon: MessengerIcon,
-    className: 'bg-[#0084FF] text-on-primary hover:bg-[#006ACC]',
+    bgClass: 'bg-[#0084FF] hover:bg-[#006ACC]',
   },
   {
     href: PHONE_NUMBER,
-    label: 'Goi dien',
+    label: 'Gọi điện',
     icon: PhoneIcon,
-    className: 'bg-primary-container text-on-primary hover:bg-primary animate-widget-pulse',
+    bgClass: 'bg-primary-container hover:bg-primary animate-widget-pulse',
   },
 ]
 
 export function FloatingWidgets() {
   const pathname = usePathname()
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
 
-  // Hide on admin pages
   if (pathname.startsWith('/admin')) {
     return null
   }
@@ -62,22 +64,39 @@ export function FloatingWidgets() {
   return (
     <div
       className="fixed right-4 z-[var(--z-fixed)] flex flex-col gap-3 bottom-[calc(var(--bottom-nav-height)+1rem)] md:bottom-8"
-      aria-label="Lien he nhanh"
+      aria-label="Liên hệ nhanh"
       role="group"
     >
-      {widgets.map((widget) => {
+      {widgets.map((widget, index) => {
         const Icon = widget.icon
         return (
-          <a
-            key={widget.label}
-            href={widget.href}
-            target={widget.href.startsWith('tel:') ? undefined : '_blank'}
-            rel={widget.href.startsWith('tel:') ? undefined : 'noopener noreferrer'}
-            aria-label={widget.label}
-            className={`flex h-12 w-12 items-center justify-center rounded-full shadow-lg transition-transform duration-300 hover:scale-110 ${widget.className}`}
-          >
-            <Icon className="h-6 w-6" />
-          </a>
+          <div key={widget.label} className="relative flex items-center justify-end">
+            {/* Tooltip */}
+            <span
+              className={cn(
+                'absolute right-14 whitespace-nowrap rounded-lg bg-inverse-surface px-3 py-1.5 font-label text-label-lg text-inverse-on-surface shadow-ambient-sm transition-all duration-300',
+                hoveredIndex === index
+                  ? 'translate-x-0 opacity-100'
+                  : 'translate-x-2 opacity-0 pointer-events-none'
+              )}
+            >
+              {widget.label}
+            </span>
+            <a
+              href={widget.href}
+              target={widget.href.startsWith('tel:') ? undefined : '_blank'}
+              rel={widget.href.startsWith('tel:') ? undefined : 'noopener noreferrer'}
+              aria-label={widget.label}
+              onMouseEnter={() => setHoveredIndex(index)}
+              onMouseLeave={() => setHoveredIndex(null)}
+              className={cn(
+                'flex h-11 w-11 items-center justify-center rounded-full text-on-primary shadow-ambient-md transition-all duration-300 hover:scale-110 hover:shadow-ambient-lg md:h-12 md:w-12',
+                widget.bgClass
+              )}
+            >
+              <Icon className="h-6 w-6" />
+            </a>
+          </div>
         )
       })}
     </div>

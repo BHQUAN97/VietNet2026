@@ -14,25 +14,315 @@
     font-family: var(--font-headline);
   }
 
-  /* Smooth scrolling */
   html {
     scroll-behavior: smooth;
   }
 
-  /* Selection color */
   ::selection {
     background-color: var(--color-primary-fixed);
     color: var(--color-on-primary-fixed);
   }
+
+  /* Mượt hơn cho tất cả transitions */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+/* ── SCROLL REVEAL ANIMATIONS ── */
+@keyframes reveal-up {
+  from {
+    opacity: 0;
+    transform: translateY(32px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes reveal-down {
+  from {
+    opacity: 0;
+    transform: translateY(-24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes reveal-left {
+  from {
+    opacity: 0;
+    transform: translateX(-32px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes reveal-right {
+  from {
+    opacity: 0;
+    transform: translateX(32px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes reveal-scale {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes reveal-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes slide-in-bottom {
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes count-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes hero-text-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+    filter: blur(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes subtle-zoom {
+  from { transform: scale(1.08); }
+  to { transform: scale(1); }
+}
+
+@keyframes line-expand {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
 }
 
 @layer utilities {
-  /* Hide scrollbar but keep functionality */
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
+  }
+
+  /* Scroll Reveal utility classes */
+  .reveal {
+    opacity: 0;
+    will-change: transform, opacity;
+  }
+
+  .reveal.is-visible {
+    animation: reveal-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  .reveal-left {
+    opacity: 0;
+    will-change: transform, opacity;
+  }
+  .reveal-left.is-visible {
+    animation: reveal-left 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  .reveal-right {
+    opacity: 0;
+    will-change: transform, opacity;
+  }
+  .reveal-right.is-visible {
+    animation: reveal-right 0.7s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  .reveal-scale {
+    opacity: 0;
+    will-change: transform, opacity;
+  }
+  .reveal-scale.is-visible {
+    animation: reveal-scale 0.6s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  }
+
+  .reveal-fade {
+    opacity: 0;
+  }
+  .reveal-fade.is-visible {
+    animation: reveal-fade 0.8s ease forwards;
+  }
+
+  /* Stagger delays cho children */
+  .stagger-1 { animation-delay: 0.1s !important; }
+  .stagger-2 { animation-delay: 0.2s !important; }
+  .stagger-3 { animation-delay: 0.3s !important; }
+  .stagger-4 { animation-delay: 0.4s !important; }
+  .stagger-5 { animation-delay: 0.5s !important; }
+  .stagger-6 { animation-delay: 0.6s !important; }
+
+  /* Skeleton loading shimmer */
+  .skeleton {
+    background: linear-gradient(
+      90deg,
+      var(--color-surface-container-low) 25%,
+      var(--color-surface-container-high) 50%,
+      var(--color-surface-container-low) 75%
+    );
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 0.5rem;
+  }
+
+  /* Gradient text utility */
+  .text-gradient-primary {
+    background: linear-gradient(135deg, #553722 0%, #6F4E37 50%, #79573F 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* Decorative line */
+  .deco-line {
+    display: block;
+    width: 48px;
+    height: 2px;
+    background: linear-gradient(90deg, #553722, #6F4E37);
+    border-radius: 1px;
+  }
+
+  .deco-line-center {
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  /* Card premium hover effect */
+  .card-premium {
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .card-premium:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 32px 64px rgba(85, 55, 34, 0.10);
+  }
+
+  /* Interactive hover lift effect */
+  .hover-lift {
+    transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+                box-shadow 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(85, 55, 34, 0.08);
+  }
+  .hover-lift:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 8px rgba(85, 55, 34, 0.04);
+  }
+
+  /* Admin sidebar active state — dải dọc bên trái thay vì dot nhỏ */
+  .nav-active {
+    position: relative;
+    background-color: var(--color-primary-fixed);
+    color: var(--color-on-primary-fixed);
+    border-radius: 0.5rem;
+  }
+  .nav-active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 25%;
+    bottom: 25%;
+    width: 3px;
+    background: var(--color-primary);
+    border-radius: 0 2px 2px 0;
+  }
+
+  /* Admin table row hover — nhẹ nhàng, nhất quán */
+  .table-row-hover {
+    transition: background-color 150ms ease;
+  }
+  .table-row-hover:hover {
+    background-color: var(--color-surface-container-low);
+  }
+
+  /* Error/Alert banner — border-radius và padding đồng bộ */
+  .alert-banner {
+    padding: 0.75rem 1rem;
+    border-radius: 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+  .alert-error {
+    background-color: var(--color-error-container);
+    color: var(--color-on-error-container);
+  }
+  .alert-warning {
+    background-color: var(--color-warning-container);
+    color: var(--color-on-warning-container);
+  }
+  .alert-success {
+    background-color: var(--color-success-container);
+    color: var(--color-on-success-container);
+  }
+  .alert-info {
+    background-color: var(--color-info-container);
+    color: var(--color-on-info-container);
+  }
+
+  /* Noise texture overlay */
+  .noise-overlay::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0.03;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 0;
   }
 }

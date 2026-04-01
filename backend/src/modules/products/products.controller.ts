@@ -14,14 +14,13 @@ import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { UpdateProductDto } from './dto/update-product.dto';
 import { UpdateImagesDto } from './dto/update-images.dto';
-import { PaginationDto } from '../../common/dto/pagination.dto';
+import { QueryProductDto, QueryProductAdminDto } from './dto/query-product.dto';
 import { ok, paginated } from '../../common/helpers/response.helper';
 import { Public } from '../../common/decorators/public.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { UserRole } from '../users/entities/user.entity';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
-import { ProductStatus } from './entities/product.entity';
 import { validateUlid } from '../../common/helpers/ulid.helper';
 
 @Controller('products')
@@ -33,15 +32,11 @@ export class ProductsController {
    */
   @Public()
   @Get()
-  async findPublished(
-    @Query() pagination: PaginationDto,
-    @Query('category_id') categoryId?: string,
-    @Query('material_type') materialType?: string,
-    @Query('finish') finish?: string,
-  ) {
+  async findPublished(@Query() query: QueryProductDto) {
+    const { category_id, material_type, finish, ...pagination } = query;
     const filters = {
-      category_id: categoryId,
-      material_type: materialType,
+      category_id,
+      material_type,
       finish,
     };
     const result = await this.productsService.findPublished(pagination, filters);
@@ -58,16 +53,11 @@ export class ProductsController {
   @Get('admin/list')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  async findAllAdmin(
-    @Query() pagination: PaginationDto,
-    @Query('category_id') categoryId?: string,
-    @Query('material_type') materialType?: string,
-    @Query('finish') finish?: string,
-    @Query('status') status?: ProductStatus,
-  ) {
+  async findAllAdmin(@Query() query: QueryProductAdminDto) {
+    const { category_id, material_type, finish, status, search, ...pagination } = query;
     const filters = {
-      category_id: categoryId,
-      material_type: materialType,
+      category_id,
+      material_type,
       finish,
       status,
     };

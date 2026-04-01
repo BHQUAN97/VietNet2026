@@ -3,24 +3,10 @@
 import { useState, useEffect, useCallback } from 'react'
 import { AlertTriangle, Mail, Phone, MessageSquare, ChevronDown } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { Badge } from '@/components/ui/Badge'
 import api from '@/lib/api'
 import type { Consultation, ApiResponse, PaginationMeta } from '@/types'
-
-const STATUS_LABELS: Record<string, string> = {
-  new: 'Moi',
-  contacted: 'Da lien he',
-  scheduled: 'Da hen',
-  completed: 'Hoan thanh',
-  cancelled: 'Da huy',
-}
-
-const STATUS_COLORS: Record<string, string> = {
-  new: 'bg-primary-fixed text-on-primary-fixed',
-  contacted: 'bg-warning-bg text-warning-text',
-  scheduled: 'bg-tertiary-container text-on-tertiary-container',
-  completed: 'bg-success-bg text-success-text',
-  cancelled: 'bg-surface-container text-on-surface-variant',
-}
+import { CONSULTATION_STATUS } from '@/lib/status-config'
 
 export default function AdminConsultationsPage() {
   const [consultations, setConsultations] = useState<Consultation[]>([])
@@ -48,7 +34,7 @@ export default function AdminConsultationsPage() {
       setConsultations(res.data || [])
       setMeta(res.meta || null)
     } catch {
-      setError('Khong the tai danh sach tu van.')
+      setError('Không thể tải danh sách tư vấn.')
     } finally {
       setIsLoading(false)
     }
@@ -75,7 +61,7 @@ export default function AdminConsultationsPage() {
       setSelectedConsultation(null)
       fetchConsultations()
     } catch {
-      setError('Khong the cap nhat trang thai.')
+      setError('Không thể cập nhật trạng thái.')
     } finally {
       setSaving(false)
     }
@@ -87,10 +73,10 @@ export default function AdminConsultationsPage() {
     <div className="py-4">
       {/* Header */}
       <div className="mb-8">
-        <h1 className="font-headline text-headline-lg text-on-surface">Quan ly tu van</h1>
+        <h1 className="font-headline text-headline-lg text-on-surface">Quản lý tư vấn</h1>
         <p className="mt-1 text-body-md text-on-surface-variant">
-          Quan ly cac yeu cau tu van tu khach hang.
-          {meta && <span className="ml-1 text-body-sm">({meta.total} yeu cau)</span>}
+          Quản lý các yêu cầu tư vấn từ khách hàng.
+          {meta && <span className="ml-1 text-body-sm">({meta.total} yêu cầu)</span>}
         </p>
       </div>
 
@@ -99,7 +85,7 @@ export default function AdminConsultationsPage() {
           <AlertTriangle className="h-5 w-5 shrink-0 text-on-error-container" />
           <p className="text-body-sm text-on-error-container">{error}</p>
           <button onClick={() => setError(null)} className="ml-auto text-body-sm underline">
-            Dong
+            Đóng
           </button>
         </div>
       )}
@@ -112,11 +98,11 @@ export default function AdminConsultationsPage() {
             onClick={() => { setStatusFilter(s); setPage(1) }}
             className={`rounded-full px-4 py-2 text-body-sm font-medium transition-colors ${
               statusFilter === s
-                ? 'bg-primary text-on-primary'
+                ? 'bg-primary-container text-on-primary-container'
                 : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
             }`}
           >
-            {s === '' ? 'Tat ca' : STATUS_LABELS[s]}
+            {s === '' ? 'Tất cả' : CONSULTATION_STATUS[s]?.label || s}
           </button>
         ))}
       </div>
@@ -132,22 +118,22 @@ export default function AdminConsultationsPage() {
             <thead>
               <tr className="bg-surface-container-low">
                 <th className="px-4 py-3 font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                  Khach hang
+                  Khách hàng
                 </th>
                 <th className="px-4 py-3 font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                  Lien he
+                  Liên hệ
                 </th>
                 <th className="px-4 py-3 font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                  Loai
+                  Loại
                 </th>
                 <th className="px-4 py-3 font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                  Trang thai
+                  Trạng thái
                 </th>
                 <th className="px-4 py-3 font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                  Ngay gui
+                  Ngày gửi
                 </th>
                 <th className="px-4 py-3 font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                  Thao tac
+                  Thao tác
                 </th>
               </tr>
             </thead>
@@ -155,7 +141,7 @@ export default function AdminConsultationsPage() {
               {consultations.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-4 py-12 text-center text-body-md text-on-surface-variant">
-                    Chua co yeu cau tu van nao.
+                    Chưa có yêu cầu tư vấn nào.
                   </td>
                 </tr>
               ) : (
@@ -187,9 +173,12 @@ export default function AdminConsultationsPage() {
                       {c.project_type || '-'}
                     </td>
                     <td className="px-4 py-3">
-                      <span className={`inline-flex rounded-full px-2.5 py-0.5 font-label text-label-sm uppercase ${STATUS_COLORS[c.status]}`}>
-                        {STATUS_LABELS[c.status]}
-                      </span>
+                      <Badge
+                        variant={CONSULTATION_STATUS[c.status]?.variant}
+                        dot={CONSULTATION_STATUS[c.status]?.dot}
+                      >
+                        {CONSULTATION_STATUS[c.status]?.label || c.status}
+                      </Badge>
                     </td>
                     <td className="px-4 py-3 text-body-sm text-on-surface-variant">
                       {new Date(c.created_at).toLocaleDateString('vi-VN')}
@@ -198,7 +187,7 @@ export default function AdminConsultationsPage() {
                       <button
                         onClick={() => openDetail(c)}
                         className="rounded-lg p-2 text-on-surface-variant hover:bg-surface-container-high"
-                        title="Chi tiet"
+                        title="Chi tiết"
                       >
                         <MessageSquare className="h-4 w-4" />
                       </button>
@@ -215,13 +204,13 @@ export default function AdminConsultationsPage() {
       {!isLoading && totalPages > 1 && (
         <div className="mt-6 flex items-center justify-center gap-2">
           <Button variant="ghost" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>
-            Truoc
+            Trước
           </Button>
           <span className="px-4 text-body-md text-on-surface-variant">
             {page} / {totalPages}
           </span>
           <Button variant="ghost" size="sm" disabled={page >= totalPages} onClick={() => setPage(p => p + 1)}>
-            Sau
+            Tiếp
           </Button>
         </div>
       )}
@@ -231,7 +220,7 @@ export default function AdminConsultationsPage() {
         <div className="fixed inset-0 z-[var(--z-modal-backdrop)] flex items-center justify-center bg-on-surface/30 backdrop-blur-sm">
           <div className="mx-4 max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-surface p-6 shadow-ambient-lg md:p-8">
             <h3 className="font-headline text-headline-sm text-on-surface">
-              Chi tiet tu van
+              Chi tiết tư vấn
             </h3>
 
             <div className="mt-6 space-y-4">
@@ -249,16 +238,16 @@ export default function AdminConsultationsPage() {
                     </p>
                   )}
                   {selectedConsultation.project_type && (
-                    <p>Loai: {selectedConsultation.project_type}</p>
+                    <p>Loại: {selectedConsultation.project_type}</p>
                   )}
                   {selectedConsultation.area && (
-                    <p>Dien tich: {selectedConsultation.area}</p>
+                    <p>Diện tích: {selectedConsultation.area}</p>
                   )}
                   {selectedConsultation.budget_range && (
-                    <p>Ngan sach: {selectedConsultation.budget_range}</p>
+                    <p>Ngân sách: {selectedConsultation.budget_range}</p>
                   )}
                   {selectedConsultation.source && (
-                    <p>Nguon: {selectedConsultation.source}</p>
+                    <p>Nguồn: {selectedConsultation.source}</p>
                   )}
                 </div>
               </div>
@@ -266,7 +255,7 @@ export default function AdminConsultationsPage() {
               {selectedConsultation.message && (
                 <div>
                   <label className="mb-1 block font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                    Tin nhan
+                    Tin nhắn
                   </label>
                   <p className="rounded-xl bg-surface-container-low p-4 text-body-md text-on-surface">
                     {selectedConsultation.message}
@@ -276,7 +265,7 @@ export default function AdminConsultationsPage() {
 
               <div>
                 <label className="mb-1 block font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                  Trang thai
+                  Trạng thái
                 </label>
                 <div className="relative">
                   <select
@@ -284,9 +273,9 @@ export default function AdminConsultationsPage() {
                     onChange={(e) => setNewStatus(e.target.value)}
                     className="w-full appearance-none rounded-xl bg-surface-container px-4 py-3 pr-10 text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
                   >
-                    {Object.entries(STATUS_LABELS).map(([value, label]) => (
+                    {Object.entries(CONSULTATION_STATUS).map(([value, cfg]) => (
                       <option key={value} value={value}>
-                        {label}
+                        {cfg.label}
                       </option>
                     ))}
                   </select>
@@ -296,24 +285,24 @@ export default function AdminConsultationsPage() {
 
               <div>
                 <label className="mb-1 block font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                  Ghi chu noi bo
+                  Ghi chú nội bộ
                 </label>
                 <textarea
                   rows={3}
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   className="w-full rounded-xl bg-surface-container px-4 py-3 text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
-                  placeholder="Ghi chu cho noi bo..."
+                  placeholder="Ghi chú cho nội bộ..."
                 />
               </div>
             </div>
 
             <div className="mt-6 flex items-center justify-end gap-3">
               <Button variant="ghost" onClick={() => setSelectedConsultation(null)} disabled={saving}>
-                Dong
+                Đóng
               </Button>
               <Button onClick={handleUpdateStatus} loading={saving}>
-                Cap nhat
+                Cập nhật
               </Button>
             </div>
           </div>

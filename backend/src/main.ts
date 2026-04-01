@@ -21,7 +21,11 @@ async function bootstrap() {
   app.useWebSocketAdapter(redisIoAdapter);
 
   app.setGlobalPrefix('api');
-  app.use(helmet());
+  app.use(helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+    crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
+    contentSecurityPolicy: false,
+  }));
   app.use(cookieParser());
   app.enableCors({
     origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],

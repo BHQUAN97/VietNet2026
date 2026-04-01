@@ -17,8 +17,10 @@ import {
   Mail,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { Badge } from '@/components/ui/Badge'
 import api from '@/lib/api'
 import type { ApiResponse, Consultation, PaginationMeta } from '@/types'
+import { CONSULTATION_STATUS } from '@/lib/status-config'
 
 // ─── Types ─────────────────────────────────────────────────────
 
@@ -33,24 +35,6 @@ interface DashboardKPI {
 interface AnalyticsDashboardData {
   totalViews: number
   totalUnique: number
-}
-
-// ─── Status helpers (reuse from consultations page) ────────────
-
-const STATUS_LABELS: Record<string, string> = {
-  new: 'Moi',
-  contacted: 'Da lien he',
-  scheduled: 'Da hen',
-  completed: 'Hoan thanh',
-  cancelled: 'Da huy',
-}
-
-const STATUS_COLORS: Record<string, string> = {
-  new: 'bg-primary-fixed text-on-primary-fixed',
-  contacted: 'bg-warning-bg text-warning-text',
-  scheduled: 'bg-tertiary-container text-on-tertiary-container',
-  completed: 'bg-success-bg text-success-text',
-  cancelled: 'bg-surface-container text-on-surface-variant',
 }
 
 // ─── Skeleton Card ─────────────────────────────────────────────
@@ -113,7 +97,7 @@ function KPICard({ kpi }: { kpi: DashboardKPI }) {
           </div>
         )}
       </div>
-      <p className="mt-4 font-headline text-headline-md text-on-surface">
+      <p className="mt-4 font-body text-headline-md font-bold text-on-surface">
         {typeof kpi.value === 'number' ? kpi.value.toLocaleString('vi-VN') : kpi.value}
       </p>
       <p className="mt-1 text-body-sm text-on-surface-variant">{kpi.label}</p>
@@ -239,10 +223,10 @@ export default function AdminDashboardPage() {
         (r) => r.status === 'rejected'
       )
       if (allFailed) {
-        setError('Khong the tai du lieu dashboard. Vui long thu lai.')
+        setError('Không thể tải dữ liệu dashboard. Vui lòng thử lại.')
       }
     } catch {
-      setError('Khong the tai du lieu dashboard. Vui long thu lai.')
+      setError('Không thể tải dữ liệu dashboard. Vui lòng thử lại.')
     } finally {
       setIsLoading(false)
     }
@@ -254,23 +238,23 @@ export default function AdminDashboardPage() {
 
   const kpis: DashboardKPI[] = [
     {
-      label: 'Luot truy cap (30 ngay)',
+      label: 'Lượt truy cập (30 ngày)',
       value: totalVisitors,
       trend: visitorTrend,
       icon: <Users className="h-5 w-5" />,
     },
     {
-      label: 'Yeu cau tu van',
+      label: 'Yêu cầu tư vấn',
       value: newConsultations,
       icon: <MessageSquare className="h-5 w-5" />,
     },
     {
-      label: 'Du an da xuat ban',
+      label: 'Dự án đã xuất bản',
       value: publishedProjects,
       icon: <Briefcase className="h-5 w-5" />,
     },
     {
-      label: 'San pham da xuat ban',
+      label: 'Sản phẩm đã xuất bản',
       value: publishedProducts,
       icon: <Package className="h-5 w-5" />,
     },
@@ -283,7 +267,7 @@ export default function AdminDashboardPage() {
         <div>
           <h1 className="font-headline text-headline-lg text-on-surface">Dashboard</h1>
           <p className="mt-1 text-body-md text-on-surface-variant">
-            Tong quan hoat dong he thong.
+            Tổng quan hoạt động hệ thống.
           </p>
         </div>
         <Button
@@ -293,7 +277,7 @@ export default function AdminDashboardPage() {
           disabled={isLoading}
         >
           <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
-          Lam moi
+          Làm mới
         </Button>
       </div>
 
@@ -306,7 +290,7 @@ export default function AdminDashboardPage() {
             onClick={fetchDashboardData}
             className="ml-auto text-body-sm text-on-error-container underline"
           >
-            Thu lai
+            Thử lại
           </button>
         </div>
       )}
@@ -324,13 +308,13 @@ export default function AdminDashboardPage() {
         <div className="lg:col-span-2">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="font-headline text-title-lg text-on-surface">
-              Yeu cau tu van gan day
+              Yêu cầu tư vấn gần đây
             </h2>
             <Link
               href="/admin/consultations"
               className="flex items-center gap-1 text-body-sm font-medium text-primary hover:underline"
             >
-              Xem tat ca
+              Xem tất cả
               <ArrowRight className="h-3.5 w-3.5" />
             </Link>
           </div>
@@ -340,16 +324,16 @@ export default function AdminDashboardPage() {
               <thead>
                 <tr className="bg-surface-container-low">
                   <th className="px-4 py-3 font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                    Khach hang
+                    Khách hàng
                   </th>
                   <th className="px-4 py-3 font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                    Loai
+                    Loại
                   </th>
                   <th className="px-4 py-3 font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                    Trang thai
+                    Trạng thái
                   </th>
                   <th className="px-4 py-3 font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-                    Ngay gui
+                    Ngày gửi
                   </th>
                 </tr>
               </thead>
@@ -362,7 +346,7 @@ export default function AdminDashboardPage() {
                       colSpan={4}
                       className="px-4 py-12 text-center text-body-md text-on-surface-variant"
                     >
-                      Chua co yeu cau tu van nao.
+                      Chưa có yêu cầu tư vấn nào.
                     </td>
                   </tr>
                 ) : (
@@ -381,13 +365,12 @@ export default function AdminDashboardPage() {
                         {c.project_type || '-'}
                       </td>
                       <td className="px-4 py-3">
-                        <span
-                          className={`inline-flex rounded-full px-2.5 py-0.5 font-label text-label-sm uppercase ${
-                            STATUS_COLORS[c.status] || ''
-                          }`}
+                        <Badge
+                          variant={CONSULTATION_STATUS[c.status]?.variant}
+                          dot={CONSULTATION_STATUS[c.status]?.dot}
                         >
-                          {STATUS_LABELS[c.status] || c.status}
-                        </span>
+                          {CONSULTATION_STATUS[c.status]?.label || c.status}
+                        </Badge>
                       </td>
                       <td className="px-4 py-3 text-body-sm text-on-surface-variant">
                         {new Date(c.created_at).toLocaleDateString('vi-VN')}
@@ -403,24 +386,24 @@ export default function AdminDashboardPage() {
         {/* Quick Actions */}
         <div>
           <h2 className="mb-4 font-headline text-title-lg text-on-surface">
-            Thao tac nhanh
+            Thao tác nhanh
           </h2>
           <div className="flex flex-col gap-3">
             <QuickActionCard
-              title="Them du an moi"
-              description="Tao va xuat ban du an"
+              title="Thêm dự án mới"
+              description="Tạo và xuất bản dự án"
               href="/admin/projects"
               icon={<Plus className="h-5 w-5" />}
             />
             <QuickActionCard
-              title="Quan ly tu van"
-              description="Xem va xu ly yeu cau"
+              title="Quản lý tư vấn"
+              description="Xem và xử lý yêu cầu"
               href="/admin/consultations"
               icon={<Mail className="h-5 w-5" />}
             />
             <QuickActionCard
-              title="Phan tich truy cap"
-              description="Xem bao cao chi tiet"
+              title="Phân tích truy cập"
+              description="Xem báo cáo chi tiết"
               href="/admin/analytics"
               icon={<BarChart3 className="h-5 w-5" />}
             />

@@ -9,15 +9,15 @@ export default function NotFound() {
         404
       </p>
       <h1 className="mt-4 font-headline text-display-md text-primary">
-        Khong tim thay trang
+        Không tìm thấy trang
       </h1>
       <p className="mt-4 max-w-md text-body-lg text-on-surface-variant">
-        Trang ban dang tim kiem khong ton tai hoac da bi di chuyen.
+        Trang bạn đang tìm kiếm không tồn tại hoặc đã bị di chuyển.
       </p>
       <div className="mt-8">
         <Link href="/">
           <Button variant="primary" size="lg">
-            Quay ve trang chu
+            Quay về trang chủ
           </Button>
         </Link>
       </div>

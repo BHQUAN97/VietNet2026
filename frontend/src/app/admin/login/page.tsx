@@ -30,7 +30,7 @@ export default function AdminLoginPage() {
     setError('')
 
     if (!email.trim() || !password.trim()) {
-      setError('Vui long nhap email va mat khau')
+      setError('Vui lòng nhập email và mật khẩu')
       return
     }
 
@@ -44,16 +44,16 @@ export default function AdminLoginPage() {
         const message = err.response?.data?.message
 
         if (status === 429) {
-          setError('Qua nhieu lan thu. Vui long doi 30 phut.')
+          setError('Quá nhiều lần thử. Vui lòng đợi 30 phút.')
         } else if (status === 401) {
-          setError('Email hoac mat khau khong chinh xac')
+          setError('Email hoặc mật khẩu không chính xác')
         } else {
-          setError(message || 'Dang nhap that bai. Vui long thu lai.')
+          setError(message || 'Đăng nhập thất bại. Vui lòng thử lại.')
         }
       } else if (err instanceof Error) {
         setError(err.message)
       } else {
-        setError('Dang nhap that bai. Vui long thu lai.')
+        setError('Đăng nhập thất bại. Vui lòng thử lại.')
       }
     } finally {
       setLoading(false)
@@ -69,10 +69,10 @@ export default function AdminLoginPage() {
     <PageContainer className="flex min-h-screen items-center justify-center">
       <div className="w-full max-w-md rounded-2xl bg-surface-container-low p-8 shadow-ambient">
         <h1 className="text-center font-headline text-headline-md text-primary">
-          Dang nhap
+          Đăng nhập
         </h1>
         <p className="mt-2 text-center text-body-sm text-on-surface-variant">
-          Dang nhap vao he thong quan tri VietNet Interior
+          Đăng nhập vào hệ thống quản trị VietNet Interior
         </p>
 
         {error && (
@@ -102,7 +102,7 @@ export default function AdminLoginPage() {
 
           <div>
             <label className="mb-1 block font-label text-label-lg uppercase tracking-label-wide text-on-surface-variant">
-              Mat khau
+              Mật khẩu
             </label>
             <div className="relative">
               <Lock className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-on-surface-variant" />
@@ -136,7 +136,7 @@ export default function AdminLoginPage() {
             className="w-full"
             size="lg"
           >
-            Dang nhap
+            Đăng nhập
           </Button>
         </form>
       </div>

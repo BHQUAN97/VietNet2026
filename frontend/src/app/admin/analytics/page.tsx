@@ -59,7 +59,7 @@ export default function AdminAnalyticsPage() {
       )
       setData((res as any).data)
     } catch {
-      setError('Khong the tai du lieu phan tich')
+      setError('Không thể tải dữ liệu phân tích')
     } finally {
       setLoading(false)
     }
@@ -73,7 +73,7 @@ export default function AdminAnalyticsPage() {
     return (
       <div className="py-4">
         <h1 className="font-headline text-headline-lg text-on-surface">
-          Phan tich
+          Phân tích
         </h1>
         <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           {[...Array(4)].map((_, i) => (
@@ -92,15 +92,15 @@ export default function AdminAnalyticsPage() {
     return (
       <div className="py-4">
         <h1 className="font-headline text-headline-lg text-on-surface">
-          Phan tich
+          Phân tích
         </h1>
         <div className="mt-8 rounded-2xl bg-error-container px-6 py-8 text-center">
           <p className="text-body-md text-on-error-container">{error}</p>
           <button
             onClick={fetchData}
-            className="mt-4 rounded-xl bg-primary px-4 py-2 text-label-md text-on-primary"
+            className="mt-4 rounded-xl bg-primary-container px-4 py-2 text-label-md text-on-primary-container"
           >
-            Thu lai
+            Thử lại
           </button>
         </div>
       </div>
@@ -118,10 +118,10 @@ export default function AdminAnalyticsPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="font-headline text-headline-lg text-on-surface">
-            Phan tich
+            Phân tích
           </h1>
           <p className="mt-1 text-body-md text-on-surface-variant">
-            Thong ke luot xem va hanh vi nguoi dung
+            Thống kê lượt xem và hành vi người dùng
           </p>
         </div>
 
@@ -135,11 +135,11 @@ export default function AdminAnalyticsPage() {
                 className={cn(
                   'rounded-lg px-3 py-1.5 text-label-md transition-colors',
                   range === r
-                    ? 'bg-primary text-on-primary'
+                    ? 'bg-primary-container text-on-primary-container'
                     : 'text-on-surface-variant hover:bg-surface-container-high',
                 )}
               >
-                {r === '7d' ? '7 ngay' : r === '30d' ? '30 ngay' : '90 ngay'}
+                {r === '7d' ? '7 ngày' : r === '30d' ? '30 ngày' : '90 ngày'}
               </button>
             ))}
           </div>
@@ -148,7 +148,7 @@ export default function AdminAnalyticsPage() {
             onClick={fetchData}
             disabled={loading}
             className="rounded-xl p-2 text-on-surface-variant transition-colors hover:bg-surface-container-high disabled:opacity-50"
-            aria-label="Lam moi"
+            aria-label="Làm mới"
           >
             <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
           </button>
@@ -159,13 +159,13 @@ export default function AdminAnalyticsPage() {
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           icon={Eye}
-          label="Tong luot xem"
+          label="Tổng lượt xem"
           value={data?.totalViews || 0}
           color="primary"
         />
         <StatCard
           icon={Users}
-          label="Khach truy cap"
+          label="Khách truy cập"
           value={data?.totalUnique || 0}
           color="secondary"
         />
@@ -188,14 +188,14 @@ export default function AdminAnalyticsPage() {
       {/* Chart area — daily trend */}
       <div className="mt-6 rounded-2xl bg-surface-container-low p-6">
         <h2 className="font-headline text-title-md text-on-surface">
-          Xu huong luot xem
+          Xu hướng lượt xem
         </h2>
         <div className="mt-4">
           {data?.dailyTrend && data.dailyTrend.length > 0 ? (
             <TrendChart data={data.dailyTrend} />
           ) : (
             <div className="flex h-48 items-center justify-center text-body-md text-on-surface-variant">
-              Chua co du lieu trong khoang thoi gian nay
+              Chưa có dữ liệu trong khoảng thời gian này
             </div>
           )}
         </div>
@@ -206,7 +206,7 @@ export default function AdminAnalyticsPage() {
         {/* Top pages table */}
         <div className="rounded-2xl bg-surface-container-low p-6 lg:col-span-2">
           <h2 className="font-headline text-title-md text-on-surface">
-            Trang duoc xem nhieu nhat
+            Trang được xem nhiều nhất
           </h2>
           <div className="mt-4 overflow-x-auto">
             {data?.topPages && data.topPages.length > 0 ? (
@@ -214,8 +214,8 @@ export default function AdminAnalyticsPage() {
                 <thead>
                   <tr className="text-left text-label-sm text-on-surface-variant">
                     <th className="pb-3 pr-4">Trang</th>
-                    <th className="pb-3 pr-4 text-right">Luot xem</th>
-                    <th className="pb-3 text-right">Khach</th>
+                    <th className="pb-3 pr-4 text-right">Lượt xem</th>
+                    <th className="pb-3 text-right">Khách</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -246,7 +246,7 @@ export default function AdminAnalyticsPage() {
               </table>
             ) : (
               <p className="py-8 text-center text-body-sm text-on-surface-variant">
-                Chua co du lieu
+                Chưa có dữ liệu
               </p>
             )}
           </div>
@@ -255,7 +255,7 @@ export default function AdminAnalyticsPage() {
         {/* Device breakdown */}
         <div className="rounded-2xl bg-surface-container-low p-6">
           <h2 className="font-headline text-title-md text-on-surface">
-            Thiet bi
+            Thiết bị
           </h2>
           <div className="mt-6 space-y-4">
             <DeviceBar
@@ -326,7 +326,7 @@ function StatCard({
           </span>
         )}
       </div>
-      <p className="mt-3 font-headline text-headline-md text-on-surface">
+      <p className="mt-3 font-body text-headline-md font-bold text-on-surface">
         {value.toLocaleString()}
       </p>
       <p className="mt-1 text-body-sm text-on-surface-variant">{label}</p>
@@ -403,7 +403,7 @@ function TrendChart({
               <div className="pointer-events-none absolute -top-16 z-10 hidden rounded-lg bg-inverse-surface px-3 py-2 text-label-sm text-inverse-on-surface shadow-lg group-hover:block">
                 <p>{d.date}</p>
                 <p>Xem: {d.views.toLocaleString()}</p>
-                <p>Khach: {d.unique.toLocaleString()}</p>
+                <p>Khách: {d.unique.toLocaleString()}</p>
               </div>
 
               {/* View bar */}

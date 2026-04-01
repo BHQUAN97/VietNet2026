@@ -13,7 +13,7 @@ import {
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
-import { PaginationDto } from '../../common/dto/pagination.dto';
+import { QueryCategoryDto } from './dto/query-category.dto';
 import { ok, paginated } from '../../common/helpers/response.helper';
 import { validateUlid } from '../../common/helpers/ulid.helper';
 import { Public } from '../../common/decorators/public.decorator';
@@ -34,10 +34,8 @@ export class CategoriesController {
    */
   @Get()
   @Public()
-  async findAll(
-    @Query() pagination: PaginationDto,
-    @Query('type') type?: CategoryType,
-  ) {
+  async findAll(@Query() query: QueryCategoryDto) {
+    const { type, ...pagination } = query;
     const result = await this.categoriesService.findAll(pagination, type);
     return paginated(result.data, result.meta);
   }

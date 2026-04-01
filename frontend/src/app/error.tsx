@@ -20,17 +20,17 @@ export default function Error({
   return (
     <PageContainer className="flex min-h-[70vh] flex-col items-center justify-center text-center">
       <p className="font-label text-label-lg uppercase tracking-label-wide text-error">
-        Loi he thong
+        Lỗi hệ thống
       </p>
       <h1 className="mt-4 font-headline text-display-md text-on-surface">
-        Da xay ra loi
+        Đã xảy ra lỗi
       </h1>
       <p className="mt-4 max-w-md text-body-lg text-on-surface-variant">
-        Xin loi, da co loi xay ra khi tai trang nay. Vui long thu lai.
+        Xin lỗi, đã có lỗi xảy ra khi tải trang này. Vui lòng thử lại.
       </p>
       <div className="mt-8">
         <Button variant="primary" size="lg" onClick={reset}>
-          Thu lai
+          Thử lại
         </Button>
       </div>
     </PageContainer>

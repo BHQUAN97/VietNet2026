@@ -31,10 +31,14 @@ export default function AdminLayout({
             <AdminSidebar />
             <div className="min-h-screen md:ml-[var(--sidebar-width)]">
               {/* Top bar with notification bell */}
-              <div className="flex items-center justify-end px-6 py-3 pl-16 md:pl-6">
+              <div className="flex items-center justify-between px-4 py-2.5 pl-14 md:justify-end md:px-6 md:pl-6 md:py-3">
+                <span className="font-body text-body-sm text-on-surface-variant md:hidden">
+                  Quản trị
+                </span>
                 <NotificationBell />
               </div>
-              <div className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-8">{children}</div>
+              {/* No footer in admin */}
+              <div className="mx-auto max-w-7xl px-4 pb-8 md:px-6">{children}</div>
             </div>
           </div>
         </AuthGuard>

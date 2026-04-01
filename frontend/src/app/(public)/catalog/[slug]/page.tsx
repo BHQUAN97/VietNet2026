@@ -9,7 +9,9 @@ import { productJsonLd } from '@/lib/jsonld'
 import { sanitizeHtml } from '@/lib/sanitize'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'
+import { getServerApiUrl } from '@/lib/api-url'
+
+const API_URL = getServerApiUrl()
 
 async function getProduct(slug: string) {
   try {
@@ -46,7 +48,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params
   const product = await getProduct(slug)
-  if (!product) return { title: 'San pham khong ton tai' }
+  if (!product) return { title: 'Sản phẩm không tồn tại' }
 
   const imageUrl = product.og_image?.preview_url || product.cover_image?.preview_url || ''
 
@@ -105,7 +107,7 @@ export default async function ProductDetailPage({
           {/* Breadcrumb */}
           <Breadcrumb
             items={[
-              { label: 'San pham', href: '/catalog' },
+              { label: 'Sản phẩm', href: '/catalog' },
               { label: product.name },
             ]}
             className="mb-6"
@@ -117,7 +119,7 @@ export default async function ProductDetailPage({
             className="mb-8 inline-flex items-center gap-2 text-body-md text-on-surface-variant transition-colors hover:text-primary"
           >
             <ArrowLeft className="h-4 w-4" />
-            Tat ca san pham
+            Tất cả sản phẩm
           </Link>
 
           <div className="grid gap-10 lg:grid-cols-2">
@@ -195,23 +197,23 @@ export default async function ProductDetailPage({
               {/* Specs */}
               <div className="mt-8 space-y-4 rounded-xl bg-surface-container-low p-6">
                 <h3 className="font-label text-label-lg uppercase tracking-label-wide text-on-surface">
-                  Thong so
+                  Thông số
                 </h3>
                 {product.material_type && (
                   <div className="flex justify-between">
-                    <span className="text-body-md text-on-surface-variant">Vat lieu</span>
+                    <span className="text-body-md text-on-surface-variant">Vật liệu</span>
                     <span className="text-body-md text-on-surface">{product.material_type}</span>
                   </div>
                 )}
                 {product.finish && (
                   <div className="flex justify-between">
-                    <span className="text-body-md text-on-surface-variant">Hoan thien</span>
+                    <span className="text-body-md text-on-surface-variant">Hoàn thiện</span>
                     <span className="text-body-md text-on-surface">{product.finish}</span>
                   </div>
                 )}
                 {dimensions && (
                   <div className="flex justify-between">
-                    <span className="text-body-md text-on-surface-variant">Kich thuoc</span>
+                    <span className="text-body-md text-on-surface-variant">Kích thước</span>
                     <span className="text-body-md text-on-surface">
                       {dimensions.width} x {dimensions.height}
                       {dimensions.depth ? ` x ${dimensions.depth}` : ''}{' '}
@@ -224,7 +226,7 @@ export default async function ProductDetailPage({
               {/* CTA */}
               <Link href="/contact" className="mt-8 inline-block">
                 <Button size="lg">
-                  Lien he tu van
+                  Liên hệ tư vấn
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </Link>
@@ -235,7 +237,7 @@ export default async function ProductDetailPage({
           {relatedProducts.length > 0 && (
             <div className="mt-20">
               <h2 className="mb-8 text-center font-headline text-headline-md text-on-surface">
-                San pham lien quan
+                Sản phẩm liên quan
               </h2>
               <div className="grid gap-6 grid-cols-2 lg:grid-cols-4">
                 {relatedProducts.map((rp: any) => (

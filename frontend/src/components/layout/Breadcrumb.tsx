@@ -24,7 +24,7 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
         href="/"
         className="text-on-surface-variant transition-colors hover:text-primary"
       >
-        Trang chu
+        Trang chủ
       </Link>
 
       {items.map((item, index) => (

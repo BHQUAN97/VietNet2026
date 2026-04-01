@@ -41,7 +41,7 @@ export default function AdminUsersPage() {
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-        'Khong the tai danh sach nguoi dung.'
+        'Không thể tải danh sách người dùng.'
       setError(message)
     } finally {
       setIsLoading(false)
@@ -81,7 +81,7 @@ export default function AdminUsersPage() {
     } catch (err: unknown) {
       const message =
         (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-        'Khong the xoa nguoi dung.'
+        'Không thể xóa người dùng.'
       setError(message)
       setDeletingUser(null)
     } finally {
@@ -96,17 +96,17 @@ export default function AdminUsersPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
         <div>
-          <h1 className="font-headline text-headline-lg text-on-surface">Nguoi dung</h1>
+          <h1 className="font-headline text-headline-lg text-on-surface">Người dùng</h1>
           <p className="mt-1 text-body-md text-on-surface-variant">
-            Quan ly tai khoan nguoi dung he thong.
+            Quản lý tài khoản người dùng hệ thống.
             {meta && (
-              <span className="ml-1 text-body-sm">({meta.total} nguoi dung)</span>
+              <span className="ml-1 text-body-sm">({meta.total} người dùng)</span>
             )}
           </p>
         </div>
         <Button variant="primary" size="md" onClick={handleCreate}>
           <Plus className="mr-2 h-4 w-4" />
-          Them nguoi dung
+          Thêm người dùng
         </Button>
       </div>
 
@@ -119,7 +119,7 @@ export default function AdminUsersPage() {
             onClick={() => setError(null)}
             className="ml-auto text-body-sm text-on-error-container underline"
           >
-            Dong
+            Đóng
           </button>
         </div>
       )}
@@ -143,7 +143,7 @@ export default function AdminUsersPage() {
             disabled={page <= 1}
             onClick={() => setPage((p) => Math.max(1, p - 1))}
           >
-            Truoc
+            Trước
           </Button>
           {Array.from({ length: totalPages }, (_, i) => i + 1)
             .filter((p) => {
@@ -171,7 +171,7 @@ export default function AdminUsersPage() {
                   onClick={() => setPage(item)}
                   className={`flex h-10 w-10 items-center justify-center rounded-xl text-body-sm font-medium transition-colors duration-200 ${
                     item === page
-                      ? 'bg-primary text-on-primary'
+                      ? 'bg-primary-container text-on-primary-container'
                       : 'text-on-surface-variant hover:bg-surface-container-high'
                   }`}
                 >
@@ -185,7 +185,7 @@ export default function AdminUsersPage() {
             disabled={page >= totalPages}
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
           >
-            Tiep
+            Tiếp
           </Button>
         </div>
       )}
@@ -203,12 +203,12 @@ export default function AdminUsersPage() {
         <div className="fixed inset-0 z-[var(--z-modal-backdrop)] flex items-center justify-center bg-on-surface/30 backdrop-blur-sm">
           <div className="mx-4 w-full max-w-md rounded-2xl bg-surface p-6 shadow-ambient-lg md:p-8">
             <h3 className="font-headline text-headline-sm text-on-surface">
-              Xac nhan xoa
+              Xác nhận xóa
             </h3>
             <p className="mt-3 text-body-md text-on-surface-variant">
-              Ban co chac chan muon xoa nguoi dung{' '}
+              Bạn có chắc chắn muốn xóa người dùng{' '}
               <span className="font-semibold text-on-surface">{deletingUser.full_name}</span>?
-              Hanh dong nay khong the hoan tac.
+              Hành động này không thể hoàn tác.
             </p>
             <div className="mt-6 flex items-center justify-end gap-3">
               <Button
@@ -216,14 +216,14 @@ export default function AdminUsersPage() {
                 onClick={() => setDeletingUser(null)}
                 disabled={isDeleting}
               >
-                Huy
+                Hủy
               </Button>
               <Button
                 variant="danger"
                 onClick={handleDeleteConfirm}
                 loading={isDeleting}
               >
-                Xoa nguoi dung
+                Xóa người dùng
               </Button>
             </div>
           </div>

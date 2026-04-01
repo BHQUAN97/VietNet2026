@@ -1,7 +1,9 @@
 import { MetadataRoute } from 'next'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://bhquan.site'
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api'
+import { getServerApiUrl } from '@/lib/api-url'
+
+const API_URL = getServerApiUrl()
 
 interface ApiItem {
   slug: string

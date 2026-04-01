@@ -13,7 +13,7 @@ import {
 import { ProjectsService } from './projects.service';
 import { CreateProjectDto } from './dto/create-project.dto';
 import { UpdateProjectDto } from './dto/update-project.dto';
-import { PaginationDto } from '../../common/dto/pagination.dto';
+import { QueryProjectDto, QueryProjectAdminDto } from './dto/query-project.dto';
 import { ok, paginated } from '../../common/helpers/response.helper';
 import { validateUlid } from '../../common/helpers/ulid.helper';
 import { Public } from '../../common/decorators/public.decorator';
@@ -34,13 +34,11 @@ export class ProjectsController {
    */
   @Get()
   @Public()
-  async findPublished(
-    @Query() pagination: PaginationDto,
-    @Query('category') categorySlug?: string,
-  ) {
+  async findPublished(@Query() query: QueryProjectDto) {
+    const { category, status, ...pagination } = query;
     const result = await this.projectsService.findPublished(
       pagination,
-      categorySlug,
+      category,
     );
     return paginated(result.data, result.meta);
   }
@@ -51,14 +49,11 @@ export class ProjectsController {
    */
   @Get('admin/list')
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  async findAllAdmin(
-    @Query() pagination: PaginationDto,
-    @Query('category_id') categoryId?: string,
-    @Query('status') status?: ProjectStatus,
-    @Query('is_featured') isFeatured?: string,
-  ) {
+  async findAllAdmin(@Query() query: QueryProjectAdminDto) {
+    const { category_id, status, is_featured, ...pagination } = query;
+
     // Validate category_id if provided
-    if (categoryId && !validateUlid(categoryId)) {
+    if (category_id && !validateUlid(category_id)) {
       throw new BadRequestException('Invalid category_id format');
     }
 
@@ -68,10 +63,10 @@ export class ProjectsController {
       is_featured?: boolean;
     } = {};
 
-    if (categoryId) filters.category_id = categoryId;
+    if (category_id) filters.category_id = category_id;
     if (status) filters.status = status;
-    if (isFeatured !== undefined) {
-      filters.is_featured = isFeatured === 'true';
+    if (is_featured !== undefined) {
+      filters.is_featured = is_featured === 'true';
     }
 
     const result = await this.projectsService.findAll(pagination, filters);

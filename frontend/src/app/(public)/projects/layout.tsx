@@ -1,9 +1,14 @@
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Du an noi that tieu bieu | VietNet Interior',
+  title: 'Dự án nội thất tiêu biểu',
   description:
-    'Kham pha cac du an thiet ke noi that da hoan thanh boi doi ngu VietNet Interior.',
+    'Khám phá các dự án thiết kế nội thất đã hoàn thành bởi đội ngũ VietNet Interior.',
+  openGraph: {
+    title: 'Dự án nội thất tiêu biểu | VietNet Interior',
+    description:
+      'Khám phá các dự án thiết kế nội thất đã hoàn thành bởi đội ngũ VietNet Interior.',
+  },
   alternates: {
     canonical: 'https://bhquan.site/projects',
   },

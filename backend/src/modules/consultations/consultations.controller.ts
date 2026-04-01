@@ -15,7 +15,7 @@ import { Throttle } from '@nestjs/throttler';
 import { ConsultationsService } from './consultations.service';
 import { CreateConsultationDto } from './dto/create-consultation.dto';
 import { UpdateConsultationDto } from './dto/update-consultation.dto';
-import { PaginationDto } from '../../common/dto/pagination.dto';
+import { QueryConsultationDto } from './dto/query-consultation.dto';
 import { Public } from '../../common/decorators/public.decorator';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
@@ -23,7 +23,6 @@ import { UserRole } from '../users/entities/user.entity';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { ok, paginated } from '../../common/helpers/response.helper';
-import { ConsultationStatus } from './entities/consultation.entity';
 
 @Controller('consultations')
 export class ConsultationsController {
@@ -54,11 +53,8 @@ export class ConsultationsController {
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  async findAllAdmin(
-    @Query() pagination: PaginationDto,
-    @Query('status') status?: ConsultationStatus,
-    @Query('search') search?: string,
-  ) {
+  async findAllAdmin(@Query() query: QueryConsultationDto) {
+    const { status, search, ...pagination } = query;
     const filters = { status, search };
     const result = await this.consultationsService.findAllAdmin(
       pagination,

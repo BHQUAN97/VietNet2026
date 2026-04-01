@@ -1,6 +1,7 @@
 import { Repository, DeepPartial, FindOptionsWhere } from 'typeorm';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { PaginationDto } from '../dto/pagination.dto';
+import { validateUlid } from '../helpers/ulid.helper';
 
 /**
  * Template Method pattern for CRUD services.
@@ -66,6 +67,10 @@ export abstract class BaseService<T extends { id: string }> {
   }
 
   async findById(id: string): Promise<T> {
+    if (!validateUlid(id)) {
+      throw new BadRequestException('Invalid ULID format');
+    }
+
     const entity = await this.repository.findOne({
       where: { id } as FindOptionsWhere<T>,
     });
