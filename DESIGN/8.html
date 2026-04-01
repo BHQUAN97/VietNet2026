@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>VietNet Admin Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;700&amp;family=Manrope:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "tertiary": "#24434b",
+                        "on-secondary-container": "#736155",
+                        "surface-tint": "#79573f",
+                        "inverse-on-surface": "#f3f0ee",
+                        "on-primary-fixed": "#2d1604",
+                        "on-tertiary-container": "#b0d0db",
+                        "inverse-surface": "#30302f",
+                        "inverse-primary": "#eabda0",
+                        "surface-container-high": "#eae8e6",
+                        "tertiary-fixed": "#c8e8f3",
+                        "on-surface": "#1b1c1b",
+                        "secondary": "#6d5b4f",
+                        "outline-variant": "#d4c3ba",
+                        "on-secondary-fixed": "#261910",
+                        "error": "#ba1a1a",
+                        "surface-bright": "#fcf9f7",
+                        "outline": "#82746d",
+                        "on-background": "#1b1c1b",
+                        "on-tertiary-fixed-variant": "#2d4b54",
+                        "primary-container": "#6f4e37",
+                        "on-surface-variant": "#50453e",
+                        "primary-fixed": "#ffdcc6",
+                        "tertiary-container": "#3c5a63",
+                        "on-tertiary-fixed": "#001f27",
+                        "on-primary-fixed-variant": "#5f402a",
+                        "background": "#fcf9f7",
+                        "surface-variant": "#e5e2e0",
+                        "primary": "#553722",
+                        "surface-dim": "#dcd9d8",
+                        "on-error-container": "#93000a",
+                        "surface-container-highest": "#e5e2e0",
+                        "on-error": "#ffffff",
+                        "on-secondary": "#ffffff",
+                        "primary-fixed-dim": "#eabda0",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-container": "#eec1a4",
+                        "on-secondary-fixed-variant": "#544339",
+                        "tertiary-fixed-dim": "#acccd6",
+                        "secondary-fixed": "#f7decf",
+                        "on-primary": "#ffffff",
+                        "surface-container-lowest": "#ffffff",
+                        "surface": "#fcf9f7",
+                        "error-container": "#ffdad6",
+                        "surface-container-low": "#f6f3f1",
+                        "secondary-fixed-dim": "#dac2b4",
+                        "secondary-container": "#f7decf",
+                        "surface-container": "#f0edeb"
+                    },
+                    fontFamily: {
+                        "headline": ["Noto Serif"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    },
+                    borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Manrope', sans-serif;
+            background-color: #FCF9F7;
+        }
+        .serif-font { font-family: 'Noto Serif', serif; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface">
+<div class="flex min-h-screen">
+<!-- SideNavBar -->
+<aside class="h-screen w-64 border-r border-[#6F4E37]/10 bg-[#FCF9F7] flex flex-col p-6 space-y-4 fixed left-0 top-0 z-50 overflow-y-auto">
+<div class="mb-8">
+<h1 class="text-xl font-['Noto_Serif'] font-bold text-[#553722]">VietNet Admin</h1>
+<p class="text-[10px] font-['Manrope'] font-bold uppercase tracking-widest text-[#553722]/60">Interior Management</p>
+</div>
+<nav class="flex-1 space-y-2">
+<!-- Dashboard Active -->
+<a class="flex items-center space-x-3 px-4 py-3 bg-[#6F4E37] text-white rounded-lg shadow-lg transition-all duration-200 ease-in-out" href="#">
+<span class="material-symbols-outlined" data-icon="dashboard">dashboard</span>
+<span class="font-['Manrope'] text-sm font-semibold">Dashboard</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-3 text-[#553722]/60 hover:bg-[#6F4E37]/5 hover:text-[#553722] transition-all duration-200 ease-in-out hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="description">description</span>
+<span class="font-['Manrope'] text-sm font-semibold">Articles</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-3 text-[#553722]/60 hover:bg-[#6F4E37]/5 hover:text-[#553722] transition-all duration-200 ease-in-out hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="group">group</span>
+<span class="font-['Manrope'] text-sm font-semibold">Accounts</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-3 text-[#553722]/60 hover:bg-[#6F4E37]/5 hover:text-[#553722] transition-all duration-200 ease-in-out hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+<span class="font-['Manrope'] text-sm font-semibold">Analytics</span>
+</a>
+<a class="flex items-center space-x-3 px-4 py-3 text-[#553722]/60 hover:bg-[#6F4E37]/5 hover:text-[#553722] transition-all duration-200 ease-in-out hover:translate-x-1" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-['Manrope'] text-sm font-semibold">Settings</span>
+</a>
+</nav>
+<div class="pt-6">
+<button class="w-full py-3 bg-primary-container text-white rounded-xl font-['Manrope'] font-bold text-xs uppercase tracking-widest shadow-lg hover:opacity-90 transition-opacity">
+                    New Project
+                </button>
+</div>
+<div class="pt-8 mt-auto flex items-center space-x-3 border-t border-[#6F4E37]/10">
+<img alt="Admin User Avatar" class="w-10 h-10 rounded-full object-cover border border-[#6F4E37]/20" data-alt="professional headshot of a middle-aged male architect in a studio setting with soft natural window lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAyN_dgWSm6A59YPu_7xiy1A237SqQYSPJbOiRS6ctsNAuUqmXTu2CSkE9-vzdstbitVGoZ8HMgaTfjlL-4G85mC8e86S5S1nztnLalMVuO9RWPM_U6O-ZdL0KtCpl61VWkZd2OIR1jPt6AciFG-NYhC6GvRxqmn6SJksXwLhpVYarSw2Oc3j4b4RSxySTlo9KjCgGghtYR1gYJv5ImD0oD3o5XzvvNGr9mv3laMhzDkYNpviTYl2Eb2eLGLOsu4neZnr6KlcawzV0E"/>
+<div>
+<p class="text-xs font-bold text-[#553722]">Alexander V.</p>
+<p class="text-[10px] text-[#553722]/50">Principal Architect</p>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 ml-64 p-10">
+<!-- Top Header -->
+<header class="flex justify-between items-end mb-12">
+<div>
+<span class="label-md text-on-surface-variant tracking-[0.2em] mb-2 block uppercase">Overview</span>
+<h2 class="display-lg serif-font text-primary leading-none">Dashboard</h2>
+</div>
+<div class="flex items-center space-x-4">
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline" data-icon="search">search</span>
+<input class="pl-10 pr-4 py-2 bg-surface-container-lowest border-none rounded-full text-sm font-body focus:ring-1 focus:ring-primary/20 w-64 shadow-sm" placeholder="Search insights..." type="text"/>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full bg-surface-container-low text-primary hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+</div>
+</header>
+<!-- Quick Action Buttons (Asymmetric Row) -->
+<section class="grid grid-cols-12 gap-6 mb-12">
+<div class="col-span-12 md:col-span-4 bg-primary-container p-6 rounded-xl text-white flex flex-col justify-between h-40 group cursor-pointer overflow-hidden relative shadow-xl">
+<div class="z-10">
+<span class="material-symbols-outlined text-4xl mb-4" data-icon="add_business">add_business</span>
+<p class="font-headline text-xl">Create New Listing</p>
+</div>
+<div class="absolute -right-4 -bottom-4 opacity-10 transition-transform group-hover:scale-110">
+<span class="material-symbols-outlined text-[120px]" data-icon="add_business">add_business</span>
+</div>
+</div>
+<div class="col-span-12 md:col-span-4 bg-surface-container-lowest p-6 rounded-xl border border-outline-variant/20 flex flex-col justify-between h-40 group cursor-pointer hover:bg-surface-container-low transition-colors shadow-sm">
+<div>
+<span class="material-symbols-outlined text-primary text-4xl mb-4" data-icon="contact_support">contact_support</span>
+<p class="font-headline text-xl text-primary">Pending Reviews</p>
+</div>
+<p class="text-on-surface-variant text-sm font-medium">12 tasks remaining</p>
+</div>
+<div class="col-span-12 md:col-span-4 bg-tertiary-container p-6 rounded-xl text-on-tertiary-container flex flex-col justify-between h-40 group cursor-pointer hover:opacity-90 transition-opacity shadow-sm">
+<div>
+<span class="material-symbols-outlined text-4xl mb-4" data-icon="auto_awesome">auto_awesome</span>
+<p class="font-headline text-xl">Generate Report</p>
+</div>
+<span class="material-symbols-outlined self-end" data-icon="arrow_forward">arrow_forward</span>
+</div>
+</section>
+<!-- Visitor Stats (Bento Grid Style) -->
+<section class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm">
+<p class="label-md text-outline mb-1 uppercase tracking-widest">Total Visitors</p>
+<div class="flex items-baseline space-x-2">
+<span class="text-3xl font-bold text-primary">24,812</span>
+<span class="text-[10px] text-green-600 font-bold bg-green-50 px-1.5 py-0.5 rounded">+14%</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm">
+<p class="label-md text-outline mb-1 uppercase tracking-widest">Avg. Session</p>
+<div class="flex items-baseline space-x-2">
+<span class="text-3xl font-bold text-primary">4m 32s</span>
+<span class="text-[10px] text-primary/50 font-bold bg-primary/5 px-1.5 py-0.5 rounded">Stable</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm">
+<p class="label-md text-outline mb-1 uppercase tracking-widest">Conversion</p>
+<div class="flex items-baseline space-x-2">
+<span class="text-3xl font-bold text-primary">3.2%</span>
+<span class="text-[10px] text-error font-bold bg-error/5 px-1.5 py-0.5 rounded">-2%</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm">
+<p class="label-md text-outline mb-1 uppercase tracking-widest">Inquiries</p>
+<div class="flex items-baseline space-x-2">
+<span class="text-3xl font-bold text-primary">156</span>
+<span class="text-[10px] text-green-600 font-bold bg-green-50 px-1.5 py-0.5 rounded">+8%</span>
+</div>
+</div>
+</section>
+<!-- Bottom Content: Recent Consultations & Project Performance -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<!-- Recent Consultations -->
+<section class="lg:col-span-2">
+<div class="flex items-center justify-between mb-6">
+<h3 class="headline-md serif-font text-primary">Recent Consultations</h3>
+<button class="text-xs font-bold uppercase tracking-widest text-primary/60 hover:text-primary transition-colors">View All</button>
+</div>
+<div class="bg-surface-container-lowest rounded-2xl shadow-sm overflow-hidden">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low">
+<th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-outline">Client</th>
+<th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-outline">Project Type</th>
+<th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-outline">Status</th>
+<th class="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-outline text-right">Date</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/10">
+<tr class="hover:bg-surface-container-low transition-colors group cursor-pointer">
+<td class="px-6 py-4">
+<div class="flex items-center space-x-3">
+<div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">MN</div>
+<span class="text-sm font-semibold text-on-surface">Minh Nguyen</span>
+</div>
+</td>
+<td class="px-6 py-4 text-sm text-on-surface-variant">Residential Penthouse</td>
+<td class="px-6 py-4">
+<span class="inline-block px-3 py-1 bg-green-50 text-green-700 text-[10px] font-bold rounded-full uppercase">Scheduled</span>
+</td>
+<td class="px-6 py-4 text-sm text-on-surface-variant text-right">Oct 24, 2023</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors group cursor-pointer">
+<td class="px-6 py-4">
+<div class="flex items-center space-x-3">
+<div class="w-8 h-8 rounded-full bg-secondary/10 flex items-center justify-center text-secondary font-bold text-xs">LL</div>
+<span class="text-sm font-semibold text-on-surface">Linh Le</span>
+</div>
+</td>
+<td class="px-6 py-4 text-sm text-on-surface-variant">Modern Office Space</td>
+<td class="px-6 py-4">
+<span class="inline-block px-3 py-1 bg-amber-50 text-amber-700 text-[10px] font-bold rounded-full uppercase">Pending</span>
+</td>
+<td class="px-6 py-4 text-sm text-on-surface-variant text-right">Oct 23, 2023</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors group cursor-pointer">
+<td class="px-6 py-4">
+<div class="flex items-center space-x-3">
+<div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">TT</div>
+<span class="text-sm font-semibold text-on-surface">Tran Thu</span>
+</div>
+</td>
+<td class="px-6 py-4 text-sm text-on-surface-variant">Boutique Hotel Lobby</td>
+<td class="px-6 py-4">
+<span class="inline-block px-3 py-1 bg-surface-container-high text-on-surface-variant text-[10px] font-bold rounded-full uppercase">Completed</span>
+</td>
+<td class="px-6 py-4 text-sm text-on-surface-variant text-right">Oct 21, 2023</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors group cursor-pointer">
+<td class="px-6 py-4">
+<div class="flex items-center space-x-3">
+<div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-xs">DH</div>
+<span class="text-sm font-semibold text-on-surface">Duy Hoang</span>
+</div>
+</td>
+<td class="px-6 py-4 text-sm text-on-surface-variant">Kitchen Renovation</td>
+<td class="px-6 py-4">
+<span class="inline-block px-3 py-1 bg-green-50 text-green-700 text-[10px] font-bold rounded-full uppercase">Scheduled</span>
+</td>
+<td class="px-6 py-4 text-sm text-on-surface-variant text-right">Oct 20, 2023</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<!-- Project Highlight / Analytics -->
+<section>
+<div class="flex items-center justify-between mb-6">
+<h3 class="headline-md serif-font text-primary">Top Performing</h3>
+</div>
+<div class="bg-surface-container-lowest rounded-2xl shadow-sm overflow-hidden">
+<div class="relative h-48">
+<img alt="Featured Interior Project" class="w-full h-full object-cover" data-alt="high-end minimalist living room with beige linen sofa, natural wood accents, and large windows with soft morning light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAssF19t22gyG2NV6cRjqNOEiXr5A3aCHl_TCCDZm7whXQNKPwc0dsuypgChAMip3O7KMT2oQlfDH-7zojWGjc8Hw6bFx9lBN6RtWhL2-1Uk3oIQPaiRFTE0yUmQZ1bwoKvbtQOlZFCbeAfZ2EXN611j_OkOlbfzdRE7tP9p5OdspEhbNW99ljaehxzb0IY-pWlAEceBY0AixQNWm7NaAZl0FB20ZkjnonLuMFkZ3o4pcXEVY0EuhC0-yTtBlVYfuOqTnRT-RDo8bqZ"/>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 to-transparent"></div>
+<div class="absolute bottom-4 left-4">
+<span class="label-md text-white/70 uppercase">Villa Series</span>
+<p class="title-lg text-white serif-font font-bold leading-tight">Saigon Serenity Villa</p>
+</div>
+</div>
+<div class="p-6">
+<div class="space-y-4">
+<div>
+<div class="flex justify-between text-xs font-bold mb-1">
+<span class="text-outline uppercase tracking-wider">Engagement</span>
+<span class="text-primary">94%</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-low rounded-full overflow-hidden">
+<div class="h-full bg-primary-container w-[94%]"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-xs font-bold mb-1">
+<span class="text-outline uppercase tracking-wider">Inquiry Rate</span>
+<span class="text-primary">12%</span>
+</div>
+<div class="h-1.5 w-full bg-surface-container-low rounded-full overflow-hidden">
+<div class="h-full bg-primary-container w-[12%]"></div>
+</div>
+</div>
+</div>
+<button class="mt-8 w-full py-3 text-sm font-bold border border-outline-variant/30 rounded-lg text-primary hover:bg-surface-container-low transition-colors">
+                                View Detailed Insights
+                            </button>
+</div>
+</div>
+</section>
+</div>
+</main>
+</div>
+</body></html>
