@@ -93,7 +93,7 @@ export function AdminSidebar() {
       </nav>
 
       {/* User info + Logout */}
-      <div className="border-t border-surface-container-high/50 px-3 py-3">
+      <div className="mt-auto bg-surface-container-low/30 px-3 py-3">
         {user && (
           <div className="mb-2 px-4">
             <p className="truncate text-body-sm font-semibold text-on-surface">
@@ -145,7 +145,7 @@ export function AdminSidebar() {
       </aside>
 
       {/* Desktop sidebar */}
-      <aside className="fixed left-0 top-0 z-[var(--z-sticky)] hidden h-full w-[var(--sidebar-width)] flex-col border-r border-surface-container-high/30 bg-surface-container-lowest md:flex">
+      <aside className="fixed left-0 top-0 z-[var(--z-sticky)] hidden h-full w-[var(--sidebar-width)] flex-col bg-surface-container-lowest shadow-ambient-sm md:flex">
         {sidebarContent}
       </aside>
     </>

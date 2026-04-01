@@ -143,7 +143,7 @@ export function Footer() {
         </div>
 
         {/* Bottom Bar */}
-        <div className="flex flex-col items-center gap-2 border-t border-inverse-on-surface/5 py-5 sm:flex-row sm:justify-between">
+        <div className="flex flex-col items-center gap-2 pt-6 mt-6 sm:flex-row sm:justify-between" style={{ background: 'linear-gradient(to bottom, rgba(255,255,255,0.03), transparent)' }}>
           <p className="text-[12px] text-inverse-on-surface/30">
             &copy; {new Date().getFullYear()} {SITE_NAME}
           </p>

@@ -67,6 +67,7 @@ function FullCtaSection({ config }: Props) {
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
+  const [formError, setFormError] = useState('')
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) {
     setFormData(prev => ({ ...prev, [e.target.name]: e.target.value }))
@@ -77,11 +78,12 @@ function FullCtaSection({ config }: Props) {
     if (!formData.name.trim() || !formData.email.trim()) return
 
     setIsSubmitting(true)
+    setFormError('')
     try {
       await api.post('/consultations', formData)
       setIsSuccess(true)
     } catch {
-      // Im lang xu ly loi, form van giu data
+      setFormError('Gửi yêu cầu thất bại. Vui lòng thử lại sau.')
     } finally {
       setIsSubmitting(false)
     }
@@ -213,6 +215,12 @@ function FullCtaSection({ config }: Props) {
                   className={`${inputClasses} resize-none`}
                 />
               </div>
+
+              {formError && (
+                <p className="text-body-sm text-error bg-error/10 rounded-xl px-4 py-2">
+                  {formError}
+                </p>
+              )}
 
               <Button
                 type="submit"

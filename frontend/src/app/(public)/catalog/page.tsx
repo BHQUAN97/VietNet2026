@@ -397,7 +397,7 @@ function CatalogPagination({
       <button
         onClick={() => onPageChange(currentPage - 1)}
         disabled={currentPage <= 1}
-        className="flex h-12 w-12 items-center justify-center rounded-full border border-outline-variant/20 text-primary transition-all duration-300 hover:bg-primary hover:text-on-primary disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-primary"
+        className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-container-low text-primary transition-all duration-300 hover:bg-primary hover:text-on-primary disabled:opacity-30 disabled:hover:bg-surface-container-low disabled:hover:text-primary"
         aria-label="Trang trước"
       >
         <ChevronLeft className="h-5 w-5" />
@@ -412,7 +412,7 @@ function CatalogPagination({
       <button
         onClick={() => onPageChange(currentPage + 1)}
         disabled={currentPage >= totalPages}
-        className="flex h-12 w-12 items-center justify-center rounded-full border border-outline-variant/20 text-primary transition-all duration-300 hover:bg-primary hover:text-on-primary disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-primary"
+        className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-container-low text-primary transition-all duration-300 hover:bg-primary hover:text-on-primary disabled:opacity-30 disabled:hover:bg-surface-container-low disabled:hover:text-primary"
         aria-label="Trang sau"
       >
         <ChevronRight className="h-5 w-5" />

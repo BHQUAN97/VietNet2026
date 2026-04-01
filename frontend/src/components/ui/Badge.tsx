@@ -32,17 +32,17 @@ const badgeVariants = cva(
         tertiary:
           'bg-tertiary-container/20 text-on-tertiary-container',
 
-        // Outline style — nhẹ nhàng hơn
+        // Tonal style — nhe nhang hon (khong dung border theo No-Line Rule)
         'outline-success':
-          'bg-transparent border border-success/30 text-success',
+          'bg-success/5 text-success',
         'outline-warning':
-          'bg-transparent border border-warning/30 text-warning',
+          'bg-warning/5 text-warning',
         'outline-error':
-          'bg-transparent border border-error/30 text-error',
+          'bg-error/5 text-error',
         'outline-info':
-          'bg-transparent border border-info/30 text-info',
+          'bg-info/5 text-info',
         'outline-neutral':
-          'bg-transparent border border-neutral-status/30 text-neutral-status',
+          'bg-neutral-status/5 text-neutral-status',
       },
       size: {
         sm: 'px-2 py-0.5 text-label-sm rounded-md',
