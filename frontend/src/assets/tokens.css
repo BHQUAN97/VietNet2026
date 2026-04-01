@@ -255,8 +255,8 @@
   --max-width-text: 65ch;
   --max-width-mobile: 32rem;
   --sidebar-width: 256px;
-  --nav-height: 72px;
-  --bottom-nav-height: 64px;
+  --nav-height: 64px;
+  --bottom-nav-height: 80px;
 
   /* -- OPACITY (ghost borders, overlays) ------------------- */
   --opacity-ghost-border: 0.2;

@@ -188,6 +188,10 @@ const config: Config = {
           from: { opacity: '0', transform: 'translateY(-8px)' },
           to:   { opacity: '1', transform: 'translateY(0)' },
         },
+        'slide-up': {
+          from: { opacity: '0', transform: 'translateY(16px)' },
+          to:   { opacity: '1', transform: 'translateY(0)' },
+        },
       },
       animation: {
         'widget-pulse':    'custom-pulse 3s infinite ease-in-out',
@@ -200,6 +204,7 @@ const config: Config = {
         'line-expand':     'line-expand 0.8s cubic-bezier(0.22,1,0.36,1) forwards',
         'subtle-zoom':     'subtle-zoom 1.2s ease forwards',
         'mobile-menu':     'mobile-menu 0.25s ease forwards',
+        'slide-up':        'slide-up 0.25s cubic-bezier(0.22,1,0.36,1) forwards',
       },
 
       aspectRatio: {
