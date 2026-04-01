@@ -444,7 +444,7 @@ export default function AdminPagesPage() {
 
             {/* Section config editor */}
             {expandedSection === section.id && (
-              <div className="border-t border-outline-variant/10 px-4 py-4">
+              <div className="mt-2 bg-surface-container-low/50 rounded-xl px-4 py-4">
                 <SectionConfigEditor
                   section={section}
                   index={index}

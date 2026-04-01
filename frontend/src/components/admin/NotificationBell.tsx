@@ -118,8 +118,8 @@ export function NotificationBell() {
               </div>
             ) : (
               <ul>
-                {notifications.map((n, i) => (
-                  <NotificationItem key={i} notification={n} formatTime={formatTime} getTypeLabel={getTypeLabel} getTypeColor={getTypeColor} />
+                {notifications.map((n) => (
+                  <NotificationItem key={n.id || `${n.type}-${n.created_at}`} notification={n} formatTime={formatTime} getTypeLabel={getTypeLabel} getTypeColor={getTypeColor} />
                 ))}
               </ul>
             )}

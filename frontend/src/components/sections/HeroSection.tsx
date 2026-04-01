@@ -35,7 +35,7 @@ export function HeroSection({ config }: Props) {
       {/* Content — mobile: bottom-aligned, desktop: centered */}
       <div className="relative z-10 w-full max-w-4xl px-6 md:px-4 md:text-center absolute bottom-0 left-0 pb-8 md:static md:pb-0">
         {/* Label badge — hidden on mobile, visible on desktop */}
-        <span className="hidden md:inline-block font-label text-label-sm tracking-[0.3em] text-surface-bright uppercase mb-6 bg-primary-container/30 backdrop-blur-md px-4 py-2 rounded-full border border-on-primary/10">
+        <span className="hidden md:inline-block font-label text-label-sm tracking-[0.3em] text-surface-bright uppercase mb-6 bg-primary-container/30 backdrop-blur-md px-4 py-2 rounded-full outline outline-1 outline-on-primary/10">
           {config.label}
         </span>
         {/* Mobile label */}

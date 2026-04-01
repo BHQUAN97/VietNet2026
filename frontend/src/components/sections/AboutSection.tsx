@@ -39,7 +39,7 @@ export function AboutSection({ config }: Props) {
 
           {/* Stats */}
           {config.stats && config.stats.length > 0 && (
-            <div className="grid grid-cols-2 gap-8 pt-8 border-t border-outline-variant/10">
+            <div className="grid grid-cols-2 gap-8 pt-8 bg-surface-container-low/40 rounded-xl p-6 -mx-2">
               {config.stats.map((stat, i) => (
                 <div key={i}>
                   <p className="text-headline-lg md:text-display-md font-headline font-bold text-primary">

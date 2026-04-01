@@ -37,13 +37,13 @@ const widgets = [
     href: ZALO_URL,
     label: 'Chat Zalo',
     icon: ZaloIcon,
-    bgClass: 'bg-[#0068FF] hover:bg-[#0055CC]',
+    bgClass: 'bg-tertiary hover:bg-tertiary/90',
   },
   {
     href: MESSENGER_URL,
     label: 'Chat Messenger',
     icon: MessengerIcon,
-    bgClass: 'bg-[#0084FF] hover:bg-[#006ACC]',
+    bgClass: 'bg-secondary hover:bg-secondary/90',
   },
   {
     href: PHONE_NUMBER,

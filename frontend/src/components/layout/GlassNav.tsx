@@ -35,9 +35,7 @@ export function GlassNav() {
           : 'rgba(252, 249, 247, 0.7)',
         backdropFilter: `blur(${isScrolled ? '24px' : '16px'})`,
         WebkitBackdropFilter: `blur(${isScrolled ? '24px' : '16px'})`,
-        borderBottom: isScrolled
-          ? '1px solid rgba(212, 195, 186, 0.15)'
-          : '1px solid rgba(212, 195, 186, 0.05)',
+        borderBottom: 'none',
       }}
     >
       <nav className="mx-auto flex h-full max-w-[1920px] items-center justify-between px-4 md:px-8 lg:px-12">
