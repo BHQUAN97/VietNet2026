@@ -9,7 +9,12 @@
     "start:prod": "node dist/main",
     "lint": "eslint 'src/**/*.ts'",
     "type-check": "tsc --noEmit",
-    "migration:run": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:run -d src/database/data-source.ts"
+    "migration:run": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js migration:run -d src/database/data-source.ts",
+    "migration:run:prod": "node ./node_modules/typeorm/cli.js migration:run -d dist/database/data-source.js",
+    "seed:admin": "ts-node -r tsconfig-paths/register src/scripts/seed-admin.ts",
+    "seed:data": "ts-node -r tsconfig-paths/register src/scripts/seed-data.ts",
+    "seed:admin:prod": "node dist/scripts/seed-admin.js",
+    "seed:data:prod": "node dist/scripts/seed-data.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.500.0",
