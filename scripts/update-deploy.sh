@@ -1,13 +1,12 @@
 #!/bin/bash
 # ============================================================
-# VietNet Interior — UPDATE DEPLOY (Khong setup lai tu dau)
+# VietNet Interior — UPDATE DEPLOY
 # ============================================================
-# Chay tu may local khi can cap nhat code len VPS da deploy
-# Chi build lai + upload + restart, KHONG tao DB/Nginx/SSL moi
+# Chay tu may local — chi build + upload + restart
+# Dung chung MySQL/Redis cua WebPhoto, KHONG setup lai DB/Nginx/SSL
 #
 # Usage:
 #   bash scripts/update-deploy.sh <vps-ip>
-#   bash scripts/update-deploy.sh 213.163.199.176
 # ============================================================
 
 set -e
@@ -41,11 +40,10 @@ log "Build OK"
 
 # 2. Upload
 step "2/5 — Upload to VPS"
-ssh "${VPS_HOST}" "rm -rf ${APP_DIR}/backend/src ${APP_DIR}/backend/dist ${APP_DIR}/frontend/src ${APP_DIR}/frontend/.next"
+ssh "${VPS_HOST}" "rm -rf ${APP_DIR}/backend/src ${APP_DIR}/backend/dist ${APP_DIR}/frontend/src"
 
 echo "  Uploading backend..."
 scp -r "$ROOT_DIR/backend/src" "${VPS_HOST}:${APP_DIR}/backend/"
-scp -r "$ROOT_DIR/backend/dist" "${VPS_HOST}:${APP_DIR}/backend/" 2>/dev/null || true
 scp "$ROOT_DIR/backend/package.json" "${VPS_HOST}:${APP_DIR}/backend/"
 scp "$ROOT_DIR/backend/package-lock.json" "${VPS_HOST}:${APP_DIR}/backend/"
 
@@ -63,11 +61,11 @@ log "Upload OK"
 step "3/5 — DB Changelog"
 CHANGELOG_DIR="$ROOT_DIR/db/changelog"
 if [ -d "$CHANGELOG_DIR" ] && ls "$CHANGELOG_DIR"/V*.sql 1>/dev/null 2>&1; then
-  MYSQL_PWD=$(ssh "${VPS_HOST}" "grep '^MYSQL_PASSWORD=' ${APP_DIR}/.env | cut -d= -f2-")
+  VIETNET_DB_PASS=$(ssh "${VPS_HOST}" "grep '^VIETNET_DB_PASSWORD=' ${APP_DIR}/.env | cut -d= -f2-")
   for f in $(find "$CHANGELOG_DIR" -name 'V*.sql' -type f | sort); do
     FNAME=$(basename "$f")
     echo -n "  $FNAME ... "
-    ssh "${VPS_HOST}" "docker exec -i vietnet-mysql mysql -u vietnet -p${MYSQL_PWD} vietnet" < "$f" 2>&1 && echo "OK" || echo "SKIP"
+    ssh "${VPS_HOST}" "docker exec -i photo-mysql mysql -u vietnet -p'${VIETNET_DB_PASS}' vietnet" < "$f" 2>&1 && echo "OK" || echo "SKIP"
   done
   log "DB Changelog done"
 else
@@ -91,11 +89,10 @@ ssh "${VPS_HOST}" "
   curl -sf http://localhost:4100/api/health && echo '' || echo 'API not ready'
   curl -sf http://localhost:3100 > /dev/null && echo 'Frontend: OK' || echo 'Frontend not ready'
   echo ''
-  cd ${APP_DIR} && docker compose ps --format 'table {{.Names}}\t{{.Status}}'
+  docker ps --filter 'name=vietnet-' --format 'table {{.Names}}\t{{.Status}}'
 "
 log "Update deploy done!"
 
 echo ""
-echo "=== Update complete ==="
-echo "  https://bhquan.store"
+echo "=== Update complete — https://bhquan.store ==="
 echo ""

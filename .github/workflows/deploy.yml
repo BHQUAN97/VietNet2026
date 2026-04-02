@@ -100,11 +100,11 @@ jobs:
           APP_DIR="/opt/vietnet"
 
           if [ -d "db/changelog" ] && ls db/changelog/V*.sql 1>/dev/null 2>&1; then
-            MYSQL_PWD=$(ssh $VPS "grep '^MYSQL_PASSWORD=' ${APP_DIR}/.env | cut -d= -f2-")
+            VIETNET_DB_PWD=$(ssh $VPS "grep '^VIETNET_DB_PASSWORD=' ${APP_DIR}/.env | cut -d= -f2-")
             for f in $(find db/changelog -name 'V*.sql' -type f | sort); do
               FNAME=$(basename "$f")
               echo -n "  $FNAME ... "
-              ssh $VPS "docker exec -i vietnet-mysql mysql -u vietnet -p${MYSQL_PWD} vietnet" < "$f" 2>&1 && echo "OK" || echo "SKIP"
+              ssh $VPS "docker exec -i photo-mysql mysql -u vietnet -p${VIETNET_DB_PWD} vietnet" < "$f" 2>&1 && echo "OK" || echo "SKIP"
             done
           else
             echo "No changelog files (skip)"
