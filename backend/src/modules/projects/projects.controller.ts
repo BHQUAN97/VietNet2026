@@ -1,13 +1,17 @@
 import {
   Controller,
   Get,
+  Post,
   Patch,
   Param,
   Body,
   Query,
+  Req,
   BadRequestException,
 } from '@nestjs/common';
 import { ProjectsService } from './projects.service';
+import { CreateProjectDto } from './dto/create-project.dto';
+import { UpdateProjectDto } from './dto/update-project.dto';
 import { QueryProjectDto, QueryProjectAdminDto } from './dto/query-project.dto';
 import { ok, paginated } from '../../common/helpers/response.helper';
 import { Public } from '../../common/decorators/public.decorator';
@@ -21,6 +25,34 @@ export class ProjectsController extends CrudController<any> {
 
   constructor(protected readonly service: ProjectsService) {
     super();
+  }
+
+  // ─── Create project (admin) ─────────────────────────────────
+
+  @Post()
+  @AdminOnly()
+  async create(@Body() dto: CreateProjectDto, @Req() req: any) {
+    const project = await this.service.create({
+      ...dto,
+      created_by: req.user?.id,
+    });
+    return ok(project, 'Project created successfully');
+  }
+
+  // ─── Update project (admin) ─────────────────────────────────
+
+  @Patch(':id')
+  @AdminOnly()
+  async update(
+    @Param('id', ParseUlidPipe) id: string,
+    @Body() dto: UpdateProjectDto,
+    @Req() req: any,
+  ) {
+    const project = await this.service.update(id, {
+      ...dto,
+      updated_by: req.user?.id,
+    });
+    return ok(project, 'Project updated successfully');
   }
 
   // ─── Override: public list voi category slug + is_featured ───

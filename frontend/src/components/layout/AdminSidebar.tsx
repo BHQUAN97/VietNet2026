@@ -43,7 +43,9 @@ export function AdminSidebar() {
       {/* Logo */}
       <div className="flex h-[var(--nav-height)] items-center justify-between px-5">
         <Link
-          href="/admin"
+          href="/"
+          target="_blank"
+          rel="noopener noreferrer"
           className="flex items-center gap-2.5 font-headline text-title-lg text-primary transition-opacity hover:opacity-80"
           onClick={() => setMobileOpen(false)}
         >

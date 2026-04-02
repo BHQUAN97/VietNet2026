@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { usePathname } from 'next/navigation'
+import { X, MessageCircle } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const ZALO_URL = process.env.NEXT_PUBLIC_ZALO_URL || 'https://zalo.me/vietnetinterior'
@@ -49,56 +50,123 @@ const widgets = [
     href: PHONE_NUMBER,
     label: 'Gọi điện',
     icon: PhoneIcon,
-    bgClass: 'bg-primary-container hover:bg-primary animate-widget-pulse',
+    bgClass: 'bg-primary-container hover:bg-primary',
   },
 ]
 
 export function FloatingWidgets() {
   const pathname = usePathname()
   const [hoveredIndex, setHoveredIndex] = useState<number | null>(null)
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   if (pathname.startsWith('/admin')) {
     return null
   }
 
   return (
-    <div
-      className="fixed right-4 z-[var(--z-fixed)] flex flex-col gap-3 bottom-[calc(var(--bottom-nav-height)+1rem)] md:bottom-8"
-      aria-label="Liên hệ nhanh"
-      role="group"
-    >
-      {widgets.map((widget, index) => {
-        const Icon = widget.icon
-        return (
-          <div key={widget.label} className="relative flex items-center justify-end">
-            {/* Tooltip */}
-            <span
-              className={cn(
-                'absolute right-14 whitespace-nowrap rounded-lg bg-inverse-surface px-3 py-1.5 font-label text-label-lg text-inverse-on-surface shadow-ambient-sm transition-all duration-300',
-                hoveredIndex === index
-                  ? 'translate-x-0 opacity-100'
-                  : 'translate-x-2 opacity-0 pointer-events-none'
-              )}
-            >
-              {widget.label}
-            </span>
-            <a
-              href={widget.href}
-              target={widget.href.startsWith('tel:') ? undefined : '_blank'}
-              rel={widget.href.startsWith('tel:') ? undefined : 'noopener noreferrer'}
-              aria-label={widget.label}
-              onMouseEnter={() => setHoveredIndex(index)}
-              onMouseLeave={() => setHoveredIndex(null)}
-              className={cn(
-                'flex h-11 w-11 items-center justify-center rounded-full text-on-primary shadow-ambient-md transition-all duration-300 hover:scale-110 hover:shadow-ambient-lg md:h-12 md:w-12',
-                widget.bgClass
-              )}
-            >
-              <Icon className="h-6 w-6" />
-            </a>
-          </div>
-        )
-      })}
-    </div>
+    <>
+      {/* ── Desktop: hien tat ca 3 buttons ── */}
+      <div
+        className="fixed right-4 z-[var(--z-fixed)] hidden flex-col gap-3 md:bottom-8 md:flex"
+        aria-label="Liên hệ nhanh"
+        role="group"
+      >
+        {widgets.map((widget, index) => {
+          const Icon = widget.icon
+          return (
+            <div key={widget.label} className="relative flex items-center justify-end">
+              <span
+                className={cn(
+                  'absolute right-14 whitespace-nowrap rounded-lg bg-inverse-surface px-3 py-1.5 font-label text-label-lg text-inverse-on-surface shadow-ambient-sm transition-all duration-300',
+                  hoveredIndex === index
+                    ? 'translate-x-0 opacity-100'
+                    : 'translate-x-2 opacity-0 pointer-events-none'
+                )}
+              >
+                {widget.label}
+              </span>
+              <a
+                href={widget.href}
+                target={widget.href.startsWith('tel:') ? undefined : '_blank'}
+                rel={widget.href.startsWith('tel:') ? undefined : 'noopener noreferrer'}
+                aria-label={widget.label}
+                onMouseEnter={() => setHoveredIndex(index)}
+                onMouseLeave={() => setHoveredIndex(null)}
+                className={cn(
+                  'flex h-12 w-12 items-center justify-center rounded-full text-on-primary shadow-ambient-md transition-all duration-300 hover:scale-110 hover:shadow-ambient-lg',
+                  widget.bgClass
+                )}
+              >
+                <Icon className="h-6 w-6" />
+              </a>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* ── Mobile: 1 FAB toggle, click expand 3 actions ── */}
+      <div
+        className="fixed right-4 z-[var(--z-fixed)] bottom-[calc(var(--bottom-nav-height)+1rem)] md:hidden"
+        aria-label="Liên hệ nhanh"
+        role="group"
+      >
+        {/* Expanded actions */}
+        <div className={cn(
+          'flex flex-col gap-2.5 mb-2.5 transition-all duration-300 origin-bottom',
+          mobileOpen
+            ? 'scale-100 opacity-100 pointer-events-auto'
+            : 'scale-75 opacity-0 pointer-events-none'
+        )}>
+          {widgets.map((widget) => {
+            const Icon = widget.icon
+            return (
+              <a
+                key={widget.label}
+                href={widget.href}
+                target={widget.href.startsWith('tel:') ? undefined : '_blank'}
+                rel={widget.href.startsWith('tel:') ? undefined : 'noopener noreferrer'}
+                aria-label={widget.label}
+                onClick={() => setMobileOpen(false)}
+                className={cn(
+                  'flex h-11 w-11 items-center justify-center rounded-full text-on-primary shadow-ambient-md transition-all duration-200 active:scale-90',
+                  widget.bgClass
+                )}
+              >
+                <Icon className="h-5 w-5" />
+              </a>
+            )
+          })}
+        </div>
+
+        {/* Toggle FAB */}
+        <button
+          onClick={() => setMobileOpen(!mobileOpen)}
+          aria-label={mobileOpen ? 'Đóng liên hệ' : 'Liên hệ nhanh'}
+          className={cn(
+            'flex h-12 w-12 items-center justify-center rounded-full shadow-ambient-lg transition-all duration-300 active:scale-90',
+            mobileOpen
+              ? 'bg-inverse-surface text-inverse-on-surface rotate-0'
+              : 'bg-primary-container text-on-primary rotate-0 animate-widget-pulse'
+          )}
+        >
+          <MessageCircle className={cn(
+            'h-6 w-6 absolute transition-all duration-300',
+            mobileOpen ? 'rotate-90 opacity-0 scale-75' : 'rotate-0 opacity-100 scale-100'
+          )} />
+          <X className={cn(
+            'h-6 w-6 absolute transition-all duration-300',
+            mobileOpen ? 'rotate-0 opacity-100 scale-100' : '-rotate-90 opacity-0 scale-75'
+          )} />
+        </button>
+      </div>
+
+      {/* Mobile backdrop khi FAB mo */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-[calc(var(--z-fixed)-1)] md:hidden"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+    </>
   )
 }

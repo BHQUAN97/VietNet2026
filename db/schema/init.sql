@@ -54,3 +54,4 @@ SOURCE tables/page_view_daily.sql;
 
 -- 14. Independent logging tables (no FK)
 SOURCE tables/email_logs.sql;
+SOURCE tables/app_logs.sql;
