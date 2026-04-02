@@ -1,0 +1,119 @@
+name: Auto Deploy
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '*.md'
+      - 'docs/**'
+
+# Cancel in-progress deploy khi co push moi
+concurrency:
+  group: deploy
+  cancel-in-progress: true
+
+jobs:
+  # CI phai pass truoc khi deploy
+  typecheck:
+    name: Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: cd frontend && npm ci && npx tsc --noEmit
+      - run: cd backend && npm ci && npx tsc --noEmit
+
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+    needs: typecheck
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Build Backend
+        run: |
+          cd backend
+          npm ci
+          npm run build
+
+      - name: Build Frontend
+        run: |
+          cd frontend
+          npm ci
+          npm run build
+
+      - name: Setup SSH
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+
+      - name: Upload to VPS
+        run: |
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          APP_DIR="/opt/vietnet"
+
+          # Clean old builds
+          ssh $VPS "rm -rf ${APP_DIR}/backend/src ${APP_DIR}/backend/dist ${APP_DIR}/frontend/src"
+
+          # Upload backend
+          scp -r backend/src $VPS:${APP_DIR}/backend/
+          scp -r backend/dist $VPS:${APP_DIR}/backend/
+          scp backend/package.json $VPS:${APP_DIR}/backend/
+          scp backend/package-lock.json $VPS:${APP_DIR}/backend/
+
+          # Upload frontend
+          scp -r frontend/src $VPS:${APP_DIR}/frontend/
+          scp frontend/package.json $VPS:${APP_DIR}/frontend/
+          scp frontend/package-lock.json $VPS:${APP_DIR}/frontend/
+          scp frontend/next.config.js $VPS:${APP_DIR}/frontend/
+          scp frontend/tailwind.config.ts $VPS:${APP_DIR}/frontend/
+          scp -r frontend/public $VPS:${APP_DIR}/frontend/ 2>/dev/null || true
+
+      - name: Rebuild & Restart containers
+        run: |
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          APP_DIR="/opt/vietnet"
+
+          ssh $VPS "
+            cd ${APP_DIR}
+            docker compose build backend frontend 2>&1 | tail -5
+            docker compose up -d backend frontend
+          "
+
+      - name: Run DB Changelog
+        run: |
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          APP_DIR="/opt/vietnet"
+
+          if [ -d "db/changelog" ] && ls db/changelog/V*.sql 1>/dev/null 2>&1; then
+            MYSQL_PWD=$(ssh $VPS "grep '^MYSQL_PASSWORD=' ${APP_DIR}/.env | cut -d= -f2-")
+            for f in $(find db/changelog -name 'V*.sql' -type f | sort); do
+              FNAME=$(basename "$f")
+              echo -n "  $FNAME ... "
+              ssh $VPS "docker exec -i vietnet-mysql mysql -u vietnet -p${MYSQL_PWD} vietnet" < "$f" 2>&1 && echo "OK" || echo "SKIP"
+            done
+          else
+            echo "No changelog files (skip)"
+          fi
+
+      - name: Health Check
+        run: |
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          sleep 8
+          ssh $VPS "curl -sf http://localhost:4100/api/health && echo ''"
+          ssh $VPS "curl -sf http://localhost:3100 > /dev/null && echo 'Frontend: OK'"
+          echo "Deploy successful!"

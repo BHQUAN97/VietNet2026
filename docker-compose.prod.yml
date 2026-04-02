@@ -1,0 +1,110 @@
+# ============================================
+# VietNet Interior — PRODUCTION
+# Chạy cùng VPS với WebPhoto (bhquan.site)
+# Domain: bhquan.store
+# Ports: 4100 (API), 3100 (SSR) — tránh xung đột WebPhoto (4000/4001)
+# ============================================
+
+services:
+
+  # ─── MySQL 8 ────────────────────────────
+  mysql:
+    image: mysql:8.0
+    container_name: vietnet-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-vietnet_root}
+      MYSQL_DATABASE: vietnet
+      MYSQL_USER: vietnet
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-vietnet_dev}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./backups/mysql:/backups
+    command: >
+      --default-authentication-plugin=mysql_native_password
+      --innodb-buffer-pool-size=1G
+      --innodb-log-file-size=128M
+      --max-connections=100
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --slow-query-log=ON
+      --long-query-time=2
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - backend
+
+  # ─── Redis 7 ────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: vietnet-redis
+    restart: always
+    command: redis-server --maxmemory 256mb --maxmemory-policy noeviction --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
+
+  # ─── NestJS API Server ──────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: vietnet-api
+    restart: always
+    ports:
+      - '4100:4000'
+    env_file:
+      - ./backend/.env
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD-SHELL', 'wget -qO- http://localhost:4000/api/health || exit 1']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - backend
+      - frontend
+
+  # ─── Next.js SSR Frontend ───────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: vietnet-frontend
+    restart: always
+    ports:
+      - '3100:3000'
+    environment:
+      NEXT_PUBLIC_API_URL: https://${DOMAIN:-bhquan.store}/api
+      NEXT_PUBLIC_SITE_URL: https://${DOMAIN:-bhquan.store}
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ['CMD', 'curl', '-f', 'http://localhost:3000']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - frontend
+
+volumes:
+  mysql_data:
+  redis_data:
+
+networks:
+  backend:
+  frontend:
