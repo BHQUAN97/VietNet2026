@@ -83,6 +83,11 @@ jobs:
           scp frontend/tailwind.config.ts $VPS:${APP_DIR}/frontend/
           scp -r frontend/public $VPS:${APP_DIR}/frontend/ 2>/dev/null || true
 
+      - name: Update Nginx config
+        run: |
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          scp nginx/conf.d/bhquan.store.conf $VPS:/opt/webphoto/nginx/conf.d/bhquan.store.conf
+
       - name: Rebuild & Restart containers
         run: |
           VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
@@ -92,6 +97,13 @@ jobs:
             cd ${APP_DIR}
             docker compose build backend frontend 2>&1 | tail -5
             docker compose up -d backend frontend
+
+            # Ensure photo-nginx on vietnet network
+            docker inspect photo-nginx --format '{{range \$k,\$v := .NetworkSettings.Networks}}{{\$k}} {{end}}' | grep -q vietnet_frontend || \
+              docker network connect vietnet_frontend photo-nginx
+
+            # Reload nginx
+            docker exec photo-nginx nginx -s reload 2>/dev/null || true
           "
 
       - name: Run DB Changelog

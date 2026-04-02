@@ -3,7 +3,7 @@
 # VietNet Interior — UPDATE DEPLOY
 # ============================================================
 # Chay tu may local — chi build + upload + restart
-# Dung chung MySQL/Redis cua WebPhoto, KHONG setup lai DB/Nginx/SSL
+# Nginx chay trong Docker (photo-nginx), config tai /opt/webphoto/nginx/conf.d/
 #
 # Usage:
 #   bash scripts/update-deploy.sh <vps-ip>
@@ -15,6 +15,7 @@ VPS_IP="${1:?Usage: bash scripts/update-deploy.sh <vps-ip>}"
 VPS_USER="${VPS_USER:-root}"
 VPS_HOST="${VPS_USER}@${VPS_IP}"
 APP_DIR="/opt/vietnet"
+WEBPHOTO_DIR="/opt/webphoto"
 
 GREEN='\033[0;32m'
 CYAN='\033[0;36m'
@@ -32,14 +33,14 @@ echo "  VPS: ${VPS_HOST}"
 echo ""
 
 # 1. Build
-step "1/5 — Build local"
+step "1/6 — Build local"
 cd "$ROOT_DIR/backend" && npm run build
 cd "$ROOT_DIR/frontend" && npm run build
 cd "$ROOT_DIR"
 log "Build OK"
 
 # 2. Upload
-step "2/5 — Upload to VPS"
+step "2/6 — Upload to VPS"
 ssh "${VPS_HOST}" "rm -rf ${APP_DIR}/backend/src ${APP_DIR}/backend/dist ${APP_DIR}/frontend/src"
 
 echo "  Uploading backend..."
@@ -58,7 +59,7 @@ scp -r "$ROOT_DIR/frontend/public" "${VPS_HOST}:${APP_DIR}/frontend/" 2>/dev/nul
 log "Upload OK"
 
 # 3. DB Changelog
-step "3/5 — DB Changelog"
+step "3/6 — DB Changelog"
 CHANGELOG_DIR="$ROOT_DIR/db/changelog"
 if [ -d "$CHANGELOG_DIR" ] && ls "$CHANGELOG_DIR"/V*.sql 1>/dev/null 2>&1; then
   VIETNET_DB_PASS=$(ssh "${VPS_HOST}" "grep '^VIETNET_DB_PASSWORD=' ${APP_DIR}/.env | cut -d= -f2-")
@@ -72,23 +73,33 @@ else
   log "No changelog files (skip)"
 fi
 
-# 4. Rebuild + Restart
-step "4/5 — Rebuild Docker + Restart"
+# 4. Update Nginx config (nếu thay đổi)
+step "4/6 — Update Nginx config"
+scp "$ROOT_DIR/nginx/conf.d/bhquan.store.conf" "${VPS_HOST}:${WEBPHOTO_DIR}/nginx/conf.d/bhquan.store.conf"
+ssh "${VPS_HOST}" "docker exec photo-nginx nginx -t 2>&1 | tail -1 && docker exec photo-nginx nginx -s reload 2>&1"
+log "Nginx config updated"
+
+# 5. Rebuild + Restart
+step "5/6 — Rebuild Docker + Restart"
 ssh "${VPS_HOST}" "
   cd ${APP_DIR}
   docker compose build backend frontend 2>&1 | tail -5
   docker compose up -d backend frontend
-  echo 'Containers restarted'
+
+  # Đảm bảo photo-nginx trên vietnet_frontend network
+  if ! docker inspect photo-nginx --format '{{range \$k,\$v := .NetworkSettings.Networks}}{{\$k}} {{end}}' | grep -q vietnet_frontend; then
+    docker network connect vietnet_frontend photo-nginx
+    echo 'photo-nginx reconnected to vietnet_frontend'
+  fi
 "
 log "Containers restarted"
 
-# 5. Health check
-step "5/5 — Health check"
+# 6. Health check
+step "6/6 — Health check"
 sleep 8
 ssh "${VPS_HOST}" "
   curl -sf http://localhost:4100/api/health && echo '' || echo 'API not ready'
-  curl -sf http://localhost:3100 > /dev/null && echo 'Frontend: OK' || echo 'Frontend not ready'
-  echo ''
+  curl -sf -o /dev/null -w 'HTTPS: %{http_code}\n' https://bhquan.store/ || true
   docker ps --filter 'name=vietnet-' --format 'table {{.Names}}\t{{.Status}}'
 "
 log "Update deploy done!"

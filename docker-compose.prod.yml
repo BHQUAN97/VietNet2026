@@ -1,9 +1,8 @@
 # ============================================
 # VietNet Interior — PRODUCTION
 # Chạy cùng VPS với WebPhoto (bhquan.site)
-# Dùng chung MySQL (photo-mysql) + Redis (photo-redis) của WebPhoto
+# Dùng chung MySQL (photo-mysql), Redis (photo-redis), Nginx (photo-nginx)
 # Domain: bhquan.store
-# Ports: 4100 (API), 3100 (SSR)
 # ============================================
 
 services:
@@ -48,7 +47,7 @@ services:
       retries: 3
     networks:
       - webphoto_backend
-      - frontend
+      - vietnet_frontend
 
   # ─── Next.js SSR Frontend ───────────────
   frontend:
@@ -71,11 +70,13 @@ services:
       timeout: 10s
       retries: 3
     networks:
-      - frontend
+      - vietnet_frontend
 
 networks:
-  # Join network của WebPhoto để access photo-mysql + photo-redis
+  # Dùng chung network của WebPhoto
   webphoto_backend:
     external: true
     name: webphoto_backend
-  frontend:
+  # Network riêng — photo-nginx cũng join network này (xem WebPhoto docker-compose)
+  vietnet_frontend:
+    name: vietnet_frontend

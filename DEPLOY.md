@@ -1,148 +1,104 @@
 # VIETNET INTERIOR — DEPLOYMENT GUIDE
 
-> Domain: bhquan.store | VPS: cùng server với WebPhoto (bhquan.site)
-> Dùng chung MySQL (photo-mysql) + Redis (photo-redis)
+> Domain: bhquan.store | VPS: 188.166.190.81 (shared with WebPhoto bhquan.site)
 
 ---
 
-## Tổng quan kiến trúc Production
+## Kiến trúc Production
 
 ```
-  Browser (https://bhquan.store)
-       │
-       ▼
-  Cloudflare DNS (DNS only)
-       │
-       ▼
-  VPS Ubuntu (shared with WebPhoto)
+  VPS Ubuntu (188.166.190.81)
   ┌──────────────────────────────────────────────┐
-  │  Nginx (BT Panel — host)                     │
-  │  ├─ bhquan.site  (WebPhoto)                  │
-  │  │   ├─ /        → SPA static                │
-  │  │   ├─ /api/*   → proxy :4000               │
-  │  │   └─ /ws/*    → proxy :4001               │
-  │  │                                            │
-  │  ├─ bhquan.store (VietNet)                    │
-  │  │   ├─ /        → proxy :3100 (Next.js SSR) │
-  │  │   ├─ /api/*   → proxy :4100 (NestJS)      │
-  │  │   └─ /ws/*    → proxy :4100               │
-  │  │                                            │
-  │  Shared Infrastructure (Docker)               │
-  │  ┌─────────────────────────────────────┐      │
-  │  │ photo-mysql  :3306 (MySQL 8)        │      │
-  │  │   ├─ DB: photo_storage (WebPhoto)   │      │
-  │  │   └─ DB: vietnet (VietNet)          │      │
-  │  │ photo-redis  :6379 (Redis 7)        │      │
-  │  └─────────────────────────────────────┘      │
+  │  photo-nginx (Docker) :80/:443               │
+  │  ├─ bhquan.site  → photo-api:4000 (WebPhoto) │
+  │  │                 + static /usr/share/nginx  │
+  │  └─ bhquan.store → vietnet-api:4000 (API)    │
+  │                    + vietnet-frontend:3000    │
   │                                               │
-  │  WebPhoto Containers                          │
-  │  ┌─────────────────────────────────────┐      │
-  │  │ photo-api    :4000 (Express)        │      │
-  │  │ photo-worker (BullMQ)               │      │
-  │  └─────────────────────────────────────┘      │
+  │  Shared (WebPhoto owns)                       │
+  │  ├─ photo-mysql  :3306                        │
+  │  │   ├─ DB: photo_storage                     │
+  │  │   └─ DB: vietnet                           │
+  │  ├─ photo-redis  :6379                        │
+  │  └─ photo-nginx  (serves both domains)        │
   │                                               │
   │  VietNet Containers                           │
-  │  ┌─────────────────────────────────────┐      │
-  │  │ vietnet-api      :4100→4000 (NestJS)│      │
-  │  │ vietnet-frontend :3100→3000 (Next)  │      │
-  │  └─────────────────────────────────────┘      │
+  │  ├─ vietnet-api      :4100→4000 (NestJS)     │
+  │  └─ vietnet-frontend :3100→3000 (Next.js)    │
+  │                                               │
+  │  Docker Networks                              │
+  │  ├─ webphoto_backend   (mysql, redis, api)    │
+  │  ├─ webphoto_frontend  (photo-nginx, api)     │
+  │  └─ vietnet_frontend   (photo-nginx, vietnet) │
   └──────────────────────────────────────────────┘
 ```
 
-### Port Map
+### Nginx routing (Docker, không phải host)
 
-| Service | WebPhoto | VietNet | Ghi chú |
-|---------|----------|---------|---------|
-| API | 4000 | 4100 | Cùng host, khác port |
-| WebSocket | 4001 | 4100 | VietNet WS qua API port |
-| Frontend | — (static) | 3100 | WebPhoto serve static |
-| MySQL | photo-mysql:3306 | **shared** | DB: `vietnet` |
-| Redis | photo-redis:6379 | **shared** | Cùng instance |
+Config tại: `/opt/webphoto/nginx/conf.d/bhquan.store.conf`
+Proxy dùng **container name** (không phải localhost):
+- `/api/*` → `http://vietnet-api:4000`
+- `/socket.io/*` → `http://vietnet-api:4000`
+- `/_next/static/*` → `http://vietnet-frontend:3000` (cache immutable)
+- `/*` → `http://vietnet-frontend:3000` (SSR)
 
 ---
 
-## Deploy lần đầu
+## Deploy
 
+### Lần đầu
 ```bash
-bash scripts/quick-deploy.sh <VPS_IP> bhquan.store
+bash scripts/quick-deploy.sh 188.166.190.81 bhquan.store
 ```
-
-Script tự động:
-1. Kiểm tra WebPhoto (photo-mysql, photo-redis) đang chạy
-2. Build FE + BE trên máy local
-3. Upload lên VPS `/opt/vietnet/`
-4. Tạo DB `vietnet` + user trong photo-mysql
-5. Build Docker images, join WebPhoto network
-6. Chạy DB migrations
-7. Cấu hình Nginx + SSL
-8. Health check
 
 ### Cập nhật code
-
 ```bash
-bash scripts/update-deploy.sh <VPS_IP>
+bash scripts/update-deploy.sh 188.166.190.81
 ```
 
-### Auto Deploy (GitHub Actions)
+### Auto Deploy
+Push to `main` → GitHub Actions → deploy
 
-Push to `main` → typecheck → deploy
-
-Secrets cần set: `SSH_PRIVATE_KEY`, `VPS_HOST`, `VPS_USER`
+Secrets: `SSH_PRIVATE_KEY`, `VPS_HOST`, `VPS_USER`
 
 ---
 
-## Quản lý Production
+## Quản lý
 
 ```bash
-ssh root@<VPS_IP>
+ssh root@188.166.190.81
 cd /opt/vietnet
 
-# Trạng thái
-docker ps --filter 'name=vietnet-'
+docker compose ps
 docker compose logs -f backend
 docker compose logs -f frontend
-
-# Restart
 docker compose restart backend frontend
 
-# DB backup (dùng chung photo-mysql)
-docker exec photo-mysql mysqldump -u root -p"<ROOT_PASS>" vietnet \
+# Nginx config (trong WebPhoto dir)
+vim /opt/webphoto/nginx/conf.d/bhquan.store.conf
+docker exec photo-nginx nginx -t && docker exec photo-nginx nginx -s reload
+
+# DB backup
+docker exec photo-mysql mysqldump -u root -p"<PASS>" vietnet \
   --single-transaction | gzip > backup_vietnet_$(date +%Y%m%d).sql.gz
 ```
-
----
-
-## Biến môi trường (.env)
-
-| Biến | Mô tả |
-|------|--------|
-| `DOMAIN` | bhquan.store |
-| `VIETNET_DB_PASSWORD` | Password cho user `vietnet` trong photo-mysql |
-| `JWT_SECRET` | JWT signing secret |
-| `REVALIDATE_SECRET` | ISR revalidation |
-| `R2_ACCESS_KEY_ID` | Cloudflare R2 |
-| `R2_SECRET_ACCESS_KEY` | Cloudflare R2 |
-| `R2_ENDPOINT` | R2 S3 endpoint |
-| `R2_PUBLIC_URL` | R2 public CDN URL |
-| `RESEND_API_KEY` | Email service |
 
 ---
 
 ## Troubleshooting
 
 ```bash
-# API không start
+# API logs
 docker compose logs backend --tail 50
 
-# Frontend 502
-docker compose logs frontend --tail 50
+# Nginx 502 — check network
+docker inspect photo-nginx --format '{{range $k,$v := .NetworkSettings.Networks}}{{$k}} {{end}}'
+# Phải có: webphoto_frontend, vietnet_frontend
+# Nếu thiếu: docker network connect vietnet_frontend photo-nginx
 
-# Kiểm tra kết nối MySQL
-docker exec vietnet-api wget -qO- http://localhost:4000/api/health
-
-# Kiểm tra network
-docker network inspect webphoto_backend
-
-# Port conflict
-ss -tlnp | grep -E ':(3100|4100|4000|4001) '
+# SSL cert renew
+certbot renew
+CERT_VOL=$(docker volume inspect webphoto_certbot_data --format '{{.Mountpoint}}')
+cp -rL /etc/letsencrypt/live/bhquan.store/* $CERT_VOL/live/bhquan.store/
+docker exec photo-nginx nginx -s reload
 ```
