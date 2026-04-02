@@ -7,122 +7,79 @@ import {
   Param,
   Body,
   Query,
-  UseGuards,
-  BadRequestException,
 } from '@nestjs/common';
 import { ArticlesService } from './articles.service';
 import { CreateArticleDto } from './dto/create-article.dto';
 import { UpdateArticleDto } from './dto/update-article.dto';
-import { PaginationDto } from '../../common/dto/pagination.dto';
+import { QueryArticleDto, QueryArticleAdminDto } from './dto/query-article.dto';
 import { ok, paginated } from '../../common/helpers/response.helper';
-import { validateUlid } from '../../common/helpers/ulid.helper';
 import { Public } from '../../common/decorators/public.decorator';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { UserRole } from '../users/entities/user.entity';
-import { ArticleStatus } from './entities/article.entity';
+import { AdminOnly, EditorOnly } from '../../common/decorators/admin-only.decorator';
+import { ParseUlidPipe } from '../../common/pipes/parse-ulid.pipe';
+import { CrudController } from '../../common/base/base-crud.controller';
 
 @Controller('articles')
-@UseGuards(JwtAuthGuard, RolesGuard)
-export class ArticlesController {
-  constructor(private readonly articlesService: ArticlesService) {}
+export class ArticlesController extends CrudController<any> {
+  protected readonly entityName = 'Article';
 
-  @Get()
+  constructor(protected readonly service: ArticlesService) {
+    super();
+  }
+
+  // ─── Override: public list voi category slug filter ──────────
+
   @Public()
-  async findPublished(
-    @Query() pagination: PaginationDto,
-    @Query('category') categorySlug?: string,
-  ) {
-    const result = await this.articlesService.findPublished(
-      pagination,
-      categorySlug,
-    );
+  @Get()
+  async findPublished(@Query() query: QueryArticleDto) {
+    const { category, is_featured, status, ...pagination } = query;
+    const filters = { category, is_featured, status };
+    const result = await this.service.findPublished(pagination, filters);
     return paginated(result.data, result.meta);
   }
+
+  // ─── Override: admin list voi filters ────────────────────────
 
   @Get('admin/list')
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  async findAllAdmin(
-    @Query() pagination: PaginationDto,
-    @Query('category_id') categoryId?: string,
-    @Query('status') status?: ArticleStatus,
-    @Query('is_featured') isFeatured?: string,
-  ) {
-    if (categoryId && !validateUlid(categoryId)) {
-      throw new BadRequestException('Invalid category_id format');
-    }
-
-    const filters: {
-      category_id?: string;
-      status?: ArticleStatus;
-      is_featured?: boolean;
-    } = {};
-
-    if (categoryId) filters.category_id = categoryId;
-    if (status) filters.status = status;
-    if (isFeatured !== undefined) {
-      filters.is_featured = isFeatured === 'true';
-    }
-
-    const result = await this.articlesService.findAll(pagination, filters);
+  @AdminOnly()
+  async findAllAdmin(@Query() query: QueryArticleAdminDto) {
+    const { category_id, is_featured, status, search, ...pagination } = query;
+    const filters = { category_id, status, is_featured };
+    const result = await this.service.findAll(pagination, filters);
     return paginated(result.data, result.meta);
   }
 
-  @Get(':slug')
+  // ─── Override: detail + view count ───────────────────────────
+
   @Public()
+  @Get(':slug')
   async findBySlug(@Param('slug') slug: string) {
-    const article = await this.articlesService.findBySlug(slug);
-
-    this.articlesService.incrementViewCount(article.id).catch(() => {});
-
+    const article = await this.service.findPublishedBySlug(slug);
+    this.service.incrementViewCount(article.id).catch(() => {});
     return ok(article);
   }
 
-  @Get(':id/related')
+  // ─── Article-specific: related ───────────────────────────────
+
   @Public()
-  async findRelated(@Param('id') id: string) {
-    if (!validateUlid(id)) {
-      throw new BadRequestException('Invalid article ID format');
-    }
-    const related = await this.articlesService.findRelated(id);
+  @Get(':id/related')
+  async findRelated(@Param('id', ParseUlidPipe) id: string) {
+    const related = await this.service.findRelated(id);
     return ok(related);
   }
 
+  // ─── Override: EditorOnly cho create/update ──────────────────
+
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.EDITOR)
+  @EditorOnly()
   async create(@Body() dto: CreateArticleDto) {
-    const article = await this.articlesService.create(dto);
+    const article = await this.service.create(dto);
     return ok(article, 'Article created successfully');
   }
 
   @Patch(':id')
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.EDITOR)
-  async update(@Param('id') id: string, @Body() dto: UpdateArticleDto) {
-    if (!validateUlid(id)) {
-      throw new BadRequestException('Invalid article ID format');
-    }
-    const article = await this.articlesService.update(id, dto);
+  @EditorOnly()
+  async update(@Param('id', ParseUlidPipe) id: string, @Body() dto: UpdateArticleDto) {
+    const article = await this.service.update(id, dto);
     return ok(article, 'Article updated successfully');
-  }
-
-  @Patch(':id/publish')
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  async publish(@Param('id') id: string) {
-    if (!validateUlid(id)) {
-      throw new BadRequestException('Invalid article ID format');
-    }
-    const article = await this.articlesService.publish(id);
-    return ok(article, 'Article published successfully');
-  }
-
-  @Delete(':id')
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  async remove(@Param('id') id: string) {
-    if (!validateUlid(id)) {
-      throw new BadRequestException('Invalid article ID format');
-    }
-    await this.articlesService.softDelete(id);
-    return ok(null, 'Article deleted successfully');
   }
 }

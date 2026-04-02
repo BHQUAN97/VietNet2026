@@ -1,13 +1,12 @@
-import { IsOptional, IsString, IsEnum } from 'class-validator';
-import { PaginationDto } from '../../../common/dto/pagination.dto';
-import { ProductStatus } from '../entities/product.entity';
+import { IsOptional, IsString } from 'class-validator';
+import { PublishableFilterDto } from '../../../common/dto/base-filter.dto';
 
-/** Query DTO cho GET /products (public) */
-export class QueryProductDto extends PaginationDto {
-  @IsOptional()
-  @IsString()
-  category_id?: string;
-
+/**
+ * Query DTO cho GET /products (public + admin).
+ * Ke thua PublishableFilterDto: status, search, category_id, is_featured, page, limit, sort, order.
+ * Chi them cac field rieng cua Product: material_type, finish.
+ */
+export class QueryProductDto extends PublishableFilterDto {
   @IsOptional()
   @IsString()
   material_type?: string;
@@ -17,13 +16,5 @@ export class QueryProductDto extends PaginationDto {
   finish?: string;
 }
 
-/** Query DTO cho GET /products/admin/list */
-export class QueryProductAdminDto extends QueryProductDto {
-  @IsOptional()
-  @IsEnum(ProductStatus)
-  status?: ProductStatus;
-
-  @IsOptional()
-  @IsString()
-  search?: string;
-}
+/** Query DTO cho GET /products/admin/list — dung chung QueryProductDto */
+export class QueryProductAdminDto extends QueryProductDto {}

@@ -5,6 +5,8 @@ import { Phone, Mail, MapPin, Clock, CheckCircle, AlertTriangle, Send } from 'lu
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
 import api from '@/lib/api'
+import { getErrorMessage } from '@/lib/error'
+import { validateRequired, validateEmail, validateFields } from '@/lib/form-validation'
 
 interface FormData {
   name: string
@@ -68,10 +70,6 @@ const CONTACT_INFO = [
   },
 ]
 
-function validateEmail(email: string): boolean {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
-}
-
 const inputBaseClasses =
   'w-full rounded-xl bg-surface-container-low px-4 py-3 text-body-sm text-on-surface placeholder:text-on-surface-variant/40 outline-none transition-all duration-300 focus:bg-surface focus:shadow-ambient-sm focus:ring-2 focus:ring-primary/15 min-h-[44px] md:text-body-md md:py-3.5 md:min-h-[48px]'
 
@@ -107,17 +105,12 @@ export function ConsultationForm() {
   function validate(): boolean {
     const newErrors: FormErrors = {}
 
-    if (!formData.name.trim()) {
-      newErrors.name = 'Vui lòng nhập họ tên'
-    }
-    if (!formData.email.trim()) {
-      newErrors.email = 'Vui lòng nhập email'
-    } else if (!validateEmail(formData.email)) {
-      newErrors.email = 'Email không hợp lệ'
-    }
-    if (!formData.message.trim()) {
-      newErrors.message = 'Vui lòng nhập nội dung'
-    }
+    if (!formData.name.trim()) newErrors.name = 'Vui lòng nhập họ tên'
+
+    const emailErr = validateEmail(formData.email)
+    if (emailErr) newErrors.email = emailErr
+
+    if (!formData.message.trim()) newErrors.message = 'Vui lòng nhập nội dung'
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -136,13 +129,11 @@ export function ConsultationForm() {
 
     try {
       const { _honey, ...submitData } = formData
+      // Chi gui form data thuc — khong gui honeypot value len backend
       await api.post('/consultations', submitData)
       setIsSuccess(true)
     } catch (err: unknown) {
-      const message =
-        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ||
-        'Có lỗi xảy ra. Vui lòng thử lại sau.'
-      setApiError(message)
+      setApiError(getErrorMessage(err))
     } finally {
       setIsSubmitting(false)
     }
@@ -383,7 +374,7 @@ export function ConsultationForm() {
           </div>
 
           {/* Honeypot - hidden from real users */}
-          <div className="absolute -left-[9999px] opacity-0" aria-hidden="true">
+          <div className="sr-only" aria-hidden="true">
             <input
               type="text"
               name="_honey"

@@ -9,6 +9,7 @@ import {
   HttpStatus,
   UnauthorizedException,
 } from '@nestjs/common';
+import { Throttle } from '@nestjs/throttler';
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
@@ -30,6 +31,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Public()
+  @Throttle({ default: { ttl: 60000, limit: 10 } }) // 10 req/min per IP — chong brute force
   @Post('login')
   @HttpCode(HttpStatus.OK)
   async login(
@@ -50,6 +52,7 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle({ default: { ttl: 60000, limit: 3 } })
   @Post('register')
   async register(
     @Body() dto: RegisterDto,

@@ -3,12 +3,9 @@ import {
   Get,
   Post,
   Patch,
-  Delete,
   Param,
   Body,
   Query,
-  UseGuards,
-  BadRequestException,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
@@ -17,134 +14,84 @@ import { UpdateImagesDto } from './dto/update-images.dto';
 import { QueryProductDto, QueryProductAdminDto } from './dto/query-product.dto';
 import { ok, paginated } from '../../common/helpers/response.helper';
 import { Public } from '../../common/decorators/public.decorator';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { UserRole } from '../users/entities/user.entity';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { validateUlid } from '../../common/helpers/ulid.helper';
+import { AdminOnly } from '../../common/decorators/admin-only.decorator';
+import { ParseUlidPipe } from '../../common/pipes/parse-ulid.pipe';
+import { CrudController } from '../../common/base/base-crud.controller';
 
 @Controller('products')
-export class ProductsController {
-  constructor(private readonly productsService: ProductsService) {}
+export class ProductsController extends CrudController<any> {
+  protected readonly entityName = 'Product';
 
-  /**
-   * GET /products — Public list of published products with optional filters.
-   */
+  constructor(protected readonly service: ProductsService) {
+    super();
+  }
+
+  // ─── Override: public list voi product-specific filters ──────
+
   @Public()
   @Get()
   async findPublished(@Query() query: QueryProductDto) {
-    const { category_id, material_type, finish, ...pagination } = query;
-    const filters = {
-      category_id,
-      material_type,
-      finish,
-    };
-    const result = await this.productsService.findPublished(pagination, filters);
-    return paginated(result.data, {
-      page: result.meta.page,
-      limit: result.meta.limit,
-      total: result.meta.total,
-    });
+    // Loai bo status — findPublished da hardcode status = 'published'
+    const { category_id, material_type, finish, is_featured, status: _status, ...pagination } = query;
+    const filters = { category_id, material_type, finish, is_featured };
+    const result = await this.service.findPublished(pagination, filters);
+    return paginated(result.data, result.meta);
   }
 
-  /**
-   * GET /products/admin/list — Admin list of all products (all statuses).
-   */
+  // ─── Override: admin list voi product-specific filters ───────
+
   @Get('admin/list')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @AdminOnly()
   async findAllAdmin(@Query() query: QueryProductAdminDto) {
-    const { category_id, material_type, finish, status, search, ...pagination } = query;
-    const filters = {
-      category_id,
-      material_type,
-      finish,
-      status,
-    };
-    const result = await this.productsService.findAll(pagination, filters);
-    return paginated(result.data, {
-      page: result.meta.page,
-      limit: result.meta.limit,
-      total: result.meta.total,
-    });
+    const { category_id, is_featured, status, search, material_type, finish, ...pagination } = query as any;
+    const filters = { category_id, material_type, finish, status, is_featured };
+    const result = await this.service.findAll(pagination, filters);
+    return paginated(result.data, result.meta);
   }
 
-  /**
-   * GET /products/:slug — Public product detail by slug.
-   */
+  // ─── Override: detail by slug voi images ─────────────────────
+
   @Public()
   @Get(':slug')
   async findBySlug(@Param('slug') slug: string) {
-    const product = await this.productsService.findBySlug(slug);
-    const images = await this.productsService.getImages(product.id);
+    const product = await this.service.findPublishedBySlug(slug);
+    const images = await this.service.getImages(product.id);
     return ok({ ...product, images });
   }
 
-  /**
-   * POST /products — Create a new product. Admin only.
-   */
+  // ─── Override: create voi images ─────────────────────────────
+
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @AdminOnly()
   async create(@Body() dto: CreateProductDto) {
-    const product = await this.productsService.createWithImages(dto);
+    const product = await this.service.createWithImages(dto);
     return ok(product, 'Product created successfully');
   }
 
-  /**
-   * PATCH /products/:id — Update a product. Admin only.
-   */
+  // ─── Override: update voi images ─────────────────────────────
+
   @Patch(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  async update(@Param('id') id: string, @Body() dto: UpdateProductDto) {
-    if (!validateUlid(id)) throw new BadRequestException('Invalid product ID');
+  @AdminOnly()
+  async update(@Param('id', ParseUlidPipe) id: string, @Body() dto: UpdateProductDto) {
     const { image_ids, ...productData } = dto as CreateProductDto & Partial<CreateProductDto>;
-    const product = await this.productsService.update(id, productData);
+    const product = await this.service.update(id, productData);
 
     if (image_ids !== undefined) {
-      await this.productsService.updateImages(product.id, image_ids);
+      await this.service.updateImages(product.id, image_ids);
     }
 
     return ok(product, 'Product updated successfully');
   }
 
-  /**
-   * PATCH /products/:id/images — Update product images. Admin only.
-   */
+  // ─── Product-specific: image management ──────────────────────
+
   @Patch(':id/images')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @AdminOnly()
   async updateImages(
-    @Param('id') id: string,
+    @Param('id', ParseUlidPipe) id: string,
     @Body() dto: UpdateImagesDto,
   ) {
-    if (!validateUlid(id)) throw new BadRequestException('Invalid product ID');
-    await this.productsService.updateImages(id, dto.image_ids);
+    await this.service.updateImages(id, dto.image_ids);
     return ok(null, 'Product images updated successfully');
-  }
-
-  /**
-   * PATCH /products/:id/publish — Publish a product. Admin only.
-   */
-  @Patch(':id/publish')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  async publish(@Param('id') id: string) {
-    if (!validateUlid(id)) throw new BadRequestException('Invalid product ID');
-    const product = await this.productsService.publish(id);
-    return ok(product, 'Product published successfully');
-  }
-
-  /**
-   * DELETE /products/:id — Soft delete a product. Admin only.
-   */
-  @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  async remove(@Param('id') id: string) {
-    if (!validateUlid(id)) throw new BadRequestException('Invalid product ID');
-    await this.productsService.softDelete(id);
-    return ok(null, 'Product deleted successfully');
   }
 }

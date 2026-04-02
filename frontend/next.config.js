@@ -26,6 +26,17 @@ const nextConfig = {
   output: 'standalone',
   // Compression handled by Nginx
   compress: false,
+  // Proxy API requests to backend (local dev without Nginx)
+  rewrites: async () => [
+    {
+      source: '/api/:path*',
+      destination: `${process.env.INTERNAL_API_URL || 'http://localhost:4000/api'}/:path*`,
+    },
+    {
+      source: '/uploads/:path*',
+      destination: `${process.env.INTERNAL_API_URL?.replace(/\/api\/?$/, '') || 'http://localhost:4000'}/uploads/:path*`,
+    },
+  ],
   // Security headers
   headers: async () => [
     {
@@ -36,6 +47,8 @@ const nextConfig = {
         { key: 'X-Content-Type-Options', value: 'nosniff' },
         { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
         { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+        // CSP — chong XSS, chi cho phep script/style tu self va inline (Next.js can)
+        { key: 'Content-Security-Policy', value: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.cloudflarestorage.com https://*.r2.dev https://bhquan.site; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://bhquan.site wss://bhquan.site; object-src 'none'; base-uri 'self'; frame-ancestors 'self'" },
       ],
     },
     {
