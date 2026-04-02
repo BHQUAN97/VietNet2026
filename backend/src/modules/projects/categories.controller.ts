@@ -7,7 +7,6 @@ import {
   Param,
   Body,
   Query,
-  UseGuards,
   BadRequestException,
 } from '@nestjs/common';
 import { CategoriesService } from './categories.service';
@@ -15,16 +14,12 @@ import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
 import { QueryCategoryDto } from './dto/query-category.dto';
 import { ok, paginated } from '../../common/helpers/response.helper';
-import { validateUlid } from '../../common/helpers/ulid.helper';
 import { Public } from '../../common/decorators/public.decorator';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { UserRole } from '../users/entities/user.entity';
+import { AdminOnly } from '../../common/decorators/admin-only.decorator';
+import { ParseUlidPipe } from '../../common/pipes/parse-ulid.pipe';
 import { CategoryType } from './entities/category.entity';
 
 @Controller('categories')
-@UseGuards(JwtAuthGuard, RolesGuard)
 export class CategoriesController {
   constructor(private readonly categoriesService: CategoriesService) {}
 
@@ -73,7 +68,7 @@ export class CategoriesController {
    * Create a new category. Admin only.
    */
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @AdminOnly()
   async create(@Body() dto: CreateCategoryDto) {
     const category = await this.categoriesService.create(dto);
     return ok(category, 'Category created successfully');
@@ -84,11 +79,11 @@ export class CategoriesController {
    * Update a category. Admin only.
    */
   @Patch(':id')
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  async update(@Param('id') id: string, @Body() dto: UpdateCategoryDto) {
-    if (!validateUlid(id)) {
-      throw new BadRequestException('Invalid category ID format');
-    }
+  @AdminOnly()
+  async update(
+    @Param('id', ParseUlidPipe) id: string,
+    @Body() dto: UpdateCategoryDto,
+  ) {
     const category = await this.categoriesService.update(id, dto);
     return ok(category, 'Category updated successfully');
   }
@@ -98,11 +93,8 @@ export class CategoriesController {
    * Soft delete a category. Admin only.
    */
   @Delete(':id')
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  async remove(@Param('id') id: string) {
-    if (!validateUlid(id)) {
-      throw new BadRequestException('Invalid category ID format');
-    }
+  @AdminOnly()
+  async remove(@Param('id', ParseUlidPipe) id: string) {
     await this.categoriesService.softDelete(id);
     return ok(null, 'Category deleted successfully');
   }
@@ -112,7 +104,7 @@ export class CategoriesController {
    * Seed initial categories. Admin only.
    */
   @Post('seed')
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @AdminOnly()
   async seed() {
     const result = await this.categoriesService.seed();
     return ok(result, `Seeded ${result.seeded} categories`);

@@ -3,11 +3,11 @@ import {
   Post,
   Body,
   UnauthorizedException,
-  Logger,
 } from '@nestjs/common';
 import { IsString, IsOptional, IsArray } from 'class-validator';
 import { Public } from '../../common/decorators/public.decorator';
 import { ok } from '../../common/helpers/response.helper';
+import { ActionLogger } from '../../common/helpers/logger.helper';
 
 class RevalidateDto {
   @IsString()
@@ -26,7 +26,7 @@ class RevalidateDto {
 
 @Controller('revalidate')
 export class RevalidateController {
-  private readonly logger = new Logger(RevalidateController.name);
+  private readonly actionLogger = new ActionLogger('RevalidateController');
 
   @Post()
   @Public()
@@ -65,15 +65,15 @@ export class RevalidateController {
       );
 
       if (!response.ok) {
-        this.logger.warn(
+        this.actionLogger.warn(
           `Next.js revalidation returned ${response.status}`,
         );
       }
     } catch (err) {
-      this.logger.warn(`Failed to reach Next.js revalidation: ${err}`);
+      this.actionLogger.warn(`Failed to reach Next.js revalidation: ${err}`);
     }
 
-    this.logger.log(`Revalidation triggered: ${revalidated.join(', ')}`);
+    this.actionLogger.log(`Revalidation triggered: ${revalidated.join(', ')}`);
     return ok({ revalidated }, 'Revalidation triggered');
   }
 }

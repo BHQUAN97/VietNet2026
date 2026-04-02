@@ -39,9 +39,13 @@ COPY --from=builder /app/package.json ./package.json
 # Copy pm2 ecosystem config if it exists
 COPY ecosystem.config.js* ./
 
+# Local uploads directory (fallback khi R2 chưa config)
+RUN mkdir -p /app/uploads
+
 # Non-root user
 RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nestjs -u 1001 -G nodejs
+    adduser -S nestjs -u 1001 -G nodejs && \
+    chown -R nestjs:nodejs /app/uploads
 USER nestjs
 
 EXPOSE 4000

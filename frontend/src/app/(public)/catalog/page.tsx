@@ -1,17 +1,18 @@
 'use client'
 
-import { Suspense, useState, useEffect, useCallback } from 'react'
+import { Suspense, useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { PageContainer } from '@/components/layout/PageContainer'
-import { Button } from '@/components/ui/Button'
+import { DataStates } from '@/components/shared/DataStates'
+import { Pagination } from '@/components/shared/Pagination'
+import { usePaginatedList } from '@/hooks/usePaginatedList'
 import { CardGridSkeleton } from '@/components/ui/Skeleton'
+import { PageHeader } from '@/components/shared/PageHeader'
 import {
   ArrowUpRight,
   Sparkles,
-  ChevronLeft,
-  ChevronRight,
   TreePine,
   Leaf,
   PanelTop,
@@ -20,27 +21,7 @@ import {
   SlidersHorizontal,
   X,
 } from 'lucide-react'
-import api from '@/lib/api'
-
-interface Product {
-  id: string
-  name: string
-  slug: string
-  description: string | null
-  material_type: string | null
-  finish: string | null
-  price_range: string | null
-  is_new: boolean
-  category: { id: string; name: string; slug: string } | null
-  cover_image: { preview_url: string; alt_text: string } | null
-}
-
-interface Meta {
-  page: number
-  limit: number
-  total: number
-  totalPages: number
-}
+import type { Product } from '@/types'
 
 const MATERIAL_FILTERS = [
   { value: 'go-cong-nghiep', label: 'Gỗ công nghiệp', labelEn: 'Industrial Wood', icon: TreePine },
@@ -63,12 +44,12 @@ const MATERIAL_SAMPLES = [
 export default function CatalogPage() {
   return (
     <Suspense fallback={
-      <section className="bg-surface py-16 md:py-24">
+      <section className="bg-surface py-[60px] md:py-24">
         <PageContainer>
           <div className="mb-12">
             <div className="skeleton h-3 w-20 mb-3" />
-            <div className="skeleton h-10 w-80 mb-3" />
-            <div className="skeleton h-5 w-96" />
+            <div className="skeleton h-10 w-full max-w-80 mb-3" />
+            <div className="skeleton h-5 w-full max-w-96" />
           </div>
           <CardGridSkeleton count={6} />
         </PageContainer>
@@ -82,38 +63,16 @@ export default function CatalogPage() {
 function CatalogContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const [products, setProducts] = useState<Product[]>([])
-  const [meta, setMeta] = useState<Meta | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
   const [mobileFilterOpen, setMobileFilterOpen] = useState(false)
 
   const currentMaterial = searchParams.get('material') || ''
-  const currentPage = parseInt(searchParams.get('page') || '1', 10)
 
-  const fetchProducts = useCallback(async () => {
-    setLoading(true)
-    setError('')
-    try {
-      const params: Record<string, string> = {
-        page: String(currentPage),
-        limit: '12',
-      }
-      if (currentMaterial) params.material_type = currentMaterial
-
-      const res: any = await api.get('/products', { params })
-      setProducts(res.data || [])
-      setMeta(res.meta || null)
-    } catch {
-      setError('Không thể tải sản phẩm. Vui lòng thử lại.')
-    } finally {
-      setLoading(false)
-    }
-  }, [currentPage, currentMaterial])
-
-  useEffect(() => {
-    fetchProducts()
-  }, [fetchProducts])
+  const { items: products, meta, page, loading, error, goToPage, refresh, isEmpty } =
+    usePaginatedList<Product>({
+      endpoint: '/products',
+      limit: 12,
+      params: { material_type: currentMaterial || undefined },
+    })
 
   function updateParams(params: Record<string, string>) {
     const sp = new URLSearchParams(searchParams.toString())
@@ -127,34 +86,29 @@ function CatalogContent() {
   const activeFilter = MATERIAL_FILTERS.find(f => f.value === currentMaterial)
 
   return (
-    <section className="bg-surface py-16 md:py-24">
+    <section className="section-surface">
       <PageContainer>
-        {/* Page Header */}
-        <div className="mb-12">
-          <p className="font-label text-label-md uppercase tracking-[0.08em] text-primary/70">
-            Bộ sưu tập
-          </p>
-          <h1 className="mt-3 font-headline text-headline-lg text-gradient-primary md:text-display-md lg:text-display-lg">
-            Bộ Sưu Tập Tủ Bếp
-          </h1>
-          <p className="mt-3 max-w-2xl text-body-md text-on-surface-variant md:text-body-lg">
-            Khám phá những không gian bếp được chế tác tỉ mỉ, kết hợp giữa chất liệu cao cấp và thiết kế hiện đại.
-          </p>
-          <div className="mt-5 flex items-center gap-4">
-            <span className="deco-line flex-1" />
-            {meta && !loading && (
-              <span className="font-label text-label-md text-on-surface-variant">
-                {meta.total} Sản phẩm
-              </span>
-            )}
-          </div>
+        {/* Page Header — compact with total count */}
+        <PageHeader
+          label="Bộ sưu tập"
+          title="Bộ Sưu Tập Tủ Bếp"
+          description="Khám phá những không gian bếp được chế tác tỉ mỉ, kết hợp giữa chất liệu cao cấp và thiết kế hiện đại."
+          showDecoLine={false}
+        />
+        <div className="-mt-4 mb-8 flex items-center gap-4">
+          <span className="deco-line flex-1" />
+          {meta && !loading && (
+            <span className="font-label text-label-md text-on-surface-variant">
+              {meta.total} Sản phẩm
+            </span>
+          )}
         </div>
 
         {/* Mobile Filter Toggle */}
         <div className="mb-6 flex items-center gap-3 lg:hidden">
           <button
             onClick={() => setMobileFilterOpen(!mobileFilterOpen)}
-            className="inline-flex items-center gap-2 rounded-xl bg-surface-container-low px-4 py-2.5 text-body-sm font-medium text-on-surface transition-colors hover:bg-surface-container"
+            className="inline-flex items-center gap-2 rounded-xl bg-surface-container-low px-4 py-2.5 min-h-[44px] text-body-sm font-medium text-on-surface transition-colors hover:bg-surface-container"
           >
             <SlidersHorizontal className="h-4 w-4" />
             Bộ lọc
@@ -167,7 +121,7 @@ function CatalogContent() {
           {activeFilter && (
             <button
               onClick={() => updateParams({ material: '', page: '' })}
-              className="inline-flex items-center gap-1.5 rounded-xl bg-primary-container px-3 py-2 text-body-sm text-on-primary"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-primary-container px-3 py-2 min-h-[44px] text-body-sm text-on-primary"
             >
               {activeFilter.label}
               <X className="h-3 w-3" />
@@ -178,10 +132,10 @@ function CatalogContent() {
         {/* Mobile Filter Chips (horizontal scroll) */}
         {mobileFilterOpen && (
           <div className="mb-6 overflow-x-auto pb-2 lg:hidden">
-            <div className="flex gap-2">
+            <div className="flex gap-2 px-1">
               <button
                 onClick={() => { updateParams({ material: '', page: '' }); setMobileFilterOpen(false) }}
-                className={`shrink-0 rounded-xl px-4 py-2.5 text-body-sm font-medium transition-all duration-300 ${
+                className={`shrink-0 rounded-xl px-4 py-2.5 min-h-[44px] text-body-sm font-medium transition-all duration-300 ${
                   !currentMaterial
                     ? 'bg-primary-container text-on-primary shadow-ambient-sm'
                     : 'bg-surface-container text-on-surface-variant'
@@ -195,7 +149,7 @@ function CatalogContent() {
                   <button
                     key={material.value}
                     onClick={() => { updateParams({ material: material.value, page: '' }); setMobileFilterOpen(false) }}
-                    className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 text-body-sm font-medium transition-all duration-300 ${
+                    className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-4 py-2.5 min-h-[44px] text-body-sm font-medium transition-all duration-300 ${
                       currentMaterial === material.value
                         ? 'bg-primary-container text-on-primary shadow-ambient-sm'
                         : 'bg-surface-container text-on-surface-variant'
@@ -262,114 +216,73 @@ function CatalogContent() {
 
           {/* Main Content */}
           <div className="min-w-0 flex-1">
-            {loading && <CardGridSkeleton count={6} />}
-
-            {error && !loading && (
-              <div className="flex min-h-[40vh] flex-col items-center justify-center text-center">
-                <div className="rounded-2xl bg-error-container/30 p-10">
-                  <p className="text-body-md text-error">{error}</p>
-                  <Button variant="ghost" className="mt-5" onClick={fetchProducts}>
-                    Thử lại
-                  </Button>
-                </div>
-              </div>
-            )}
-
-            {!loading && !error && products.length === 0 && (
-              <div className="flex min-h-[40vh] items-center justify-center">
-                <div className="text-center">
-                  <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-surface-container-high">
-                    <Layers className="h-7 w-7 text-on-surface-variant/50" />
-                  </div>
-                  <p className="text-body-lg font-medium text-on-surface">
-                    Không tìm thấy sản phẩm
-                  </p>
-                  <p className="mt-1 text-body-md text-on-surface-variant">
-                    Thử thay đổi bộ lọc để tìm sản phẩm phù hợp.
-                  </p>
-                  {currentMaterial && (
-                    <Button
-                      variant="ghost"
-                      className="mt-5"
-                      onClick={() => updateParams({ material: '', page: '' })}
-                    >
-                      Xóa bộ lọc
-                    </Button>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {!loading && !error && products.length > 0 && (
-              <>
-                {/* Product Grid - gap-8 desktop, gap-4 mobile, aspect-[4/5] cards */}
-                <div className="grid gap-4 grid-cols-2 md:gap-8 xl:grid-cols-3">
-                  {products.map((product, idx) => (
-                    <Link
-                      key={product.id}
-                      href={`/catalog/${product.slug}`}
-                      className="card-premium group overflow-hidden rounded-2xl bg-surface-container-lowest"
-                    >
-                      {/* Image - aspect 4/5 matching design */}
-                      <div className="relative aspect-[4/5] overflow-hidden bg-surface-container">
-                        {product.cover_image?.preview_url ? (
-                          <Image
-                            src={product.cover_image.preview_url}
-                            alt={product.cover_image.alt_text || product.name}
-                            fill
-                            className="object-cover transition-transform duration-700 ease-out group-hover:scale-110"
-                            sizes="(max-width: 640px) 50vw, (max-width: 1280px) 33vw, 25vw"
-                          />
-                        ) : (
-                          <div className="flex h-full items-center justify-center bg-surface-container">
-                            <div className="h-12 w-12 rounded-lg bg-surface-container-high" />
-                          </div>
-                        )}
-                        {/* New badge */}
-                        {product.is_new && (
-                          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-surface/90 px-2.5 py-1 font-label text-label-sm uppercase text-on-surface shadow-ambient-sm backdrop-blur-sm">
-                            <Sparkles className="h-3 w-3" />
-                            Mới
-                          </span>
-                        )}
-                        {/* Hover overlay voi "Xem chi tiet" */}
-                        <div className="absolute inset-0 flex flex-col items-center justify-center bg-on-surface/30 opacity-0 transition-opacity duration-500 group-hover:opacity-100">
-                          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-surface/90 text-primary shadow-ambient-sm">
-                            <ArrowUpRight className="h-4 w-4" />
-                          </div>
+            <DataStates
+              loading={loading}
+              error={error}
+              isEmpty={isEmpty}
+              onRetry={refresh}
+              emptyMessage="Không tìm thấy sản phẩm. Thử thay đổi bộ lọc để tìm sản phẩm phù hợp."
+            >
+              {/* Product Grid - gap-8 desktop, gap-4 mobile, aspect-[4/5] cards */}
+              <div className="grid gap-4 grid-cols-2 md:gap-8 xl:grid-cols-3">
+                {products.map((product) => (
+                  <Link
+                    key={product.id}
+                    href={`/catalog/${product.slug}`}
+                    className="card-premium group overflow-hidden rounded-2xl bg-surface-container-lowest"
+                  >
+                    {/* Image - aspect 4/5 matching design */}
+                    <div className="relative aspect-[4/5] overflow-hidden bg-surface-container">
+                      {product.cover_image?.preview_url ? (
+                        <Image
+                          src={product.cover_image.preview_url}
+                          alt={product.cover_image.alt_text || product.name}
+                          fill
+                          className="object-cover transition-transform duration-700 ease-out group-hover:scale-110"
+                          sizes="(max-width: 640px) 50vw, (max-width: 1280px) 33vw, 25vw"
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center bg-surface-container">
+                          <div className="h-12 w-12 rounded-lg bg-surface-container-high" />
+                        </div>
+                      )}
+                      {/* New badge */}
+                      {product.is_new && (
+                        <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-surface/90 px-2.5 py-1 font-label text-label-sm uppercase text-on-surface shadow-ambient-sm backdrop-blur-sm">
+                          <Sparkles className="h-3 w-3" />
+                          Mới
+                        </span>
+                      )}
+                      {/* Hover overlay voi "Xem chi tiet" */}
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-on-surface/30 opacity-0 transition-opacity duration-500 group-hover:opacity-100">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-surface/90 text-primary shadow-ambient-sm">
+                          <ArrowUpRight className="h-4 w-4" />
                         </div>
                       </div>
+                    </div>
 
-                      {/* Content */}
-                      <div className="p-4 md:p-5">
-                        {product.category && (
-                          <p className="font-label text-[10px] uppercase tracking-[0.1em] text-primary/60 md:text-label-md md:tracking-[0.06em]">
-                            {product.category.name}
-                          </p>
-                        )}
-                        <h3 className="mt-1 line-clamp-2 font-headline text-title-sm text-on-surface transition-colors duration-300 group-hover:text-primary-container md:text-title-lg">
-                          {product.name}
-                        </h3>
-                        {/* View link - desktop only */}
-                        <p className="mt-2 hidden items-center gap-1 text-body-sm text-on-surface-variant transition-colors group-hover:text-primary md:flex">
-                          Xem chi tiết
-                          <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                    {/* Content */}
+                    <div className="p-4 md:p-5">
+                      {product.category && (
+                        <p className="font-label text-[11px] uppercase tracking-[0.1em] text-primary/60 md:text-label-md md:tracking-[0.06em]">
+                          {product.category.name}
                         </p>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
+                      )}
+                      <h3 className="mt-1 line-clamp-2 font-headline text-title-md text-on-surface transition-colors duration-300 group-hover:text-primary-container md:text-title-lg">
+                        {product.name}
+                      </h3>
+                      {/* View link - desktop only */}
+                      <p className="mt-2 hidden items-center gap-1 text-body-sm text-on-surface-variant transition-colors group-hover:text-primary md:flex">
+                        Xem chi tiết
+                        <ArrowUpRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                      </p>
+                    </div>
+                  </Link>
+                ))}
+              </div>
 
-                {/* Pagination - chevron style matching design */}
-                {meta && meta.totalPages > 1 && (
-                  <CatalogPagination
-                    currentPage={currentPage}
-                    totalPages={meta.totalPages}
-                    onPageChange={(page) => updateParams({ page: String(page) })}
-                  />
-                )}
-              </>
-            )}
+              <Pagination meta={meta} currentPage={page} onPageChange={goToPage} variant="simple" />
+            </DataStates>
           </div>
         </div>
 
@@ -377,47 +290,6 @@ function CatalogContent() {
         <MaterialSamplesSection />
       </PageContainer>
     </section>
-  )
-}
-
-/** Pagination voi chevron va page indicator "01 / 04" */
-function CatalogPagination({
-  currentPage,
-  totalPages,
-  onPageChange,
-}: {
-  currentPage: number
-  totalPages: number
-  onPageChange: (page: number) => void
-}) {
-  const padded = (n: number) => String(n).padStart(2, '0')
-
-  return (
-    <div className="mt-12 flex items-center justify-center gap-6">
-      <button
-        onClick={() => onPageChange(currentPage - 1)}
-        disabled={currentPage <= 1}
-        className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-container-low text-primary transition-all duration-300 hover:bg-primary hover:text-on-primary disabled:opacity-50 disabled:hover:bg-surface-container-low disabled:hover:text-primary"
-        aria-label="Trang trước"
-      >
-        <ChevronLeft className="h-5 w-5" />
-      </button>
-
-      <span className="font-headline text-title-md tracking-wider text-on-surface">
-        {padded(currentPage)}{' '}
-        <span className="text-on-surface-variant/60">/</span>{' '}
-        {padded(totalPages)}
-      </span>
-
-      <button
-        onClick={() => onPageChange(currentPage + 1)}
-        disabled={currentPage >= totalPages}
-        className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-container-low text-primary transition-all duration-300 hover:bg-primary hover:text-on-primary disabled:opacity-50 disabled:hover:bg-surface-container-low disabled:hover:text-primary"
-        aria-label="Trang sau"
-      >
-        <ChevronRight className="h-5 w-5" />
-      </button>
-    </div>
   )
 }
 
@@ -438,7 +310,7 @@ function MaterialSamplesSection() {
       </div>
 
       <div className="overflow-x-auto pb-4 scrollbar-thin">
-        <div className="flex justify-center gap-8 md:gap-12">
+        <div className="flex justify-start gap-6 px-1 md:gap-12">
           {MATERIAL_SAMPLES.map((sample) => (
             <div key={sample.name} className="flex shrink-0 flex-col items-center gap-3">
               <div

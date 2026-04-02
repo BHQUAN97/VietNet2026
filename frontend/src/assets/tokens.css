@@ -24,7 +24,7 @@
   --color-surface: #FCF9F7;
   --color-surface-bright: #FCF9F7;
   --color-surface-dim: #DCD9D8;
-  --color-surface-container-lowest: #FFFFFF;
+  --color-surface-container-lowest: #FFFBF8;
   --color-surface-container-low: #F6F3F1;
   --color-surface-container: #F0EDEB;
   --color-surface-container-high: #EAE8E6;
@@ -105,10 +105,10 @@
   --color-warning-text: var(--color-on-warning-container);
 
   /* -- TYPOGRAPHY ------------------------------------------- */
-  --font-display: 'Noto Serif', serif;
-  --font-headline: 'Noto Serif', serif;
-  --font-body: 'Manrope', sans-serif;
-  --font-label: 'Manrope', sans-serif;
+  --font-display: 'Google Sans Flex', system-ui, sans-serif;
+  --font-headline: 'Google Sans Flex', system-ui, sans-serif;
+  --font-body: 'Google Sans Flex', system-ui, sans-serif;
+  --font-label: 'Google Sans Flex', system-ui, sans-serif;
   --font-icon: 'Material Symbols Outlined';
 
   /* Display Large -- page hero titles */
@@ -122,6 +122,12 @@
   --text-display-md-weight: 700;
   --text-display-md-tracking: 0;
   --text-display-md-leading: 1.15;
+
+  /* Display Small -- page titles mobile */
+  --text-display-sm-size: 2.25rem;
+  --text-display-sm-weight: 700;
+  --text-display-sm-tracking: 0;
+  --text-display-sm-leading: 1.2;
 
   /* Headline Large -- section titles desktop */
   --text-headline-lg-size: 2rem;
@@ -224,6 +230,13 @@
   --shadow-xl: 0 12px 32px rgba(85, 55, 34, 0.08);
   --shadow-2xl: 0 24px 48px rgba(85, 55, 34, 0.06);
   --shadow-bottom-nav: 0 -4px 24px rgba(85, 55, 34, 0.06);
+  --shadow-card-hover: 0 32px 64px rgba(85, 55, 34, 0.10);
+  --shadow-lift-hover: 0 8px 24px rgba(85, 55, 34, 0.08);
+  --shadow-lift-active: 0 2px 8px rgba(85, 55, 34, 0.04);
+
+  /* -- GRADIENTS ------------------------------------------- */
+  --gradient-primary: linear-gradient(135deg, #553722 0%, #6F4E37 50%, #79573F 100%);
+  --gradient-primary-line: linear-gradient(90deg, #553722, #6F4E37);
 
   /* -- GLASSMORPHISM --------------------------------------- */
   --glass-bg: rgba(252, 249, 247, 0.8);

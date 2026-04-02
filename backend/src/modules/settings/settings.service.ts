@@ -10,7 +10,7 @@ export class SettingsService extends BaseService<Setting> {
     @InjectRepository(Setting)
     private readonly settingRepo: Repository<Setting>,
   ) {
-    super(settingRepo);
+    super(settingRepo, 'Setting');
   }
 
   /**

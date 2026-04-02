@@ -2,8 +2,7 @@ import { Controller, Get, Put, Param, Body, Req } from '@nestjs/common';
 import { Request } from 'express';
 import { SettingsService } from './settings.service';
 import { UpsertSettingDto } from './dto/upsert-setting.dto';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { UserRole } from '../users/entities/user.entity';
+import { AdminOnly } from '../../common/decorators/admin-only.decorator';
 import { ok } from '../../common/helpers/response.helper';
 
 @Controller('settings')
@@ -14,7 +13,7 @@ export class SettingsController {
    * GET /api/settings
    * Admin only — get all settings grouped by setting_group.
    */
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @AdminOnly()
   @Get()
   async findAll() {
     const grouped = await this.settingsService.findAllGrouped();
@@ -25,7 +24,7 @@ export class SettingsController {
    * GET /api/settings/:group
    * Admin only — get all settings for a specific group.
    */
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @AdminOnly()
   @Get(':group')
   async findByGroup(@Param('group') group: string) {
     const settings = await this.settingsService.findByGroup(group);
@@ -36,7 +35,7 @@ export class SettingsController {
    * PUT /api/settings/:key
    * Admin only — upsert a setting by key.
    */
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @AdminOnly()
   @Put(':key')
   async upsert(
     @Param('key') key: string,

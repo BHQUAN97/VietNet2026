@@ -10,6 +10,7 @@ import {
   Package,
   MessageCircle,
   BarChart3,
+  ScrollText,
   Users,
   Settings,
   LogOut,
@@ -27,6 +28,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Package,
   MessageCircle,
   BarChart3,
+  ScrollText,
   Users,
   Settings,
 }
@@ -74,7 +76,7 @@ export function AdminSidebar() {
                   href={item.href}
                   onClick={() => setMobileOpen(false)}
                   className={cn(
-                    'flex items-center gap-3 rounded-xl px-4 py-2.5 text-body-sm transition-all duration-200',
+                    'flex items-center gap-3 rounded-xl px-4 py-2.5 min-h-[44px] text-body-sm transition-all duration-200',
                     isActive
                       ? 'bg-primary-container/15 text-primary font-semibold shadow-ambient-sm'
                       : 'text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface active:bg-surface-container-highest'

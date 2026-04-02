@@ -36,7 +36,7 @@ const ATTR_RE = /([a-zA-Z][a-zA-Z0-9_-]*)\s*=\s*(?:"([^"]*)"|'([^']*)'|(\S+))/g
 /** Matches HTML comments */
 const COMMENT_RE = /<!--[\s\S]*?-->/g
 
-function isUrlSafe(url: string): boolean {
+export function isUrlSafe(url: string): boolean {
   const trimmed = url.trim()
   // Relative URLs are safe
   if (trimmed.startsWith('/') || trimmed.startsWith('#') || trimmed.startsWith('.')) {

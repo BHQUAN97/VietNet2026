@@ -6,7 +6,6 @@ import {
   Param,
   Body,
   Query,
-  UseGuards,
   ParseIntPipe,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -15,14 +14,10 @@ import { CreatePageConfigDto } from './dto/create-page-config.dto';
 import { UpdatePageConfigDto } from './dto/update-page-config.dto';
 import { ok } from '../../common/helpers/response.helper';
 import { Public } from '../../common/decorators/public.decorator';
-import { Roles } from '../../common/decorators/roles.decorator';
+import { AdminOnly, EditorOnly } from '../../common/decorators/admin-only.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { RolesGuard } from '../../common/guards/roles.guard';
-import { UserRole } from '../users/entities/user.entity';
 
 @Controller('pages')
-@UseGuards(JwtAuthGuard, RolesGuard)
 export class PagesController {
   constructor(private readonly pagesService: PagesService) {}
 
@@ -53,21 +48,21 @@ export class PagesController {
   // ─── Admin ─────────────────────────────────────────────
 
   @Get('admin/list')
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @AdminOnly()
   async listAll() {
     const configs = await this.pagesService.listAll();
     return ok(configs);
   }
 
   @Get(':slug/draft')
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.EDITOR)
+  @EditorOnly()
   async getDraft(@Param('slug') slug: string) {
     const config = await this.pagesService.findBySlug(slug);
     return ok(config);
   }
 
   @Post()
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @AdminOnly()
   async create(
     @Body() dto: CreatePageConfigDto,
     @CurrentUser('id') userId: string,
@@ -77,7 +72,7 @@ export class PagesController {
   }
 
   @Patch(':slug/draft')
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN, UserRole.EDITOR)
+  @EditorOnly()
   async updateDraft(
     @Param('slug') slug: string,
     @Body() dto: UpdatePageConfigDto,
@@ -88,7 +83,7 @@ export class PagesController {
   }
 
   @Post(':slug/publish')
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @AdminOnly()
   async publish(
     @Param('slug') slug: string,
     @CurrentUser('id') userId: string,
@@ -98,14 +93,14 @@ export class PagesController {
   }
 
   @Get(':slug/history')
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @AdminOnly()
   async getHistory(@Param('slug') slug: string) {
     const history = await this.pagesService.getHistory(slug);
     return ok(history);
   }
 
   @Post(':slug/rollback/:version')
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @AdminOnly()
   async rollback(
     @Param('slug') slug: string,
     @Param('version', ParseIntPipe) version: number,

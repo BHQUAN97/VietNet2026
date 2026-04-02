@@ -31,8 +31,8 @@ export function GlassNav() {
       )}
       style={{
         backgroundColor: isScrolled
-          ? 'rgba(252, 249, 247, 0.92)'
-          : 'rgba(252, 249, 247, 0.7)',
+          ? 'var(--glass-bg-strong)'
+          : 'var(--glass-bg)',
         backdropFilter: `blur(${isScrolled ? '24px' : '16px'})`,
         WebkitBackdropFilter: `blur(${isScrolled ? '24px' : '16px'})`,
         borderBottom: 'none',

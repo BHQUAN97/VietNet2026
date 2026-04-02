@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Bell } from 'lucide-react'
 import { useSocket } from '@/contexts/socket.context'
 import { cn } from '@/lib/utils'
+import { formatRelativeTime } from '@/lib/date'
 import type { RealtimeNotification } from '@/types'
 
 export function NotificationBell() {
@@ -38,19 +39,6 @@ export function NotificationBell() {
     if (!open && unreadCount > 0) {
       clearNotifications()
     }
-  }
-
-  function formatTime(dateStr: string | Date) {
-    const date = new Date(dateStr)
-    const now = new Date()
-    const diffMs = now.getTime() - date.getTime()
-    const diffMin = Math.floor(diffMs / 60000)
-
-    if (diffMin < 1) return 'Vừa xong'
-    if (diffMin < 60) return `${diffMin} phút trước`
-    const diffHour = Math.floor(diffMin / 60)
-    if (diffHour < 24) return `${diffHour} giờ trước`
-    return `${Math.floor(diffHour / 24)} ngày trước`
   }
 
   function getTypeLabel(type: string) {
@@ -96,7 +84,7 @@ export function NotificationBell() {
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-[var(--z-popover)] mt-1.5 w-80 rounded-2xl bg-surface-container-lowest shadow-ambient-lg">
+        <div className="absolute right-0 top-full z-[var(--z-popover)] mt-1.5 w-80 max-w-[calc(100vw-2rem)] rounded-2xl bg-surface-container-lowest shadow-ambient-lg">
           <div className="flex items-center justify-between px-4 py-3">
             <h3 className="font-headline text-body-md font-semibold text-on-surface">
               Thông báo
@@ -119,7 +107,7 @@ export function NotificationBell() {
             ) : (
               <ul>
                 {notifications.map((n) => (
-                  <NotificationItem key={n.id || `${n.type}-${n.created_at}`} notification={n} formatTime={formatTime} getTypeLabel={getTypeLabel} getTypeColor={getTypeColor} />
+                  <NotificationItem key={n.id || `${n.type}-${n.created_at}`} notification={n} getTypeLabel={getTypeLabel} getTypeColor={getTypeColor} />
                 ))}
               </ul>
             )}
@@ -132,12 +120,10 @@ export function NotificationBell() {
 
 function NotificationItem({
   notification,
-  formatTime,
   getTypeLabel,
   getTypeColor,
 }: {
   notification: RealtimeNotification
-  formatTime: (d: string | Date) => string
   getTypeLabel: (t: string) => string
   getTypeColor: (t: string) => string
 }) {
@@ -162,7 +148,7 @@ function NotificationItem({
             </p>
           )}
           <p className="mt-1 text-[11px] text-on-surface-variant/60">
-            {formatTime(notification.created_at)}
+            {formatRelativeTime(notification.created_at)}
           </p>
         </div>
       </div>

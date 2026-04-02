@@ -23,6 +23,7 @@ export const ADMIN_NAV_ITEMS = [
   { label: 'Sản phẩm', href: '/admin/products', icon: 'Package' },
   { label: 'Tư vấn', href: '/admin/consultations', icon: 'MessageCircle' },
   { label: 'Phân tích', href: '/admin/analytics', icon: 'BarChart3' },
+  { label: 'System Log', href: '/admin/logs', icon: 'ScrollText' },
   { label: 'Người dùng', href: '/admin/users', icon: 'Users' },
   { label: 'Cài đặt', href: '/admin/settings', icon: 'Settings' },
 ] as const

@@ -22,7 +22,7 @@ export default function Error({
       <p className="font-label text-label-lg uppercase tracking-label-wide text-error">
         Lỗi hệ thống
       </p>
-      <h1 className="mt-4 font-headline text-display-md text-on-surface">
+      <h1 className="mt-4 font-headline text-headline-lg md:text-display-md text-on-surface">
         Đã xảy ra lỗi
       </h1>
       <p className="mt-4 max-w-md text-body-lg text-on-surface-variant">

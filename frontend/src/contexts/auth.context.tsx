@@ -48,12 +48,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(response.data)
         } else {
           localStorage.removeItem('access_token')
-          document.cookie = 'auth_session=; path=/; max-age=0; SameSite=Lax'
+          document.cookie = 'auth_session=; path=/; max-age=0; SameSite=Lax; Secure'
           setUser(null)
         }
       } catch {
         localStorage.removeItem('access_token')
-        document.cookie = 'auth_session=; path=/; max-age=0; SameSite=Lax'
+        document.cookie = 'auth_session=; path=/; max-age=0; SameSite=Lax; Secure'
         setUser(null)
       } finally {
         setLoading(false)
@@ -73,7 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (response.success && response.data) {
         localStorage.setItem('access_token', response.data.accessToken)
         // Set cookie hint for server-side middleware redirect
-        document.cookie = 'auth_session=1; path=/; max-age=604800; SameSite=Lax'
+        document.cookie = 'auth_session=1; path=/; max-age=604800; SameSite=Lax; Secure'
         setUser(response.data.user)
       } else {
         throw new Error(response.message || 'Đăng nhập thất bại')
@@ -90,7 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       localStorage.removeItem('access_token')
       // Remove cookie hint for server-side middleware redirect
-      document.cookie = 'auth_session=; path=/; max-age=0; SameSite=Lax'
+      document.cookie = 'auth_session=; path=/; max-age=0; SameSite=Lax; Secure'
       setUser(null)
       router.push('/admin/login')
     }

@@ -1,25 +1,10 @@
 import type { Metadata } from 'next'
-import { Noto_Serif, Manrope } from 'next/font/google'
 import './globals.css'
 import { GlassNav } from '@/components/layout/GlassNav'
 import { Footer } from '@/components/layout/Footer'
 import { BottomNav } from '@/components/layout/BottomNav'
 import { FloatingWidgets } from '@/components/layout/FloatingWidgets'
 import { PublicShell } from '@/components/layout/PublicShell'
-
-const notoSerif = Noto_Serif({
-  subsets: ['latin', 'vietnamese'],
-  weight: ['400', '700'],
-  variable: '--font-noto-serif',
-  display: 'swap',
-})
-
-const manrope = Manrope({
-  subsets: ['latin', 'vietnamese'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-manrope',
-  display: 'swap',
-})
 
 export const metadata: Metadata = {
   title: {
@@ -44,8 +29,12 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="vi" className={`${notoSerif.variable} ${manrope.variable}`}>
+    <html lang="vi">
       <head>
+        {/* Google Sans Flex — variable font for all text */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&display=swap" rel="stylesheet" />
         {/* Preconnect to R2 CDN for faster image loading */}
         <link rel="preconnect" href="https://pub-vietnet.r2.dev" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://pub-vietnet.r2.dev" />

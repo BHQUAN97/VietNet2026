@@ -8,7 +8,7 @@ export default function NotFound() {
       <p className="font-label text-label-lg uppercase tracking-label-wide text-on-surface-variant">
         404
       </p>
-      <h1 className="mt-4 font-headline text-display-md text-primary">
+      <h1 className="mt-4 font-headline text-headline-lg md:text-display-md text-primary">
         Không tìm thấy trang
       </h1>
       <p className="mt-4 max-w-md text-body-lg text-on-surface-variant">

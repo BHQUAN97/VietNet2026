@@ -7,20 +7,18 @@ import {
   Smartphone,
   Monitor,
   Tablet,
-  TrendingUp,
-  ArrowUpRight,
-  ArrowDownRight,
   RefreshCw,
 } from 'lucide-react'
+import { PageHeader } from '@/components/shared/PageHeader'
+import { LoadingSpinner, ErrorDisplay } from '@/components/shared/DataStates'
+import { formatDateISO } from '@/lib/date'
+import { formatNumber } from '@/lib/number'
+import { getErrorMessage } from '@/lib/error'
 import api from '@/lib/api'
 import { cn } from '@/lib/utils'
 import type { AnalyticsDashboard } from '@/types'
 
 type DateRange = '7d' | '30d' | '90d' | 'custom'
-
-function formatDateParam(date: Date): string {
-  return date.toISOString().split('T')[0]
-}
 
 function getDateRange(range: DateRange): { start: string; end: string } {
   const end = new Date()
@@ -40,7 +38,7 @@ function getDateRange(range: DateRange): { start: string; end: string } {
       start.setDate(end.getDate() - 30)
   }
 
-  return { start: formatDateParam(start), end: formatDateParam(end) }
+  return { start: formatDateISO(start), end: formatDateISO(end) }
 }
 
 export default function AdminAnalyticsPage() {
@@ -58,8 +56,8 @@ export default function AdminAnalyticsPage() {
         `/analytics/dashboard?start=${start}&end=${end}`,
       )
       setData((res as any).data)
-    } catch {
-      setError('Không thể tải dữ liệu phân tích')
+    } catch (err) {
+      setError(getErrorMessage(err))
     } finally {
       setLoading(false)
     }
@@ -72,18 +70,8 @@ export default function AdminAnalyticsPage() {
   if (loading && !data) {
     return (
       <div className="py-4">
-        <h1 className="font-headline text-headline-lg text-on-surface">
-          Phân tích
-        </h1>
-        <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {[...Array(4)].map((_, i) => (
-            <div
-              key={i}
-              className="h-32 animate-pulse rounded-2xl bg-surface-container"
-            />
-          ))}
-        </div>
-        <div className="mt-6 h-72 animate-pulse rounded-2xl bg-surface-container" />
+        <PageHeader title="Phân tích" showDecoLine={false} />
+        <LoadingSpinner minHeight="min-h-[30vh]" />
       </div>
     )
   }
@@ -91,40 +79,25 @@ export default function AdminAnalyticsPage() {
   if (error) {
     return (
       <div className="py-4">
-        <h1 className="font-headline text-headline-lg text-on-surface">
-          Phân tích
-        </h1>
-        <div className="mt-8 rounded-2xl bg-error-container px-6 py-8 text-center">
-          <p className="text-body-md text-on-error-container">{error}</p>
-          <button
-            onClick={fetchData}
-            className="mt-4 rounded-xl bg-primary-container px-4 py-2 text-label-md text-on-primary-container"
-          >
-            Thử lại
-          </button>
-        </div>
+        <PageHeader title="Phân tích" showDecoLine={false} />
+        <ErrorDisplay message={error} onRetry={fetchData} minHeight="min-h-[30vh]" />
       </div>
     )
   }
 
   const totalDevice =
-    (data?.deviceBreakdown.mobile || 0) +
-    (data?.deviceBreakdown.desktop || 0) +
-    (data?.deviceBreakdown.tablet || 0)
+    (data?.deviceBreakdown?.mobile || 0) +
+    (data?.deviceBreakdown?.desktop || 0) +
+    (data?.deviceBreakdown?.tablet || 0)
 
   return (
     <div className="py-4">
       {/* Header */}
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
-          <h1 className="font-headline text-headline-lg text-on-surface">
-            Phân tích
-          </h1>
-          <p className="mt-1 text-body-md text-on-surface-variant">
-            Thống kê lượt xem và hành vi người dùng
-          </p>
-        </div>
-
+      <PageHeader
+        title="Phân tích"
+        description="Thống kê lượt xem và hành vi người dùng"
+        showDecoLine={false}
+      >
         <div className="flex items-center gap-2">
           {/* Date range selector */}
           <div className="flex rounded-xl bg-surface-container p-1">
@@ -133,7 +106,7 @@ export default function AdminAnalyticsPage() {
                 key={r}
                 onClick={() => setRange(r)}
                 className={cn(
-                  'rounded-lg px-3 py-1.5 text-label-md transition-colors',
+                  'rounded-lg px-3 py-1.5 min-h-[44px] text-label-md transition-colors',
                   range === r
                     ? 'bg-primary-container text-on-primary-container'
                     : 'text-on-surface-variant hover:bg-surface-container-high',
@@ -147,13 +120,13 @@ export default function AdminAnalyticsPage() {
           <button
             onClick={fetchData}
             disabled={loading}
-            className="rounded-xl p-2 text-on-surface-variant transition-colors hover:bg-surface-container-high disabled:opacity-50"
+            className="rounded-xl p-2.5 min-h-[44px] min-w-[44px] text-on-surface-variant transition-colors hover:bg-surface-container-high disabled:opacity-50"
             aria-label="Làm mới"
           >
             <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
           </button>
         </div>
-      </div>
+      </PageHeader>
 
       {/* Stats cards */}
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -172,15 +145,15 @@ export default function AdminAnalyticsPage() {
         <StatCard
           icon={Smartphone}
           label="Mobile"
-          value={data?.deviceBreakdown.mobile || 0}
-          suffix={totalDevice > 0 ? `${Math.round(((data?.deviceBreakdown.mobile || 0) / totalDevice) * 100)}%` : '0%'}
+          value={data?.deviceBreakdown?.mobile || 0}
+          suffix={totalDevice > 0 ? `${Math.round(((data?.deviceBreakdown?.mobile || 0) / totalDevice) * 100)}%` : '0%'}
           color="tertiary"
         />
         <StatCard
           icon={Monitor}
           label="Desktop"
-          value={data?.deviceBreakdown.desktop || 0}
-          suffix={totalDevice > 0 ? `${Math.round(((data?.deviceBreakdown.desktop || 0) / totalDevice) * 100)}%` : '0%'}
+          value={data?.deviceBreakdown?.desktop || 0}
+          suffix={totalDevice > 0 ? `${Math.round(((data?.deviceBreakdown?.desktop || 0) / totalDevice) * 100)}%` : '0%'}
           color="primary"
         />
       </div>
@@ -235,10 +208,10 @@ export default function AdminAnalyticsPage() {
                         </div>
                       </td>
                       <td className="py-3 pr-4 text-right text-body-sm font-medium text-on-surface">
-                        {page.views.toLocaleString()}
+                        {formatNumber(page.views)}
                       </td>
                       <td className="py-3 text-right text-body-sm text-on-surface-variant">
-                        {page.unique.toLocaleString()}
+                        {formatNumber(page.unique)}
                       </td>
                     </tr>
                   ))}
@@ -261,19 +234,19 @@ export default function AdminAnalyticsPage() {
             <DeviceBar
               icon={Monitor}
               label="Desktop"
-              value={data?.deviceBreakdown.desktop || 0}
+              value={data?.deviceBreakdown?.desktop || 0}
               total={totalDevice}
             />
             <DeviceBar
               icon={Smartphone}
               label="Mobile"
-              value={data?.deviceBreakdown.mobile || 0}
+              value={data?.deviceBreakdown?.mobile || 0}
               total={totalDevice}
             />
             <DeviceBar
               icon={Tablet}
               label="Tablet"
-              value={data?.deviceBreakdown.tablet || 0}
+              value={data?.deviceBreakdown?.tablet || 0}
               total={totalDevice}
             />
           </div>
@@ -327,7 +300,7 @@ function StatCard({
         )}
       </div>
       <p className="mt-3 font-body text-headline-md font-bold text-on-surface">
-        {value.toLocaleString()}
+        {formatNumber(value)}
       </p>
       <p className="mt-1 text-body-sm text-on-surface-variant">{label}</p>
     </div>
@@ -355,7 +328,7 @@ function DeviceBar({
           <span className="text-body-sm text-on-surface">{label}</span>
         </div>
         <span className="text-label-sm text-on-surface-variant">
-          {value.toLocaleString()} ({pct}%)
+          {formatNumber(value)} ({pct}%)
         </span>
       </div>
       <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-container">
@@ -378,50 +351,62 @@ function TrendChart({
   const maxViews = Math.max(...data.map((d) => d.views), 1)
   const chartHeight = 200
 
+  // On mobile with many data points, ensure bars have minimum width
+  const minBarWidth = 8 // px
+  const needsScroll = data.length > 15
+
   return (
     <div className="relative">
       {/* Y-axis labels */}
       <div className="absolute left-0 top-0 flex h-[200px] flex-col justify-between text-label-sm text-on-surface-variant/50">
-        <span>{maxViews.toLocaleString()}</span>
-        <span>{Math.round(maxViews / 2).toLocaleString()}</span>
+        <span>{formatNumber(maxViews)}</span>
+        <span>{formatNumber(Math.round(maxViews / 2))}</span>
         <span>0</span>
       </div>
 
-      {/* Chart bars */}
-      <div className="ml-12 flex items-end gap-1" style={{ height: chartHeight }}>
-        {data.map((d, i) => {
-          const viewHeight = (d.views / maxViews) * chartHeight
-          const uniqueHeight = (d.unique / maxViews) * chartHeight
-          const dateStr = d.date.slice(5) // MM-DD
+      {/* Chart bars — scrollable on mobile when many data points */}
+      <div className={needsScroll ? 'ml-12 overflow-x-auto' : 'ml-12'}>
+        <div
+          className="flex items-end gap-1"
+          style={{
+            height: chartHeight,
+            minWidth: needsScroll ? `${data.length * (minBarWidth + 4)}px` : undefined,
+          }}
+        >
+          {data.map((d, i) => {
+            const viewHeight = (d.views / maxViews) * chartHeight
+            const dateStr = d.date.slice(5) // MM-DD
 
-          return (
-            <div
-              key={i}
-              className="group relative flex flex-1 flex-col items-center"
-            >
-              {/* Tooltip */}
-              <div className="pointer-events-none absolute -top-16 z-10 hidden rounded-lg bg-inverse-surface px-3 py-2 text-label-sm text-inverse-on-surface shadow-lg group-hover:block">
-                <p>{d.date}</p>
-                <p>Xem: {d.views.toLocaleString()}</p>
-                <p>Khách: {d.unique.toLocaleString()}</p>
-              </div>
-
-              {/* View bar */}
+            return (
               <div
-                className="w-full rounded-t bg-primary/30 transition-all group-hover:bg-primary/50"
-                style={{ height: `${viewHeight}px` }}
-              />
+                key={i}
+                className="group relative flex flex-1 flex-col items-center"
+                style={{ minWidth: `${minBarWidth}px` }}
+              >
+                {/* Tooltip */}
+                <div className="pointer-events-none absolute -top-16 z-10 hidden rounded-lg bg-inverse-surface px-3 py-2 text-label-sm text-inverse-on-surface shadow-lg group-hover:block">
+                  <p>{d.date}</p>
+                  <p>Xem: {formatNumber(d.views)}</p>
+                  <p>Khách: {formatNumber(d.unique)}</p>
+                </div>
 
-              {/* Date label (show every few) */}
-              {(i % Math.max(1, Math.floor(data.length / 8)) === 0 ||
-                i === data.length - 1) && (
-                <span className="mt-2 text-label-sm text-on-surface-variant/50">
-                  {dateStr}
-                </span>
-              )}
-            </div>
-          )
-        })}
+                {/* View bar */}
+                <div
+                  className="w-full rounded-t bg-primary/30 transition-all group-hover:bg-primary/50"
+                  style={{ height: `${viewHeight}px` }}
+                />
+
+                {/* Date label (show every few) */}
+                {(i % Math.max(1, Math.floor(data.length / 8)) === 0 ||
+                  i === data.length - 1) && (
+                  <span className="mt-2 whitespace-nowrap text-label-sm text-on-surface-variant/50">
+                    {dateStr}
+                  </span>
+                )}
+              </div>
+            )
+          })}
+        </div>
       </div>
     </div>
   )

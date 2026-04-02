@@ -1,4 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { ActionLogger } from '../../common/helpers/logger.helper';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, LessThan } from 'typeorm';
 import { InjectQueue } from '@nestjs/bullmq';
@@ -9,7 +10,7 @@ import { PageView } from '../analytics/entities/page-view.entity';
 
 @Injectable()
 export class CronService {
-  private readonly logger = new Logger(CronService.name);
+  private readonly actionLogger = new ActionLogger('CronService');
 
   constructor(
     @InjectQueue('traffic-sync') private readonly trafficSyncQueue: Queue,
@@ -33,7 +34,7 @@ export class CronService {
       removeOnFail: { age: 7 * 24 * 3600 },
     });
 
-    this.logger.log(`Traffic sync job queued: ${job.id}`);
+    this.actionLogger.log(`Traffic sync job queued: ${job.id}`);
     return { jobId: job.id };
   }
 
@@ -79,7 +80,7 @@ export class CronService {
       oldPageViews: oldViews.affected ?? 0,
     };
 
-    this.logger.log('Cleanup sessions complete', result);
+    this.actionLogger.log('Cleanup sessions complete');
     return result;
   }
 }

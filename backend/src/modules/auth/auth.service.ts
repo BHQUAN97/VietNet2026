@@ -217,10 +217,15 @@ export class AuthService {
     ip?: string,
     userAgent?: string,
   ) {
-    let payload: { sub: string };
+    let payload: { sub: string; type?: string };
     try {
       payload = this.jwtService.verify(refreshToken);
     } catch {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    // Guard: reject access tokens used as refresh tokens
+    if (payload.type && payload.type !== 'refresh') {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
@@ -276,15 +281,19 @@ export class AuthService {
   }
 
   private async generateTokens(userId: string, email: string, role: string) {
-    const payload = { sub: userId, email, role };
-
     const [accessToken, refreshToken] = await Promise.all([
-      this.jwtService.signAsync(payload, {
-        expiresIn: this.configService.get<number>('jwt.expiresIn', 3600),
-      }),
-      this.jwtService.signAsync(payload, {
-        expiresIn: this.configService.get<number>('jwt.refreshExpiresIn', 604800),
-      }),
+      this.jwtService.signAsync(
+        { sub: userId, email, role, type: 'access' },
+        {
+          expiresIn: this.configService.get<number>('jwt.expiresIn', 3600),
+        },
+      ),
+      this.jwtService.signAsync(
+        { sub: userId, email, role, type: 'refresh' },
+        {
+          expiresIn: this.configService.get<number>('jwt.refreshExpiresIn', 604800),
+        },
+      ),
     ]);
 
     return { accessToken, refreshToken };

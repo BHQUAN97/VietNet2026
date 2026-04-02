@@ -59,120 +59,213 @@ if not exist "frontend\.env" (
     echo   Da tao frontend\.env
 )
 
-:: ── Stop old containers ──
+:: ── Check if infra (MySQL, Redis) is already running ──
+set INFRA_RUNNING=0
+docker-compose ps mysql 2>nul | findstr /i "running healthy" >nul 2>&1
+if not errorlevel 1 (
+    docker-compose ps redis 2>nul | findstr /i "running healthy" >nul 2>&1
+    if not errorlevel 1 set INFRA_RUNNING=1
+)
+
+:: ── Menu ──
 echo.
-echo [1/4] Dung containers cu...
+if !INFRA_RUNNING!==1 (
+    echo   [MySQL + Redis dang chay]
+    echo.
+    echo   1. Rebuild FE+BE only    ^(nhanh, ~30s^)
+    echo   2. Rebuild FE only
+    echo   3. Rebuild BE only
+    echo   4. Full restart           ^(down tat ca, build lai tu dau^)
+    echo   5. Chi restart FE+BE     ^(khong rebuild, dung image cu^)
+    echo.
+    set /p CHOICE="Chon [1-5, default=1]: "
+    if "!CHOICE!"=="" set CHOICE=1
+) else (
+    echo   [Infra chua chay - can khoi dong day du]
+    echo.
+    echo   1. Khoi dong tat ca
+    echo   2. Khoi dong infra only   ^(MySQL + Redis^)
+    echo.
+    set /p CHOICE="Chon [1-2, default=1]: "
+    if "!CHOICE!"=="" set CHOICE=1
+    if "!CHOICE!"=="2" goto start_infra_only
+    set CHOICE=4
+)
+
+:: ── Execute based on choice ──
+
+if "!CHOICE!"=="1" goto rebuild_fe_be
+if "!CHOICE!"=="2" goto rebuild_fe
+if "!CHOICE!"=="3" goto rebuild_be
+if "!CHOICE!"=="4" goto full_restart
+if "!CHOICE!"=="5" goto restart_fe_be
+goto rebuild_fe_be
+
+:: ────────────────────────────────────────────
+:rebuild_fe_be
+echo.
+echo [1/2] Build Frontend + Backend...
+docker-compose build --parallel frontend backend 2>&1
+if errorlevel 1 goto build_error
+echo.
+echo [2/2] Restart Frontend + Backend + Nginx...
+docker-compose up -d --no-deps backend
+docker-compose up -d --no-deps frontend
+:: Cho frontend healthy roi restart nginx (nginx depends on FE+BE)
+echo   Cho backend + frontend san sang...
+call :wait_for_backend
+call :wait_for_frontend
+docker-compose up -d --no-deps nginx
+goto done
+
+:: ────────────────────────────────────────────
+:rebuild_fe
+echo.
+echo [1/2] Build Frontend...
+docker-compose build frontend 2>&1
+if errorlevel 1 goto build_error
+echo.
+echo [2/2] Restart Frontend + Nginx...
+docker-compose up -d --no-deps frontend
+call :wait_for_frontend
+docker-compose up -d --no-deps nginx
+goto done
+
+:: ────────────────────────────────────────────
+:rebuild_be
+echo.
+echo [1/2] Build Backend...
+docker-compose build backend 2>&1
+if errorlevel 1 goto build_error
+echo.
+echo [2/2] Restart Backend + Nginx...
+docker-compose up -d --no-deps backend
+call :wait_for_backend
+docker-compose up -d --no-deps nginx
+goto done
+
+:: ────────────────────────────────────────────
+:restart_fe_be
+echo.
+echo Restart Frontend + Backend (khong rebuild)...
+docker-compose restart backend frontend
+call :wait_for_backend
+call :wait_for_frontend
+docker-compose restart nginx
+goto done
+
+:: ────────────────────────────────────────────
+:start_infra_only
+echo.
+echo Khoi dong MySQL + Redis...
+docker-compose up -d mysql redis
+call :wait_for_mysql
+call :wait_for_redis
+echo.
+echo   MySQL:  OK (port 3306)
+echo   Redis:  OK (port 6379)
+echo.
+echo Infra san sang. Chay lai script de build FE/BE.
+pause
+exit /b 0
+
+:: ────────────────────────────────────────────
+:full_restart
+echo.
+echo [1/4] Dung tat ca containers...
 docker-compose down --remove-orphans 2>nul
-
-:: ── Build with latest code (always rebuild) ──
 echo.
-echo [2/4] Build voi code moi nhat...
-echo   - Backend NestJS
-echo   - Frontend Next.js
+echo [2/4] Build Frontend + Backend...
+docker-compose build --parallel frontend backend 2>&1
+if errorlevel 1 goto build_error
 echo.
-docker-compose build --parallel 2>&1
-if errorlevel 1 (
-    echo.
-    echo [ERROR] Build that bai! Chi tiet:
-    echo.
-    docker-compose build 2>&1 | findstr /i "error"
-    echo.
-    echo Thu chay: docker-compose build 2>&1
-    pause
-    exit /b 1
-)
-
-:: ── Start services ──
-echo.
-echo [3/4] Khoi dong services...
-echo   - MySQL 8      (port 3306)
-echo   - Redis 7      (port 6379)
-echo   - Backend      (port 4000)
-echo   - Frontend     (port 3000)
-echo   - Nginx proxy  (port 8080)
-echo.
-
+echo [3/4] Khoi dong tat ca services...
 docker-compose up -d
-if errorlevel 1 (
-    echo.
-    echo [ERROR] Khoi dong that bai!
-    echo.
-    echo Kiem tra logs:
-    docker-compose logs --tail=20 2>&1
-    echo.
-    pause
-    exit /b 1
-)
-
-:: ── Wait for health checks with timeout ──
 echo.
 echo [4/4] Cho services san sang...
+call :wait_for_mysql
+call :wait_for_redis
+call :wait_for_backend
+call :wait_for_frontend
+goto done
 
-:: MySQL
-set /a _retries=0
-:wait_mysql
-set /a _retries+=1
-if !_retries! gtr 30 (
-    echo   [WARN] MySQL chua san sang sau 60s - kiem tra logs
-    goto check_redis
+:: ────────────────────────────────────────────
+:build_error
+echo.
+echo [ERROR] Build that bai!
+echo   Thu chay: docker-compose build 2>&1
+pause
+exit /b 1
+
+:: ── Health check subroutines ──
+
+:wait_for_mysql
+set /a _r=0
+:_wm
+set /a _r+=1
+if !_r! gtr 30 (
+    echo   [WARN] MySQL chua san sang sau 60s
+    goto :eof
 )
 docker-compose exec -T mysql mysqladmin ping -h localhost >nul 2>&1
 if errorlevel 1 (
     timeout /t 2 /nobreak >nul
-    goto wait_mysql
+    goto _wm
 )
 echo   MySQL:    OK
+goto :eof
 
-:: Redis
-:check_redis
-set /a _retries=0
-:wait_redis
-set /a _retries+=1
-if !_retries! gtr 15 (
+:wait_for_redis
+set /a _r=0
+:_wr
+set /a _r+=1
+if !_r! gtr 15 (
     echo   [WARN] Redis chua san sang sau 30s
-    goto check_backend
+    goto :eof
 )
 docker-compose exec -T redis redis-cli ping >nul 2>&1
 if errorlevel 1 (
     timeout /t 2 /nobreak >nul
-    goto wait_redis
+    goto _wr
 )
 echo   Redis:    OK
+goto :eof
 
-:: Backend
-:check_backend
-set /a _retries=0
-:wait_backend
-set /a _retries+=1
-if !_retries! gtr 20 (
+:wait_for_backend
+set /a _r=0
+:_wb
+set /a _r+=1
+if !_r! gtr 20 (
     echo   [WARN] Backend chua san sang sau 60s
     echo   Kiem tra: docker-compose logs backend
-    goto check_frontend
+    goto :eof
 )
 curl -sf http://localhost:4000/api/health >nul 2>&1
 if errorlevel 1 (
     timeout /t 3 /nobreak >nul
-    goto wait_backend
+    goto _wb
 )
 echo   Backend:  OK
+goto :eof
 
-:: Frontend
-:check_frontend
-set /a _retries=0
-:wait_frontend
-set /a _retries+=1
-if !_retries! gtr 20 (
+:wait_for_frontend
+set /a _r=0
+:_wf
+set /a _r+=1
+if !_r! gtr 20 (
     echo   [WARN] Frontend chua san sang sau 60s
     echo   Kiem tra: docker-compose logs frontend
-    goto done
+    goto :eof
 )
 curl -sf http://localhost:3000 >nul 2>&1
 if errorlevel 1 (
     timeout /t 3 /nobreak >nul
-    goto wait_frontend
+    goto _wf
 )
 echo   Frontend: OK
+goto :eof
 
+:: ── Done ──
 :done
 echo.
 echo ============================================

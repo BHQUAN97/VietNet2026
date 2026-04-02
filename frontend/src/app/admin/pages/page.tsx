@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import api from '@/lib/api'
+import { formatDateTime } from '@/lib/date'
 import type {
   PageConfig,
   PageConfigData,
@@ -261,21 +262,21 @@ export default function AdminPagesPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="py-4">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="mb-8 flex items-center justify-between">
         <div>
-          <h1 className="font-headline text-headline-md text-on-surface">
+          <h1 className="font-headline text-headline-lg text-on-surface">
             Page Builder
           </h1>
           <p className="mt-1 text-body-sm text-on-surface-variant">
             Trang chủ — Phiên bản {pageConfig?.version || 0}
             {pageConfig?.published_at && (
-              <> — Xuất bản lúc {new Date(pageConfig.published_at).toLocaleString('vi-VN')}</>
+              <> — Xuất bản lúc {formatDateTime(pageConfig.published_at)}</>
             )}
           </p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-2 md:gap-3">
           {saveStatus && (
             <span className="text-body-sm text-primary">{saveStatus}</span>
           )}
@@ -289,9 +290,7 @@ export default function AdminPagesPage() {
             Lịch sử
           </Button>
           <a
-            href={`/api/draft/enable?secret=${encodeURIComponent(
-              process.env.NEXT_PUBLIC_PREVIEW_SECRET || 'preview-secret',
-            )}&slug=/`}
+            href="/api/draft/enable?slug=/"
             target="_blank"
             rel="noopener noreferrer"
           >
@@ -353,7 +352,7 @@ export default function AdminPagesPage() {
                     </span>
                     <span className="ml-3 text-body-sm text-on-surface-variant">
                       {h.published_at
-                        ? new Date(h.published_at).toLocaleString('vi-VN')
+                        ? formatDateTime(h.published_at)
                         : ''}
                     </span>
                   </div>
@@ -383,35 +382,35 @@ export default function AdminPagesPage() {
                 : 'bg-surface-container-low/50 opacity-60'
             }`}
           >
-            {/* Section header */}
-            <div className="flex items-center gap-3 px-4 py-3">
-              <GripVertical className="h-5 w-5 shrink-0 text-on-surface-variant/40" />
-              <div className="flex-1">
-                <span className="font-label text-label-lg text-on-surface">
+            {/* Section header — wraps to 2 rows on narrow mobile */}
+            <div className="flex flex-wrap items-center gap-2 px-4 py-3">
+              <div className="flex min-w-0 flex-1 items-center gap-2">
+                <GripVertical className="h-5 w-5 shrink-0 text-on-surface-variant/40" />
+                <span className="truncate font-label text-label-lg text-on-surface">
                   {SECTION_TYPE_LABELS[section.type]}
                 </span>
                 {!section.visible && (
-                  <span className="ml-2 text-body-sm text-on-surface-variant">(Ẩn)</span>
+                  <span className="shrink-0 text-body-sm text-on-surface-variant">(Ẩn)</span>
                 )}
               </div>
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => moveSection(index, 'up')}
                   disabled={index === 0}
-                  className="rounded-lg p-2 text-on-surface-variant hover:bg-surface-container-high disabled:opacity-30"
+                  className="rounded-lg p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high disabled:opacity-30"
                 >
                   <ChevronUp className="h-4 w-4" />
                 </button>
                 <button
                   onClick={() => moveSection(index, 'down')}
                   disabled={index === sections.length - 1}
-                  className="rounded-lg p-2 text-on-surface-variant hover:bg-surface-container-high disabled:opacity-30"
+                  className="rounded-lg p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high disabled:opacity-30"
                 >
                   <ChevronDown className="h-4 w-4" />
                 </button>
                 <button
                   onClick={() => toggleVisibility(index)}
-                  className="rounded-lg p-2 text-on-surface-variant hover:bg-surface-container-high"
+                  className="rounded-lg p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high"
                 >
                   {section.visible ? (
                     <Eye className="h-4 w-4" />
@@ -421,7 +420,7 @@ export default function AdminPagesPage() {
                 </button>
                 <button
                   onClick={() => removeSection(index)}
-                  className="rounded-lg p-2 text-on-surface-variant hover:bg-error-container hover:text-on-error-container"
+                  className="rounded-lg p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-on-surface-variant hover:bg-error-container hover:text-on-error-container"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
@@ -431,7 +430,7 @@ export default function AdminPagesPage() {
                       expandedSection === section.id ? null : section.id,
                     )
                   }
-                  className="rounded-lg p-2 text-on-surface-variant hover:bg-surface-container-high"
+                  className="rounded-lg p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high"
                 >
                   {expandedSection === section.id ? (
                     <ChevronUp className="h-4 w-4" />
@@ -508,14 +507,14 @@ function FieldInput({
           value={value}
           onChange={(e) => onChange(e.target.value)}
           rows={3}
-          className="w-full rounded-lg bg-surface-container px-3 py-2 text-body-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/40"
+          className="w-full rounded-lg bg-surface-container px-3 py-2 min-h-[44px] text-body-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/40"
         />
       ) : (
         <input
           type="text"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-full rounded-lg bg-surface-container px-3 py-2 text-body-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/40"
+          className="w-full rounded-lg bg-surface-container px-3 py-2 min-h-[44px] text-body-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/40"
         />
       )}
     </div>
@@ -540,7 +539,7 @@ function FieldNumber({
         type="number"
         value={value}
         onChange={(e) => onChange(parseInt(e.target.value) || 0)}
-        className="w-full rounded-lg bg-surface-container px-3 py-2 text-body-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/40"
+        className="w-full rounded-lg bg-surface-container px-3 py-2 min-h-[44px] text-body-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/40"
       />
     </div>
   )
@@ -592,7 +591,7 @@ function SectionConfigEditor({ section, index, onUpdate }: ConfigEditorProps) {
               Thống kê
             </label>
             {(config.stats || []).map((stat: any, si: number) => (
-              <div key={si} className="mb-2 flex gap-2">
+              <div key={si} className="mb-2 flex flex-wrap gap-2 sm:flex-nowrap">
                 <input
                   value={stat.value}
                   onChange={(e) => {
@@ -601,7 +600,7 @@ function SectionConfigEditor({ section, index, onUpdate }: ConfigEditorProps) {
                     onUpdate(index, 'stats', newStats)
                   }}
                   placeholder="Giá trị (vd: 10+)"
-                  className="w-1/3 rounded-lg bg-surface-container px-3 py-2 text-body-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/40"
+                  className="w-full sm:w-1/3 rounded-lg bg-surface-container px-3 py-2 min-h-[44px] text-body-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/40"
                 />
                 <input
                   value={stat.label}
@@ -611,14 +610,14 @@ function SectionConfigEditor({ section, index, onUpdate }: ConfigEditorProps) {
                     onUpdate(index, 'stats', newStats)
                   }}
                   placeholder="Nhãn (vd: Năm kinh nghiệm)"
-                  className="flex-1 rounded-lg bg-surface-container px-3 py-2 text-body-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/40"
+                  className="flex-1 min-w-0 rounded-lg bg-surface-container px-3 py-2 min-h-[44px] text-body-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/40"
                 />
                 <button
                   onClick={() => {
                     const newStats = (config.stats || []).filter((_: any, i: number) => i !== si)
                     onUpdate(index, 'stats', newStats)
                   }}
-                  className="rounded-lg p-2 text-on-surface-variant hover:bg-error-container hover:text-on-error-container"
+                  className="rounded-lg p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-on-surface-variant hover:bg-error-container hover:text-on-error-container"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>
@@ -682,7 +681,7 @@ function SectionConfigEditor({ section, index, onUpdate }: ConfigEditorProps) {
                       onUpdate(index, 'items', newItems)
                     }}
                     placeholder="Tên"
-                    className="rounded-lg bg-surface-container px-3 py-2 text-body-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/40"
+                    className="rounded-lg bg-surface-container px-3 py-2 min-h-[44px] text-body-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/40"
                   />
                   <input
                     value={item.role}
@@ -692,7 +691,7 @@ function SectionConfigEditor({ section, index, onUpdate }: ConfigEditorProps) {
                       onUpdate(index, 'items', newItems)
                     }}
                     placeholder="Vai trò"
-                    className="rounded-lg bg-surface-container px-3 py-2 text-body-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/40"
+                    className="rounded-lg bg-surface-container px-3 py-2 min-h-[44px] text-body-sm text-on-surface outline-none focus:ring-2 focus:ring-primary/40"
                   />
                 </div>
                 <textarea
@@ -712,7 +711,7 @@ function SectionConfigEditor({ section, index, onUpdate }: ConfigEditorProps) {
                       const newItems = (config.items || []).filter((_: any, i: number) => i !== ti)
                       onUpdate(index, 'items', newItems)
                     }}
-                    className="rounded-lg p-1 text-on-surface-variant hover:bg-error-container hover:text-on-error-container"
+                    className="rounded-lg p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-on-surface-variant hover:bg-error-container hover:text-on-error-container"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>

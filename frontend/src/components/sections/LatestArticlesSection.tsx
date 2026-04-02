@@ -4,6 +4,7 @@ import { PageContainer } from '@/components/layout/PageContainer'
 import { ScrollReveal } from '@/components/ui/ScrollReveal'
 import { ArrowUpRight } from 'lucide-react'
 import type { LatestArticlesConfig, Article } from '@/types'
+import { formatDate } from '@/lib/date'
 
 import { getServerApiUrl } from '@/lib/api-url'
 
@@ -47,7 +48,7 @@ export async function LatestArticlesSection({ config }: Props) {
             <p className="text-body-md text-on-surface-variant">Chưa có bài viết nào.</p>
           </div>
         ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="card-grid">
             {articles.map((article, index) => (
               <ScrollReveal key={article.id} delay={index * 0.1} className="group">
                 <Link
@@ -72,10 +73,7 @@ export async function LatestArticlesSection({ config }: Props) {
                     {article.published_at && (
                       <div className="absolute left-3 top-3 rounded-lg bg-surface/90 px-2.5 py-1 shadow-ambient-sm backdrop-blur-sm">
                         <p className="font-label text-label-sm text-on-surface">
-                          {new Date(article.published_at).toLocaleDateString('vi-VN', {
-                            day: 'numeric',
-                            month: 'short',
-                          })}
+                          {formatDate(article.published_at)}
                         </p>
                       </div>
                     )}

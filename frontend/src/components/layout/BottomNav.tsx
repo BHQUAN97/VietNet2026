@@ -61,7 +61,7 @@ export function BottomNav() {
               backgroundColor: 'var(--color-surface)',
               borderTopLeftRadius: 'var(--radius-2xl)',
               borderTopRightRadius: 'var(--radius-2xl)',
-              boxShadow: '0 -8px 32px rgba(85, 55, 34, 0.08)',
+              boxShadow: 'var(--shadow-xl)', /* matches design token --shadow-xl */
             }}
           >
             <div className="px-5 pb-4 pt-5">
@@ -103,7 +103,7 @@ export function BottomNav() {
           backgroundColor: 'var(--color-surface)',
           borderTopLeftRadius: 'var(--radius-2xl)',
           borderTopRightRadius: 'var(--radius-2xl)',
-          boxShadow: '0 -4px 24px rgba(85, 55, 34, 0.06)',
+          boxShadow: 'var(--shadow-bottom-nav)', /* matches design token --shadow-bottom-nav */
         }}
         aria-label="Mobile navigation"
       >
@@ -125,8 +125,8 @@ export function BottomNav() {
                 className={cn(
                   'flex flex-col items-center justify-center transition-transform duration-200 active:scale-90',
                   menuOpen
-                    ? 'rounded-xl bg-primary-container/10 px-3 py-1 text-primary-container'
-                    : 'px-3 py-1 text-on-surface-variant/70 hover:text-primary'
+                    ? 'rounded-xl bg-primary-container/10 px-3 py-1 min-h-[44px] text-primary-container'
+                    : 'px-3 py-1 min-h-[44px] text-on-surface-variant/70 hover:text-primary'
                 )}
                 aria-label={menuOpen ? 'Đóng menu' : 'Mở menu'}
               >
@@ -154,8 +154,8 @@ export function BottomNav() {
               className={cn(
                 'flex flex-col items-center justify-center transition-transform duration-200 active:scale-90',
                 isActive
-                  ? 'rounded-xl bg-primary-container/10 px-3 py-1 text-primary-container'
-                  : 'px-3 py-1 text-on-surface-variant/70 hover:text-primary'
+                  ? 'rounded-xl bg-primary-container/10 px-3 py-1 min-h-[44px] text-primary-container'
+                  : 'px-3 py-1 min-h-[44px] text-on-surface-variant/70 hover:text-primary'
               )}
               aria-label={item.label}
             >

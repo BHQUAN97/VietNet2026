@@ -91,17 +91,18 @@ const config: Config = {
       },
 
       fontFamily: {
-        'headline': ['"Noto Serif"', 'Georgia', 'serif'],
-        'body':     ['"Manrope"', 'system-ui', 'sans-serif'],
-        'label':    ['"Manrope"', 'system-ui', 'sans-serif'],
+        'headline': ['"Google Sans Flex"', 'system-ui', 'sans-serif'],
+        'body':     ['"Google Sans Flex"', 'system-ui', 'sans-serif'],
+        'label':    ['"Google Sans Flex"', 'system-ui', 'sans-serif'],
       },
 
       fontSize: {
         'display-lg':  ['3.5rem',   { lineHeight: '1.1',  fontWeight: '700', letterSpacing: '0' }],
-        'display-md':  ['3rem',     { lineHeight: '1.1',  fontWeight: '700', letterSpacing: '0' }],
-        'headline-lg': ['2.5rem',   { lineHeight: '1.2',  fontWeight: '700', letterSpacing: '0' }],
+        'display-md':  ['2.5rem',   { lineHeight: '1.15', fontWeight: '700', letterSpacing: '0' }],
+        'display-sm':  ['2.25rem',  { lineHeight: '1.2',  fontWeight: '700', letterSpacing: '0' }],
+        'headline-lg': ['2rem',     { lineHeight: '1.25', fontWeight: '700', letterSpacing: '0' }],
         'headline-md': ['1.75rem',  { lineHeight: '1.3',  fontWeight: '700' }],
-        'headline-sm': ['1.25rem',  { lineHeight: '1.4',  fontWeight: '700' }],
+        'headline-sm': ['1.25rem',  { lineHeight: '1.35',  fontWeight: '700' }],
         'title-lg':    ['1.375rem', { lineHeight: '1.4',  fontWeight: '600' }],
         'title-md':    ['1rem',     { lineHeight: '1.5',  fontWeight: '600' }],
         'body-lg':     ['1.125rem', { lineHeight: '1.6',  fontWeight: '400' }],
@@ -120,7 +121,7 @@ const config: Config = {
         'xl':      '0.5rem',
         '2xl':     '1rem',
         '3xl':     '1.5rem',
-        'full':    '0.75rem',
+        'full':    '9999px',
       },
 
       boxShadow: {
@@ -173,8 +174,8 @@ const config: Config = {
           to:   { opacity: '1', transform: 'scale(1)' },
         },
         'hero-reveal': {
-          from: { opacity: '0', transform: 'translateY(40px)', filter: 'blur(8px)' },
-          to:   { opacity: '1', transform: 'translateY(0)', filter: 'blur(0)' },
+          from: { opacity: '0', transform: 'translateY(40px)' },
+          to:   { opacity: '1', transform: 'translateY(0)' },
         },
         'line-expand': {
           from: { transform: 'scaleX(0)' },

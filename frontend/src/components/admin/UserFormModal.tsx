@@ -144,14 +144,14 @@ export function UserFormModal({ open, onOpenChange, user, onSuccess }: UserFormM
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-[var(--z-modal-backdrop)] bg-on-surface/30 backdrop-blur-sm data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
-        <Dialog.Content className="fixed left-1/2 top-1/2 z-[var(--z-modal)] w-[calc(100%-2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-surface p-6 shadow-ambient-lg md:p-8 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]">
+        <Dialog.Content className="fixed left-1/2 top-1/2 z-[var(--z-modal)] w-[calc(100%-2rem)] max-w-lg max-h-[calc(100vh-2rem)] overflow-y-auto -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-surface p-6 shadow-ambient-lg md:p-8 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[state=closed]:slide-out-to-left-1/2 data-[state=closed]:slide-out-to-top-[48%] data-[state=open]:slide-in-from-left-1/2 data-[state=open]:slide-in-from-top-[48%]">
           <div className="flex items-center justify-between mb-6">
             <Dialog.Title className="font-headline text-headline-sm text-on-surface">
               {isEdit ? 'Chỉnh sửa người dùng' : 'Thêm người dùng mới'}
             </Dialog.Title>
             <Dialog.Close asChild>
               <button
-                className="flex h-10 w-10 items-center justify-center rounded-xl text-on-surface-variant transition-colors duration-200 hover:bg-surface-container-high"
+                className="flex h-11 w-11 items-center justify-center rounded-xl text-on-surface-variant transition-colors duration-200 hover:bg-surface-container-high"
                 aria-label="Đóng"
               >
                 <X className="h-5 w-5" />

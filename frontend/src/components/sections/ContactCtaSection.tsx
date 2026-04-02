@@ -94,7 +94,7 @@ function FullCtaSection({ config }: Props) {
 
   return (
     <section className="py-20 md:py-32 px-4 md:px-8 bg-primary" id="consultation">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-20">
         {/* Left: info */}
         <ScrollReveal className="text-surface-bright">
           <span className="font-label text-label-sm tracking-[0.2em] text-on-primary-container uppercase mb-4 block">
@@ -117,7 +117,7 @@ function FullCtaSection({ config }: Props) {
                   <p className="font-label text-label-sm tracking-widest text-surface-bright/60 uppercase mb-1">
                     Direct Line
                   </p>
-                  <a href={`tel:${config.phone.replace(/\s/g, '')}`} className="text-title-md md:text-title-lg font-headline font-bold text-surface-bright hover:text-on-primary-container transition-colors">
+                  <a href={`tel:${config.phone.replace(/\s/g, '')}`} className="break-all text-title-md md:text-title-lg font-headline font-bold text-surface-bright hover:text-on-primary-container transition-colors">
                     {config.phone}
                   </a>
                 </div>
@@ -132,7 +132,7 @@ function FullCtaSection({ config }: Props) {
                   <p className="font-label text-label-sm tracking-widest text-surface-bright/60 uppercase mb-1">
                     Email Inquiry
                   </p>
-                  <a href={`mailto:${config.email}`} className="text-title-md md:text-title-lg font-headline font-bold text-surface-bright hover:text-on-primary-container transition-colors">
+                  <a href={`mailto:${config.email}`} className="break-all text-title-md md:text-title-lg font-headline font-bold text-surface-bright hover:text-on-primary-container transition-colors">
                     {config.email}
                   </a>
                 </div>

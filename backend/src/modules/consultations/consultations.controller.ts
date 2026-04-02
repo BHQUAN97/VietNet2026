@@ -8,7 +8,6 @@ import {
   Body,
   Query,
   Req,
-  UseGuards,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { Throttle } from '@nestjs/throttler';
@@ -17,11 +16,9 @@ import { CreateConsultationDto } from './dto/create-consultation.dto';
 import { UpdateConsultationDto } from './dto/update-consultation.dto';
 import { QueryConsultationDto } from './dto/query-consultation.dto';
 import { Public } from '../../common/decorators/public.decorator';
-import { Roles } from '../../common/decorators/roles.decorator';
+import { AdminOnly } from '../../common/decorators/admin-only.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
-import { UserRole } from '../users/entities/user.entity';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { RolesGuard } from '../../common/guards/roles.guard';
+import { ParseUlidPipe } from '../../common/pipes/parse-ulid.pipe';
 import { ok, paginated } from '../../common/helpers/response.helper';
 
 @Controller('consultations')
@@ -51,8 +48,7 @@ export class ConsultationsController {
    * GET /consultations — Admin: list consultations with pagination, status filter, search.
    */
   @Get()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @AdminOnly()
   async findAllAdmin(@Query() query: QueryConsultationDto) {
     const { status, search, ...pagination } = query;
     const filters = { status, search };
@@ -60,20 +56,15 @@ export class ConsultationsController {
       pagination,
       filters,
     );
-    return paginated(result.data, {
-      page: result.meta.page,
-      limit: result.meta.limit,
-      total: result.meta.total,
-    });
+    return paginated(result.data, result.meta);
   }
 
   /**
    * GET /consultations/:id — Admin: get consultation detail.
    */
   @Get(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  async findOne(@Param('id') id: string) {
+  @AdminOnly()
+  async findOne(@Param('id', ParseUlidPipe) id: string) {
     const consultation = await this.consultationsService.findByIdAdmin(id);
     return ok(consultation);
   }
@@ -82,10 +73,9 @@ export class ConsultationsController {
    * PATCH /consultations/:id — Admin: update status, notes, or assignee.
    */
   @Patch(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @AdminOnly()
   async update(
-    @Param('id') id: string,
+    @Param('id', ParseUlidPipe) id: string,
     @Body() dto: UpdateConsultationDto,
     @CurrentUser('id') userId: string,
   ) {
@@ -101,9 +91,8 @@ export class ConsultationsController {
    * DELETE /consultations/:id — Admin: soft delete a consultation.
    */
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  async remove(@Param('id') id: string) {
+  @AdminOnly()
+  async remove(@Param('id', ParseUlidPipe) id: string) {
     await this.consultationsService.softDelete(id);
     return ok(null, 'Consultation deleted successfully');
   }

@@ -147,7 +147,7 @@ export function UserTable({
                         size="sm"
                         onClick={() => onEdit(user)}
                         aria-label={`Sửa ${user.full_name}`}
-                        className="h-10 w-10 p-0"
+                        className="h-11 w-11 p-0"
                       >
                         <Pencil className="h-4 w-4" />
                       </Button>
@@ -156,7 +156,7 @@ export function UserTable({
                         size="sm"
                         onClick={() => onDelete(user)}
                         aria-label={`Xóa ${user.full_name}`}
-                        className="h-10 w-10 p-0 text-error hover:bg-error-container/30"
+                        className="h-11 w-11 p-0 text-error hover:bg-error-container/30"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>

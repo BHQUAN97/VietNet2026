@@ -2,7 +2,6 @@ import {
   Injectable,
   ConflictException,
   NotFoundException,
-  BadRequestException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull, DeepPartial } from 'typeorm';
@@ -11,7 +10,6 @@ import { User, UserStatus } from './entities/user.entity';
 import { BaseService } from '../../common/base/base.service';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 import { CreateUserDto } from './dto/create-user.dto';
-import { validateUlid } from '../../common/helpers/ulid.helper';
 
 @Injectable()
 export class UsersService extends BaseService<User> {
@@ -19,7 +17,7 @@ export class UsersService extends BaseService<User> {
     @InjectRepository(User)
     private readonly usersRepository: Repository<User>,
   ) {
-    super(usersRepository);
+    super(usersRepository, 'User');
   }
 
   /**
@@ -38,33 +36,27 @@ export class UsersService extends BaseService<User> {
   }
 
   /**
-   * Override findAll to exclude soft-deleted users.
+   * Override findAll to exclude soft-deleted users with sort allowlist.
    */
   async findAll(pagination: PaginationDto) {
-    const { page, limit, sort, order } = pagination;
-    const skip = (page - 1) * limit;
+    const qb = this.createBaseQuery('u');
 
-    const [data, total] = await this.usersRepository.findAndCount({
-      where: { deleted_at: IsNull() },
-      skip,
-      take: limit,
-      order: { [sort]: order } as Record<string, 'ASC' | 'DESC'>,
+    return this.executePaginatedQuery(qb, 'u', pagination, {
+      sortAllowlist: {
+        created_at: 'u.created_at',
+        updated_at: 'u.updated_at',
+        full_name: 'u.full_name',
+        email: 'u.email',
+        status: 'u.status',
+        name: 'u.full_name',
+      },
     });
-
-    return {
-      data,
-      meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
-    };
   }
 
   /**
    * Override findById to exclude soft-deleted users.
    */
   async findById(id: string): Promise<User> {
-    if (!validateUlid(id)) {
-      throw new BadRequestException('Invalid user ID format');
-    }
-
     const entity = await this.usersRepository.findOne({
       where: { id, deleted_at: IsNull() },
     });
@@ -79,10 +71,6 @@ export class UsersService extends BaseService<User> {
    * Includes password_hash and role for auth checks.
    */
   async findByIdSafe(id: string): Promise<User | null> {
-    if (!validateUlid(id)) {
-      return null;
-    }
-
     return this.usersRepository.findOne({
       where: { id, deleted_at: IsNull() },
       select: [
@@ -113,7 +101,7 @@ export class UsersService extends BaseService<User> {
 
   async findByEmail(email: string): Promise<User | null> {
     return this.usersRepository.findOne({
-      where: { email },
+      where: { email, deleted_at: IsNull() },
       select: [
         'id',
         'full_name',
@@ -133,14 +121,6 @@ export class UsersService extends BaseService<User> {
 
   async updateLastLogin(userId: string): Promise<void> {
     await this.usersRepository.update(userId, { last_login_at: new Date() });
-  }
-
-  /**
-   * Soft delete a user by setting deleted_at timestamp.
-   */
-  async softDelete(id: string): Promise<void> {
-    const user = await this.findById(id);
-    await this.usersRepository.update(user.id, { deleted_at: new Date() });
   }
 
   /**

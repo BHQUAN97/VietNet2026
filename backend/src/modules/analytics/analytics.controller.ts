@@ -10,8 +10,7 @@ import {
   AnalyticsDashboardQueryDto,
 } from './dto/analytics-query.dto';
 import { Public } from '../../common/decorators/public.decorator';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { UserRole } from '../users/entities/user.entity';
+import { AdminOnly } from '../../common/decorators/admin-only.decorator';
 import { ok } from '../../common/helpers/response.helper';
 
 @Controller('analytics')
@@ -56,7 +55,7 @@ export class AnalyticsController {
    * GET /api/analytics/summary?date=YYYY-MM-DD
    * Admin-only endpoint for dashboard stats.
    */
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @AdminOnly()
   @Get('summary')
   async getSummary(@Query() query: AnalyticsSummaryQueryDto) {
     const targetDate = query.date || new Date().toISOString().split('T')[0];
@@ -68,7 +67,7 @@ export class AnalyticsController {
    * GET /api/analytics/pageviews?path=/projects&date=YYYY-MM-DD
    * Admin-only endpoint for specific page stats.
    */
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @AdminOnly()
   @Get('pageviews')
   async getPageViews(@Query() query: AnalyticsPageviewsQueryDto) {
     if (!query.path) {
@@ -87,7 +86,7 @@ export class AnalyticsController {
    * GET /api/analytics/dashboard?start=YYYY-MM-DD&end=YYYY-MM-DD
    * Admin-only: Full dashboard stats from MySQL (persisted data).
    */
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @AdminOnly()
   @Get('dashboard')
   async getDashboard(@Query() query: AnalyticsDashboardQueryDto) {
     // Default: last 30 days

@@ -19,6 +19,8 @@ export const metadata: Metadata = {
 }
 
 async function getHomepageConfig(isDraft: boolean): Promise<PageConfigData> {
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 10000)
   try {
     const previewSecret = process.env.PREVIEW_SECRET || process.env.REVALIDATE_SECRET || ''
     // Draft mode: fetch draft via preview endpoint, otherwise fetch published
@@ -27,6 +29,7 @@ async function getHomepageConfig(isDraft: boolean): Promise<PageConfigData> {
       : `${API_URL}/pages/homepage/published`
     const res = await fetch(endpoint, {
       next: isDraft ? { revalidate: 0 } : { revalidate: 60, tags: ['homepage'] },
+      signal: controller.signal,
     })
     if (!res.ok) return DEFAULT_HOMEPAGE_CONFIG
     const json = await res.json()
@@ -40,11 +43,13 @@ async function getHomepageConfig(isDraft: boolean): Promise<PageConfigData> {
     return config
   } catch {
     return DEFAULT_HOMEPAGE_CONFIG
+  } finally {
+    clearTimeout(timeout)
   }
 }
 
 export default async function HomePage() {
-  const { isEnabled: isDraft } = draftMode()
+  const { isEnabled: isDraft } = await draftMode()
   const config = await getHomepageConfig(isDraft)
 
   return (
@@ -52,7 +57,7 @@ export default async function HomePage() {
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify(organizationJsonLd()),
+          __html: JSON.stringify(organizationJsonLd()).replace(/</g, '\\u003c'),
         }}
       />
       {isDraft && (

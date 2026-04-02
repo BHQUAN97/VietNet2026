@@ -18,6 +18,7 @@ export function AnimatedCounter({
   const [count, setCount] = useState(0)
   const [hasAnimated, setHasAnimated] = useState(false)
   const ref = useRef<HTMLSpanElement>(null)
+  const rafIdRef = useRef<number>(0)
 
   useEffect(() => {
     const element = ref.current
@@ -28,6 +29,12 @@ export function AnimatedCounter({
         const entry = entries[0]
         if (entry.isIntersecting && !hasAnimated) {
           setHasAnimated(true)
+
+          // Skip animation khi user bat reduced motion
+          if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+            setCount(target)
+            return
+          }
 
           const startTime = performance.now()
 
@@ -42,18 +49,21 @@ export function AnimatedCounter({
             setCount(current)
 
             if (progress < 1) {
-              requestAnimationFrame(animate)
+              rafIdRef.current = requestAnimationFrame(animate)
             }
           }
 
-          requestAnimationFrame(animate)
+          rafIdRef.current = requestAnimationFrame(animate)
         }
       },
       { threshold: 0.3 }
     )
 
     observer.observe(element)
-    return () => observer.disconnect()
+    return () => {
+      observer.disconnect()
+      cancelAnimationFrame(rafIdRef.current)
+    }
   }, [target, duration, hasAnimated])
 
   return (

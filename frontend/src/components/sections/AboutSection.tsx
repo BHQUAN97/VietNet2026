@@ -19,7 +19,7 @@ interface Props {
 export function AboutSection({ config }: Props) {
   return (
     <section className="py-20 md:py-32 px-4 md:px-8 bg-surface">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-16 items-center">
         {/* Left column: text + stats */}
         <ScrollReveal className="lg:col-span-5">
           <span className="font-label text-label-sm tracking-[0.2em] text-primary uppercase mb-4 block">
@@ -39,7 +39,7 @@ export function AboutSection({ config }: Props) {
 
           {/* Stats */}
           {config.stats && config.stats.length > 0 && (
-            <div className="grid grid-cols-2 gap-8 pt-8 bg-surface-container-low/40 rounded-xl p-6 -mx-2">
+            <div className="grid grid-cols-2 gap-8 pt-8 bg-surface-container-low/40 rounded-xl p-6 -mx-1">
               {config.stats.map((stat, i) => (
                 <div key={i}>
                   <p className="text-headline-lg md:text-display-md font-headline font-bold text-primary">
@@ -55,7 +55,7 @@ export function AboutSection({ config }: Props) {
         </ScrollReveal>
 
         {/* Right column: 2 staggered images */}
-        <div className="lg:col-span-7 grid grid-cols-2 gap-4">
+        <div className="lg:col-span-7 grid grid-cols-1 sm:grid-cols-2 gap-4">
           {config.images && config.images.length >= 2 ? (
             <>
               <ScrollReveal delay={0.1} className="pt-12">

@@ -28,7 +28,7 @@ export function TestimonialsSection({ config }: Props) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 md:gap-12">
             {config.items.map((item, i) => (
               <ScrollReveal key={i} delay={i * 0.15}>
-                <div className="bg-surface-container-lowest p-8 md:p-12 rounded-2xl shadow-2xl relative">
+                <div className="bg-surface-container-lowest p-5 md:p-8 lg:p-12 rounded-2xl shadow-2xl relative">
                   {/* Quote icon decorative */}
                   <span className="absolute top-6 right-6 md:top-8 md:right-8 text-primary/15 text-5xl md:text-6xl font-headline select-none">
                     &ldquo;
@@ -49,7 +49,7 @@ export function TestimonialsSection({ config }: Props) {
                   {/* Author info */}
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-full bg-primary-container/10 flex items-center justify-center text-primary font-headline font-bold text-title-md">
-                      {item.name.split(' ').map(w => w[0]).join('').slice(0, 2)}
+                      {item.name.split(' ').filter(Boolean).map(w => w[0]).join('').slice(0, 2)}
                     </div>
                     <div>
                       <h4 className="font-bold text-primary text-body-md">{item.name}</h4>

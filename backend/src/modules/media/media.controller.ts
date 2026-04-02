@@ -8,9 +8,6 @@ import {
   Req,
   UseInterceptors,
   UploadedFile,
-  ParseFilePipe,
-  MaxFileSizeValidator,
-  FileTypeValidator,
   UseGuards,
   BadRequestException,
 } from '@nestjs/common';
@@ -19,15 +16,15 @@ import * as sharp from 'sharp';
 import { MediaService } from './media.service';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 import { ok, paginated } from '../../common/helpers/response.helper';
-import { Roles } from '../../common/decorators/roles.decorator';
-import { UserRole } from '../users/entities/user.entity';
+import { AdminOnly } from '../../common/decorators/admin-only.decorator';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { RolesGuard } from '../../common/guards/roles.guard';
+import { ParseUlidPipe } from '../../common/pipes/parse-ulid.pipe';
+import { validateUploadedFile } from '../../common/helpers/file-validator';
 
 const MAX_IMAGE_DIMENSION = 10000; // 10000x10000 max to prevent DOS
 
 @Controller('media')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard)
 export class MediaController {
   constructor(private readonly mediaService: MediaService) {}
 
@@ -42,19 +39,16 @@ export class MediaController {
     }),
   )
   async upload(
-    @UploadedFile(
-      new ParseFilePipe({
-        validators: [
-          new MaxFileSizeValidator({ maxSize: 20 * 1024 * 1024 }),
-          new FileTypeValidator({
-            fileType: /^image\/(jpeg|png|webp|gif)$/,
-          }),
-        ],
-      }),
-    )
-    file: Express.Multer.File,
+    @UploadedFile() file: Express.Multer.File,
     @Req() req: any,
   ) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+
+    // Validate MIME type and file size via centralized helper
+    validateUploadedFile(file, { type: 'image', maxSize: 20 * 1024 * 1024 });
+
     // Guard: validate image dimensions to prevent DOS via huge images
     try {
       const metadata = await sharp(file.buffer).metadata();
@@ -81,7 +75,7 @@ export class MediaController {
    * List all media (paginated). Admin only.
    */
   @Get()
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
+  @AdminOnly()
   async findAll(@Query() pagination: PaginationDto) {
     const result = await this.mediaService.findAll(pagination);
     return paginated(result.data, {
@@ -96,7 +90,7 @@ export class MediaController {
    * Get a single media by ID.
    */
   @Get(':id')
-  async findOne(@Param('id') id: string) {
+  async findOne(@Param('id', ParseUlidPipe) id: string) {
     const media = await this.mediaService.findById(id);
     return ok(media);
   }
@@ -106,8 +100,8 @@ export class MediaController {
    * Soft delete a media record. Admin only.
    */
   @Delete(':id')
-  @Roles(UserRole.ADMIN, UserRole.SUPER_ADMIN)
-  async remove(@Param('id') id: string) {
+  @AdminOnly()
+  async remove(@Param('id', ParseUlidPipe) id: string) {
     await this.mediaService.softDelete(id);
     return ok(null, 'Media deleted successfully');
   }

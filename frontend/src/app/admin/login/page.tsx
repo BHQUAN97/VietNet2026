@@ -92,7 +92,7 @@ export default function AdminLoginPage() {
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-xl bg-surface-container focus:ring-2 focus:ring-primary/30 py-3 pl-11 pr-4 text-body-md text-on-surface outline-none transition-colors focus:ring-primary"
+                className="w-full rounded-xl bg-surface-container focus:ring-2 focus:ring-primary/30 py-3 pl-11 pr-4 text-body-md text-on-surface outline-none transition-colors"
                 placeholder="admin@vietnetinterior.vn"
                 autoComplete="email"
                 disabled={loading}
@@ -110,7 +110,7 @@ export default function AdminLoginPage() {
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-xl bg-surface-container focus:ring-2 focus:ring-primary/30 py-3 pl-11 pr-12 text-body-md text-on-surface outline-none transition-colors focus:ring-primary"
+                className="w-full rounded-xl bg-surface-container focus:ring-2 focus:ring-primary/30 py-3 pl-11 pr-12 text-body-md text-on-surface outline-none transition-colors"
                 placeholder="••••••••"
                 autoComplete="current-password"
                 disabled={loading}

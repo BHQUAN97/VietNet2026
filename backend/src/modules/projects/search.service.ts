@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Brackets } from 'typeorm';
+import { buildPaginationMeta } from '../../common/helpers/query-builder.helper';
 import { Project, ProjectStatus } from './entities/project.entity';
 import { Product, ProductStatus } from '../products/entities/product.entity';
 import { Article, ArticleStatus } from '../articles/entities/article.entity';
@@ -34,11 +35,13 @@ export class SearchService {
     if (!query || query.trim().length === 0) {
       return {
         data: [],
-        meta: { page, limit, total: 0, totalPages: 0 },
+        meta: buildPaginationMeta({ page, limit } as any, 0),
       };
     }
 
     const searchTerm = `%${query.trim()}%`;
+    // Cap each sub-query to prevent loading all matching rows into memory
+    const subQueryLimit = limit + (page - 1) * limit;
 
     // Search published projects
     const [projects, projectCount] = await this.projectRepo
@@ -57,6 +60,7 @@ export class SearchService {
       )
       .addOrderBy('p.updated_at', 'DESC')
       .setParameter('exactSearch', searchTerm)
+      .take(subQueryLimit)
       .getManyAndCount();
 
     // Search published products
@@ -76,6 +80,7 @@ export class SearchService {
       )
       .addOrderBy('pr.updated_at', 'DESC')
       .setParameter('exactSearch', searchTerm)
+      .take(subQueryLimit)
       .getManyAndCount();
 
     // Search published articles
@@ -95,6 +100,7 @@ export class SearchService {
       )
       .addOrderBy('ar.updated_at', 'DESC')
       .setParameter('exactSearch', searchTerm)
+      .take(subQueryLimit)
       .getManyAndCount();
 
     // Combine results
@@ -138,7 +144,6 @@ export class SearchService {
     });
 
     const total = projectCount + productCount + articleCount;
-    const totalPages = Math.ceil(total / limit);
 
     // Apply pagination to combined results
     const start = (page - 1) * limit;
@@ -146,7 +151,7 @@ export class SearchService {
 
     return {
       data: paginated,
-      meta: { page, limit, total, totalPages },
+      meta: buildPaginationMeta({ page, limit } as any, total),
     };
   }
 }

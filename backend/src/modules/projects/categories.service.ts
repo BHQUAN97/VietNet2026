@@ -1,27 +1,18 @@
-import {
-  Injectable,
-  ConflictException,
-  NotFoundException,
-  BadRequestException,
-  Logger,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, IsNull, DeepPartial } from 'typeorm';
+import { Repository, DeepPartial, IsNull } from 'typeorm';
 import { Category, CategoryType } from './entities/category.entity';
 import { BaseService } from '../../common/base/base.service';
 import { PaginationDto } from '../../common/dto/pagination.dto';
-import { validateUlid } from '../../common/helpers/ulid.helper';
 import { toSlug } from '../../common/helpers/slug.helper';
 
 @Injectable()
 export class CategoriesService extends BaseService<Category> {
-  private readonly logger = new Logger(CategoriesService.name);
-
   constructor(
     @InjectRepository(Category)
     private readonly categoryRepo: Repository<Category>,
   ) {
-    super(categoryRepo);
+    super(categoryRepo, 'Category');
   }
 
   /**
@@ -30,15 +21,14 @@ export class CategoriesService extends BaseService<Category> {
   protected async beforeSave(
     data: DeepPartial<Category>,
   ): Promise<DeepPartial<Category>> {
-    if (data.name) {
-      data.slug = toSlug(data.name as string);
-    }
+    // Auto-generate slug tu name
+    this.generateSlug(data, 'name');
 
-    // Validate parent_id if provided
+    // Validate parent_id format neu co
+    this.validateForeignKeys(data as any, ['parent_id']);
+
+    // Validate parent exists
     if (data.parent_id) {
-      if (!validateUlid(data.parent_id as string)) {
-        throw new BadRequestException('Invalid parent_id format');
-      }
       const parent = await this.categoryRepo.findOne({
         where: { id: data.parent_id as string, deleted_at: IsNull() },
       });
@@ -54,6 +44,7 @@ export class CategoriesService extends BaseService<Category> {
 
   /**
    * Hook: validate slug uniqueness per type.
+   * Khong dung base validateSlugUnique vi can filter theo type.
    */
   protected async validate(data: DeepPartial<Category>): Promise<void> {
     if (data.slug && data.type) {
@@ -65,7 +56,7 @@ export class CategoriesService extends BaseService<Category> {
         },
       });
       if (existing && existing.id !== (data as any).id) {
-        throw new ConflictException(
+        throw new NotFoundException(
           `Category slug "${data.slug}" already exists for type "${data.type}"`,
         );
       }
@@ -73,31 +64,21 @@ export class CategoriesService extends BaseService<Category> {
   }
 
   /**
-   * Override findAll: exclude soft-deleted, order by display_order.
+   * Override findAll: filter by type, order by display_order.
    */
   async findAll(pagination: PaginationDto, type?: CategoryType) {
-    const { page, limit } = pagination;
-    const skip = (page - 1) * limit;
-
-    const qb = this.categoryRepo
-      .createQueryBuilder('c')
-      .where('c.deleted_at IS NULL');
+    const qb = this.createBaseQuery('c');
 
     if (type) {
       qb.andWhere('c.type = :type', { type });
     }
 
-    qb.orderBy('c.display_order', 'ASC')
-      .addOrderBy('c.created_at', 'DESC')
-      .skip(skip)
-      .take(limit);
-
-    const [data, total] = await qb.getManyAndCount();
-
-    return {
-      data,
-      meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
-    };
+    return this.executePaginatedQuery(qb, 'c', pagination, {
+      sortAllowlist: {
+        display_order: 'c.display_order',
+        created_at: 'c.created_at',
+      },
+    });
   }
 
   /**
@@ -153,36 +134,6 @@ export class CategoriesService extends BaseService<Category> {
   }
 
   /**
-   * Override findById to exclude soft-deleted records.
-   */
-  async findById(id: string): Promise<Category> {
-    if (!validateUlid(id)) {
-      throw new BadRequestException('Invalid category ID format');
-    }
-
-    const category = await this.categoryRepo.findOne({
-      where: { id, deleted_at: IsNull() },
-    });
-    if (!category) {
-      throw new NotFoundException(`Category with id ${id} not found`);
-    }
-    return category;
-  }
-
-  /**
-   * Soft delete a category by setting deleted_at.
-   */
-  async softDelete(id: string): Promise<void> {
-    if (!validateUlid(id)) {
-      throw new BadRequestException('Invalid category ID format');
-    }
-
-    const category = await this.findById(id);
-    await this.categoryRepo.update(category.id, { deleted_at: new Date() });
-    this.logger.log(`Category ${id} soft-deleted`);
-  }
-
-  /**
    * Seed initial categories if the table is empty.
    */
   async seed(): Promise<{ seeded: number }> {
@@ -191,7 +142,7 @@ export class CategoriesService extends BaseService<Category> {
     });
 
     if (count > 0) {
-      this.logger.log('Categories table not empty, skipping seed');
+      this.actionLogger.log('Categories table not empty, skipping seed');
       return { seeded: 0 };
     }
 
@@ -201,72 +152,20 @@ export class CategoriesService extends BaseService<Category> {
       display_order: number;
     }> = [
       // Project categories
-      {
-        name: 'Phòng Khách',
-        type: CategoryType.PROJECT,
-        display_order: 1,
-      },
-      {
-        name: 'Phòng Ngủ',
-        type: CategoryType.PROJECT,
-        display_order: 2,
-      },
-      {
-        name: 'Phòng Bếp',
-        type: CategoryType.PROJECT,
-        display_order: 3,
-      },
-      {
-        name: 'Phòng Tắm',
-        type: CategoryType.PROJECT,
-        display_order: 4,
-      },
-      {
-        name: 'Văn Phòng',
-        type: CategoryType.PROJECT,
-        display_order: 5,
-      },
-      {
-        name: 'Biệt Thự',
-        type: CategoryType.PROJECT,
-        display_order: 6,
-      },
-      {
-        name: 'Căn Hộ',
-        type: CategoryType.PROJECT,
-        display_order: 7,
-      },
+      { name: 'Phòng Khách', type: CategoryType.PROJECT, display_order: 1 },
+      { name: 'Phòng Ngủ', type: CategoryType.PROJECT, display_order: 2 },
+      { name: 'Phòng Bếp', type: CategoryType.PROJECT, display_order: 3 },
+      { name: 'Phòng Tắm', type: CategoryType.PROJECT, display_order: 4 },
+      { name: 'Văn Phòng', type: CategoryType.PROJECT, display_order: 5 },
+      { name: 'Biệt Thự', type: CategoryType.PROJECT, display_order: 6 },
+      { name: 'Căn Hộ', type: CategoryType.PROJECT, display_order: 7 },
       // Product categories
-      {
-        name: 'Sofa',
-        type: CategoryType.PRODUCT,
-        display_order: 1,
-      },
-      {
-        name: 'Bàn',
-        type: CategoryType.PRODUCT,
-        display_order: 2,
-      },
-      {
-        name: 'Ghế',
-        type: CategoryType.PRODUCT,
-        display_order: 3,
-      },
-      {
-        name: 'Tủ',
-        type: CategoryType.PRODUCT,
-        display_order: 4,
-      },
-      {
-        name: 'Đèn',
-        type: CategoryType.PRODUCT,
-        display_order: 5,
-      },
-      {
-        name: 'Phụ Kiện Trang Trí',
-        type: CategoryType.PRODUCT,
-        display_order: 6,
-      },
+      { name: 'Sofa', type: CategoryType.PRODUCT, display_order: 1 },
+      { name: 'Bàn', type: CategoryType.PRODUCT, display_order: 2 },
+      { name: 'Ghế', type: CategoryType.PRODUCT, display_order: 3 },
+      { name: 'Tủ', type: CategoryType.PRODUCT, display_order: 4 },
+      { name: 'Đèn', type: CategoryType.PRODUCT, display_order: 5 },
+      { name: 'Phụ Kiện Trang Trí', type: CategoryType.PRODUCT, display_order: 6 },
     ];
 
     const entities: Category[] = [];
@@ -283,7 +182,7 @@ export class CategoriesService extends BaseService<Category> {
     }
 
     await this.categoryRepo.save(entities);
-    this.logger.log(`Seeded ${entities.length} categories`);
+    this.actionLogger.log(`Seeded ${entities.length} categories`);
     return { seeded: entities.length };
   }
 }

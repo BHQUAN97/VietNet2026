@@ -1,27 +1,15 @@
 'use client'
 
-import { Suspense, useState, useEffect, useCallback } from 'react'
+import { Suspense, useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { PageContainer } from '@/components/layout/PageContainer'
-import { Button } from '@/components/ui/Button'
+import { PageHeader } from '@/components/shared/PageHeader'
+import { DataStates } from '@/components/shared/DataStates'
+import { Pagination } from '@/components/shared/Pagination'
+import { usePaginatedList } from '@/hooks/usePaginatedList'
 import { Search } from 'lucide-react'
-import api from '@/lib/api'
-
-interface SearchResult {
-  id: string
-  type: 'project' | 'product' | 'article'
-  title: string
-  slug: string
-  description: string | null
-}
-
-interface Meta {
-  page: number
-  limit: number
-  total: number
-  totalPages: number
-}
+import type { SearchResult } from '@/types'
 
 const TYPE_LABELS: Record<string, string> = {
   project: 'Dự án',
@@ -46,39 +34,18 @@ export default function SearchPage() {
 function SearchContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
-  const [results, setResults] = useState<SearchResult[]>([])
-  const [meta, setMeta] = useState<Meta | null>(null)
-  const [loading, setLoading] = useState(false)
-  const [inputValue, setInputValue] = useState(searchParams.get('q') || '')
-
   const query = searchParams.get('q') || ''
-  const currentPage = parseInt(searchParams.get('page') || '1', 10)
+  const [inputValue, setInputValue] = useState(query)
 
-  const doSearch = useCallback(async () => {
-    if (!query) {
-      setResults([])
-      setMeta(null)
-      return
-    }
+  const { items: results, meta, page, loading, error, goToPage, refresh, isEmpty } =
+    usePaginatedList<SearchResult>({
+      endpoint: '/search',
+      limit: 12,
+      params: { q: query || undefined },
+      autoFetch: !!query,
+    })
 
-    setLoading(true)
-    try {
-      const res: any = await api.get('/search', {
-        params: { q: query, page: String(currentPage), limit: '12' },
-      })
-      setResults(res.data || [])
-      setMeta(res.meta || null)
-    } catch {
-      setResults([])
-    } finally {
-      setLoading(false)
-    }
-  }, [query, currentPage])
-
-  useEffect(() => {
-    doSearch()
-  }, [doSearch])
-
+  // Dong bo input voi URL query param
   useEffect(() => {
     setInputValue(query)
   }, [query])
@@ -91,16 +58,13 @@ function SearchContent() {
   }
 
   return (
-    <section className="bg-surface py-16 md:py-24">
+    <section className="section-surface">
       <PageContainer>
-        <div className="mb-12">
-          <h1 className="font-headline text-display-md text-on-surface md:text-display-lg">
-            Tìm kiếm
-          </h1>
-          <p className="mt-4 text-body-lg text-on-surface-variant">
-            Tìm kiếm dự án, sản phẩm và bài viết.
-          </p>
-        </div>
+        <PageHeader
+          label="Tìm kiếm"
+          title="Tìm Kiếm"
+          description="Tìm kiếm dự án, sản phẩm và bài viết."
+        />
 
         {/* Search Input */}
         <form onSubmit={handleSubmit} className="mb-10">
@@ -116,24 +80,16 @@ function SearchContent() {
           </div>
         </form>
 
-        {/* Loading */}
-        {loading && (
-          <div className="flex min-h-[30vh] items-center justify-center">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          </div>
-        )}
-
-        {/* Results */}
-        {!loading && query && results.length === 0 && (
-          <div className="flex min-h-[30vh] items-center justify-center">
-            <p className="text-body-lg text-on-surface-variant">
-              Không tìm thấy kết quả cho &quot;{query}&quot;
-            </p>
-          </div>
-        )}
-
-        {!loading && results.length > 0 && (
-          <>
+        {/* Chi render DataStates khi co query */}
+        {query ? (
+          <DataStates
+            loading={loading}
+            error={error}
+            isEmpty={isEmpty}
+            onRetry={refresh}
+            emptyMessage={`Không tìm thấy kết quả cho "${query}"`}
+            minHeight="min-h-[30vh]"
+          >
             <p className="mb-6 text-body-md text-on-surface-variant">
               Tìm thấy {meta?.total || results.length} kết quả cho &quot;{query}&quot;
             </p>
@@ -163,36 +119,9 @@ function SearchContent() {
               ))}
             </div>
 
-            {/* Pagination */}
-            {meta && meta.totalPages > 1 && (
-              <div className="mt-10 flex items-center justify-center gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={currentPage <= 1}
-                  onClick={() =>
-                    router.push(`/search?q=${encodeURIComponent(query)}&page=${currentPage - 1}`)
-                  }
-                >
-                  Trước
-                </Button>
-                <span className="px-4 text-body-md text-on-surface-variant">
-                  {currentPage} / {meta.totalPages}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={currentPage >= meta.totalPages}
-                  onClick={() =>
-                    router.push(`/search?q=${encodeURIComponent(query)}&page=${currentPage + 1}`)
-                  }
-                >
-                  Sau
-                </Button>
-              </div>
-            )}
-          </>
-        )}
+            <Pagination meta={meta} currentPage={page} onPageChange={goToPage} variant="simple" />
+          </DataStates>
+        ) : null}
       </PageContainer>
     </section>
   )

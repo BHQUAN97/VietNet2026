@@ -1,9 +1,9 @@
-import { Injectable, Logger, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Notification } from './entities/notification.entity';
 import { NotificationsGateway } from './notifications.gateway';
-import { validateUlid } from '../../common/helpers/ulid.helper';
+import { ActionLogger } from '../../common/helpers/logger.helper';
 
 export interface CreateNotificationDto {
   user_id: string;
@@ -15,7 +15,7 @@ export interface CreateNotificationDto {
 
 @Injectable()
 export class NotificationsService {
-  private readonly logger = new Logger(NotificationsService.name);
+  private readonly actionLogger = new ActionLogger('NotificationsService');
 
   constructor(
     @InjectRepository(Notification)
@@ -27,10 +27,6 @@ export class NotificationsService {
    * Create a notification for a specific user and push via Socket.io.
    */
   async create(dto: CreateNotificationDto): Promise<Notification> {
-    if (!validateUlid(dto.user_id)) {
-      throw new BadRequestException('Invalid user_id format');
-    }
-
     const notification = this.notificationsRepo.create({
       user_id: dto.user_id,
       type: dto.type,
@@ -72,7 +68,7 @@ export class NotificationsService {
       created_at: new Date(),
     });
 
-    this.logger.log(`Admin notification emitted: ${type} - ${title}`);
+    this.actionLogger.log(`Admin notification emitted: ${type} - ${title}`);
   }
 
   /**
@@ -83,10 +79,6 @@ export class NotificationsService {
     page = 1,
     limit = 20,
   ): Promise<{ data: Notification[]; total: number; unreadCount: number }> {
-    if (!validateUlid(userId)) {
-      throw new BadRequestException('Invalid user ID format');
-    }
-
     const skip = (page - 1) * limit;
 
     const [data, total] = await this.notificationsRepo.findAndCount({
@@ -107,10 +99,6 @@ export class NotificationsService {
    * Get unread count for a user.
    */
   async getUnreadCount(userId: string): Promise<number> {
-    if (!validateUlid(userId)) {
-      throw new BadRequestException('Invalid user ID format');
-    }
-
     return this.notificationsRepo.count({
       where: { user_id: userId, is_read: false },
     });
@@ -120,10 +108,6 @@ export class NotificationsService {
    * Mark a single notification as read.
    */
   async markAsRead(id: string, userId: string): Promise<void> {
-    if (!validateUlid(id)) {
-      throw new NotFoundException('Invalid notification ID');
-    }
-
     await this.notificationsRepo.update(
       { id, user_id: userId },
       { is_read: true },
@@ -134,10 +118,6 @@ export class NotificationsService {
    * Mark all notifications as read for a user.
    */
   async markAllAsRead(userId: string): Promise<void> {
-    if (!validateUlid(userId)) {
-      throw new BadRequestException('Invalid user ID format');
-    }
-
     await this.notificationsRepo.update(
       { user_id: userId, is_read: false },
       { is_read: true },

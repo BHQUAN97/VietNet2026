@@ -22,7 +22,7 @@ const buttonVariants = cva(
           'bg-error-container text-on-error-container hover:bg-error hover:text-on-error active:scale-[0.97]',
       },
       size: {
-        sm: 'h-9 px-4 text-label-sm rounded-full',
+        sm: 'h-10 min-h-[44px] px-4 text-label-sm rounded-full',
         md: 'h-11 px-6 text-label-md rounded-full',
         lg: 'h-14 px-8 text-label-lg rounded-full',
       },

@@ -2,24 +2,24 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import {
   Users,
   MessageSquare,
-  Briefcase,
-  Package,
   TrendingUp,
   TrendingDown,
   ArrowRight,
   AlertTriangle,
   RefreshCw,
   Plus,
-  BarChart3,
   FileText,
   Eye,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
+import { PageHeader } from '@/components/shared/PageHeader'
+import { formatDate } from '@/lib/date'
+import { formatNumber } from '@/lib/number'
+import { getErrorMessage } from '@/lib/error'
 import api from '@/lib/api'
 import type { ApiResponse, Consultation, PaginationMeta } from '@/types'
 import { CONSULTATION_STATUS } from '@/lib/status-config'
@@ -91,7 +91,7 @@ function KPICard({ kpi }: { kpi: DashboardKPI }) {
         )}
       </div>
       <p className="mt-4 font-body text-headline-md font-bold text-on-surface">
-        {typeof kpi.value === 'number' ? kpi.value.toLocaleString('vi-VN') : kpi.value}
+        {typeof kpi.value === 'number' ? formatNumber(kpi.value) : kpi.value}
       </p>
       <p className="mt-1 text-body-sm text-on-surface-variant">{kpi.label}</p>
     </div>
@@ -103,6 +103,7 @@ function KPICard({ kpi }: { kpi: DashboardKPI }) {
 function AvatarInitial({ name }: { name: string }) {
   const initials = name
     .split(' ')
+    .filter(Boolean)
     .map(w => w[0])
     .slice(0, 2)
     .join('')
@@ -297,8 +298,8 @@ export default function AdminDashboardPage() {
       if (allFailed) {
         setError('Không thể tải dữ liệu dashboard. Vui lòng thử lại.')
       }
-    } catch {
-      setError('Không thể tải dữ liệu dashboard. Vui lòng thử lại.')
+    } catch (err) {
+      setError(getErrorMessage(err))
     } finally {
       setIsLoading(false)
     }
@@ -337,15 +338,11 @@ export default function AdminDashboardPage() {
   return (
     <div className="py-4">
       {/* Header — matching design 8.html */}
-      <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
-            Overview
-          </p>
-          <h1 className="mt-1 font-headline text-headline-lg text-primary md:text-display-sm">
-            Dashboard
-          </h1>
-        </div>
+      <PageHeader
+        label="Overview"
+        title="Dashboard"
+        showDecoLine={false}
+      >
         <Button
           variant="ghost"
           size="sm"
@@ -355,7 +352,7 @@ export default function AdminDashboardPage() {
           <RefreshCw className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
           Làm mới
         </Button>
-      </div>
+      </PageHeader>
 
       {/* Error banner */}
       {error && (
@@ -402,16 +399,16 @@ export default function AdminDashboardPage() {
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-surface-container-low">
-                  <th className="px-4 py-3 font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
+                  <th className="table-header-cell">
                     Client
                   </th>
-                  <th className="px-4 py-3 font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
+                  <th className="table-header-cell">
                     Project Type
                   </th>
-                  <th className="px-4 py-3 font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
+                  <th className="table-header-cell">
                     Status
                   </th>
-                  <th className="px-4 py-3 font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">
+                  <th className="table-header-cell">
                     Date
                   </th>
                 </tr>
@@ -455,7 +452,7 @@ export default function AdminDashboardPage() {
                         </Badge>
                       </td>
                       <td className="px-4 py-3 text-body-sm text-on-surface-variant">
-                        {new Date(c.created_at).toLocaleDateString('vi-VN')}
+                        {formatDate(c.created_at)}
                       </td>
                     </tr>
                   ))

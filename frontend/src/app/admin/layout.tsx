@@ -26,7 +26,7 @@ export default function AdminLayout({
   return (
     <AuthProvider>
       <SocketProvider>
-        <AuthGuard>
+        <AuthGuard requireAdmin>
           <div className="min-h-screen bg-surface">
             <AdminSidebar />
             <div className="min-h-screen md:ml-[var(--sidebar-width)]">

@@ -22,10 +22,11 @@ export class NotificationsController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
   ) {
+    const safeLimit = Math.min(parseInt(limit || '20', 10) || 20, 100);
     const result = await this.notificationsService.findByUser(
       userId,
       page ? parseInt(page, 10) : 1,
-      limit ? parseInt(limit, 10) : 20,
+      safeLimit,
     );
     return ok(result);
   }

@@ -1,4 +1,5 @@
 import { PageContainer } from '@/components/layout/PageContainer'
+import { PageHeader } from '@/components/shared/PageHeader'
 import { ConsultationForm } from '@/components/forms/ConsultationForm'
 
 export const metadata = {
@@ -11,22 +12,13 @@ export const metadata = {
 
 export default function ContactPage() {
   return (
-    <section className="bg-surface py-16 md:py-24">
+    <section className="section-surface">
       <PageContainer>
-        {/* Page Header */}
-        <div className="mb-12 md:mb-16">
-          <p className="font-label text-label-md uppercase tracking-[0.08em] text-primary/70">
-            Liên hệ
-          </p>
-          <h1 className="mt-3 font-headline text-headline-lg text-gradient-primary md:text-display-md">
-            Tư vấn thiết kế nội thất
-          </h1>
-          <p className="mt-4 max-w-2xl text-body-md leading-relaxed text-on-surface-variant md:text-body-lg">
-            Đăng ký tư vấn miễn phí. Đội ngũ kiến trúc sư và nhà thiết kế của VietNet Interior
-            sẵn sàng đồng hành cùng bạn tạo nên không gian sống lý tưởng.
-          </p>
-          <span className="deco-line mt-5" />
-        </div>
+        <PageHeader
+          label="Liên hệ"
+          title="Tư Vấn Thiết Kế Nội Thất"
+          description="Đăng ký tư vấn miễn phí. Đội ngũ kiến trúc sư và nhà thiết kế của VietNet Interior sẵn sàng đồng hành cùng bạn tạo nên không gian sống lý tưởng."
+        />
 
         {/* Form Section */}
         <ConsultationForm />

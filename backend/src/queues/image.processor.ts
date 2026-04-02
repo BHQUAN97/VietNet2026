@@ -54,22 +54,25 @@ export class ImageProcessor extends WorkerHost {
       const width = metadata.width ?? null;
       const height = metadata.height ?? null;
 
-      // 3. Auto-rotate based on EXIF (strips EXIF orientation data)
+      // 3. Auto-rotate based on EXIF and strip ALL metadata
       const rotatedBuffer = await sharp(originalBuffer).rotate().toBuffer();
 
-      // 4. Generate thumbnail: 300x300 cover crop, WebP 80%
+      // 4. Re-upload clean original (EXIF stripped) to R2
+      await this.r2Storage.upload('private', r2Key, rotatedBuffer, media.mime_type);
+
+      // 5. Generate thumbnail: 300x300 cover crop, WebP 80%
       const thumbnailBuffer = await sharp(rotatedBuffer)
         .resize(300, 300, { fit: 'cover' })
         .webp({ quality: 80 })
         .toBuffer();
 
-      // 5. Generate preview: max 1200px wide, preserve aspect ratio, WebP 80%
+      // 6. Generate preview: max 1200px wide, preserve aspect ratio, WebP 80%
       const previewBuffer = await sharp(rotatedBuffer)
         .resize(1200, null, { withoutEnlargement: true })
         .webp({ quality: 80 })
         .toBuffer();
 
-      // 6. Upload thumbnail and preview to R2 public bucket
+      // 7. Upload thumbnail and preview to R2 public bucket
       const thumbKey = `media/${mediaId}/thumb.webp`;
       const previewKey = `media/${mediaId}/preview.webp`;
 
@@ -83,7 +86,7 @@ export class ImageProcessor extends WorkerHost {
         ),
       ]);
 
-      // 7. Update media entity with processed data
+      // 8. Update media entity with processed data
       await this.mediaRepo.update(mediaId, {
         thumbnail_url: thumbnailUrl,
         preview_url: previewUrl,

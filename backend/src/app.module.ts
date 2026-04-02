@@ -26,6 +26,7 @@ import { RevalidateModule } from './modules/revalidate/revalidate.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { QueuesModule } from './queues/queues.module';
 import { CronModule } from './modules/cron/cron.module';
+import { LogsModule } from './modules/logs/logs.module';
 import { ServicesModule } from './common/services/services.module';
 
 @Module({
@@ -74,6 +75,7 @@ import { ServicesModule } from './common/services/services.module';
     NotificationsModule,
     QueuesModule,
     CronModule,
+    LogsModule,
     ServicesModule,
   ],
   providers: [

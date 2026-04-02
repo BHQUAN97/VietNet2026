@@ -20,7 +20,7 @@ export function Footer() {
   }
 
   return (
-    <footer className="relative overflow-hidden bg-inverse-surface text-inverse-on-surface">
+    <footer className="relative overflow-hidden bg-inverse-surface text-inverse-on-surface pb-20 md:pb-0">
       {/* Decorative gradient top edge */}
       <div className="absolute left-0 right-0 top-0 h-px bg-gradient-to-r from-transparent via-inverse-primary/20 to-transparent" />
 
@@ -106,7 +106,7 @@ export function Footer() {
               </h4>
               <ul className="mt-3 flex flex-col gap-2 text-body-sm text-inverse-on-surface/60">
                 <li>
-                  <a href="mailto:contact@vietnetinterior.vn" className="transition-colors duration-200 hover:text-inverse-primary">
+                  <a href="mailto:contact@vietnetinterior.vn" className="break-all transition-colors duration-200 hover:text-inverse-primary">
                     contact@vietnetinterior.vn
                   </a>
                 </li>
@@ -132,7 +132,7 @@ export function Footer() {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={social.label}
-                    className="flex h-9 w-9 items-center justify-center rounded-lg bg-inverse-on-surface/5 text-inverse-on-surface/40 transition-all duration-300 hover:bg-inverse-primary/15 hover:text-inverse-primary hover:scale-105"
+                    className="flex h-11 w-11 items-center justify-center rounded-lg bg-inverse-on-surface/5 text-inverse-on-surface/40 transition-all duration-300 hover:bg-inverse-primary/15 hover:text-inverse-primary hover:scale-105"
                   >
                     <SocialIcon type={social.icon} />
                   </a>

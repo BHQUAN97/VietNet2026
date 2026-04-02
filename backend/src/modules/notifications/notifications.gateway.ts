@@ -6,15 +6,15 @@ import {
   OnGatewayDisconnect,
   SubscribeMessage,
 } from '@nestjs/websockets';
-import { Logger } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { UserRole } from '../users/entities/user.entity';
+import { ActionLogger } from '../../common/helpers/logger.helper';
 
 @WebSocketGateway({
   cors: {
-    origin: true,
+    origin: process.env.ALLOWED_ORIGINS?.split(',') || ['http://localhost:3000'],
     credentials: true,
   },
   namespace: '/',
@@ -26,7 +26,7 @@ export class NotificationsGateway
   @WebSocketServer()
   server!: Server;
 
-  private readonly logger = new Logger(NotificationsGateway.name);
+  private readonly actionLogger = new ActionLogger('NotificationsGateway');
 
   constructor(
     private readonly configService: ConfigService,
@@ -35,7 +35,7 @@ export class NotificationsGateway
 
   afterInit() {
     // Redis adapter được set qua RedisIoAdapter trong main.ts
-    this.logger.log('Socket.io server initialized');
+    this.actionLogger.log('Socket.io server initialized');
   }
 
   async handleConnection(client: Socket) {
@@ -46,7 +46,7 @@ export class NotificationsGateway
         this.extractTokenFromCookie(client.handshake.headers.cookie);
 
       if (!token) {
-        this.logger.warn(`Client ${client.id} disconnected: no token`);
+        this.actionLogger.warn(`Client ${client.id} disconnected: no token`);
         client.disconnect();
         return;
       }
@@ -66,17 +66,17 @@ export class NotificationsGateway
         await client.join('admin');
       }
 
-      this.logger.log(
+      this.actionLogger.log(
         `Client connected: ${client.id} (user: ${payload.sub}, role: ${payload.role})`,
       );
     } catch {
-      this.logger.warn(`Client ${client.id} disconnected: invalid token`);
+      this.actionLogger.warn(`Client ${client.id} disconnected: invalid token`);
       client.disconnect();
     }
   }
 
   handleDisconnect(client: Socket) {
-    this.logger.log(`Client disconnected: ${client.id}`);
+    this.actionLogger.log(`Client disconnected: ${client.id}`);
   }
 
   @SubscribeMessage('ping')

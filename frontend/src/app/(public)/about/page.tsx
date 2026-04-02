@@ -55,23 +55,23 @@ export default function AboutPage() {
   return (
     <>
       {/* Company Story */}
-      <section className="bg-surface py-16 md:py-24">
+      <section className="section-surface">
         <PageContainer>
           <ScrollReveal className="mx-auto max-w-3xl text-center">
-            <p className="font-label text-label-md uppercase tracking-[0.08em] text-primary/70">
+            <p className="font-label text-label-sm uppercase tracking-[0.08em] text-primary/70">
               Về chúng tôi
             </p>
-            <h1 className="mt-4 font-headline text-headline-lg text-gradient-primary md:text-display-md">
-              Kiến tạo không gian sống tinh tế
+            <h1 className="mt-2 font-headline text-headline-sm text-gradient-primary md:text-headline-md lg:text-headline-lg">
+              Kiến Tạo Không Gian Sống Tinh Tế
             </h1>
-            <span className="deco-line deco-line-center mt-5" />
-            <p className="mt-8 font-body text-body-md leading-relaxed text-on-surface-variant md:text-body-lg">
+            <span className="deco-line deco-line-center mt-4" />
+            <p className="mt-6 font-body text-body-sm leading-relaxed text-on-surface-variant md:text-body-md">
               VietNet Interior được thành lập với sứ mệnh mang đến những không gian nội thất
               cao cấp, phản ánh cá tính và phong cách sống của mỗi gia chủ. Chúng tôi tin
               rằng ngôi nhà không chỉ là nơi để ở, mà còn là nơi lưu giữ những giá trị và
               cảm xúc của gia đình.
             </p>
-            <p className="mt-5 font-body text-body-md leading-relaxed text-on-surface-variant md:text-body-lg">
+            <p className="mt-4 font-body text-body-sm leading-relaxed text-on-surface-variant md:text-body-md">
               Với hơn 15 năm kinh nghiệm, đội ngũ kiến trúc sư và thợ tay nghề cao của chúng
               tôi đã hoàn thành hàng trăm dự án — từ căn hộ chung cư đến biệt thự, từ không
               gian làm việc đến showroom thương mại. Mỗi dự án là một câu chuyện thiết kế
@@ -134,10 +134,10 @@ export default function AboutPage() {
       </section>
 
       {/* Quality Commitment */}
-      <section className="bg-surface py-16 md:py-24">
+      <section className="section-surface">
         <PageContainer>
           <ScrollReveal className="mx-auto max-w-3xl text-center">
-            <p className="font-label text-label-md uppercase tracking-[0.08em] text-primary/70">
+            <p className="font-label text-label-sm uppercase tracking-[0.08em] text-primary/70">
               Cam kết chất lượng
             </p>
             <h2 className="mt-3 font-headline text-headline-md text-on-surface md:text-headline-lg">
@@ -198,7 +198,7 @@ export default function AboutPage() {
                   </span>
                 </div>
               </div>
-              <div className="divide-y divide-surface-container-high">
+              <div className="[&>div:nth-child(even)]:bg-surface-container-low">
                 {warrantyData.map((row) => (
                   <div
                     key={row.product}

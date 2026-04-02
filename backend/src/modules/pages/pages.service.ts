@@ -3,7 +3,6 @@ import {
   ConflictException,
   NotFoundException,
   BadRequestException,
-  Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -12,10 +11,11 @@ import { PageConfigHistory } from './entities/page-config-history.entity';
 import { CreatePageConfigDto } from './dto/create-page-config.dto';
 import { UpdatePageConfigDto } from './dto/update-page-config.dto';
 import { generateUlid } from '../../common/helpers/ulid.helper';
+import { ActionLogger } from '../../common/helpers/logger.helper';
 
 @Injectable()
 export class PagesService {
-  private readonly logger = new Logger(PagesService.name);
+  private readonly actionLogger = new ActionLogger('PagesService');
 
   constructor(
     @InjectRepository(PageConfig)
@@ -42,7 +42,7 @@ export class PagesService {
     });
 
     const saved = await this.pageConfigRepo.save(entity);
-    this.logger.log(`Page config created: ${dto.page_slug}`);
+    this.actionLogger.log(`Page config created: ${dto.page_slug}`);
     return saved;
   }
 
@@ -121,7 +121,7 @@ export class PagesService {
     config.updated_by = userId;
 
     const saved = await this.pageConfigRepo.save(config);
-    this.logger.log(`Draft updated for page: ${slug}`);
+    this.actionLogger.log(`Draft updated for page: ${slug}`);
     return saved;
   }
 
@@ -153,7 +153,7 @@ export class PagesService {
     config.updated_by = userId;
 
     const saved = await this.pageConfigRepo.save(config);
-    this.logger.log(
+    this.actionLogger.log(
       `Page "${slug}" published — version ${saved.version}`,
     );
 
@@ -179,7 +179,7 @@ export class PagesService {
         body: JSON.stringify({ secret, paths, tags }),
       });
     } catch (err) {
-      this.logger.warn(`Revalidation request failed: ${err}`);
+      this.actionLogger.warn(`Revalidation request failed: ${err}`);
     }
   }
 
@@ -212,7 +212,7 @@ export class PagesService {
     config.updated_by = userId;
 
     const saved = await this.pageConfigRepo.save(config);
-    this.logger.log(
+    this.actionLogger.log(
       `Page "${slug}" draft rolled back to version ${version}`,
     );
     return saved;

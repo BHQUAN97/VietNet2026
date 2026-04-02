@@ -9,6 +9,9 @@ import {
   Search,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { PageHeader } from '@/components/shared/PageHeader'
+import { LoadingSpinner } from '@/components/shared/DataStates'
+import { getErrorMessage } from '@/lib/error'
 import api from '@/lib/api'
 import type { ApiResponse } from '@/types'
 
@@ -157,8 +160,8 @@ export default function AdminSettingsPage() {
       }
       setSettings(map)
       setOriginalSettings(map)
-    } catch {
-      setError('Không thể tải cài đặt. Vui lòng thử lại.')
+    } catch (err) {
+      setError(getErrorMessage(err))
     } finally {
       setIsLoading(false)
     }
@@ -209,8 +212,8 @@ export default function AdminSettingsPage() {
       })
 
       setToastMessage('Đã lưu cài đặt thành công!')
-    } catch {
-      setError('Không thể lưu cài đặt. Vui lòng thử lại.')
+    } catch (err) {
+      setError(getErrorMessage(err))
     } finally {
       setIsSaving(false)
     }
@@ -219,12 +222,11 @@ export default function AdminSettingsPage() {
   return (
     <div className="py-4">
       {/* Header */}
-      <div className="mb-8">
-        <h1 className="font-headline text-headline-lg text-on-surface">Cài đặt</h1>
-        <p className="mt-1 text-body-md text-on-surface-variant">
-          Cấu hình hệ thống và tùy chỉnh.
-        </p>
-      </div>
+      <PageHeader
+        title="Cài đặt"
+        description="Cấu hình hệ thống và tùy chỉnh."
+        showDecoLine={false}
+      />
 
       {/* Error banner */}
       {error && (
@@ -246,7 +248,7 @@ export default function AdminSettingsPage() {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex items-center gap-2 rounded-full px-4 py-2 text-body-sm font-medium transition-colors ${
+            className={`flex items-center gap-2 rounded-full px-4 py-2.5 min-h-[44px] text-body-sm font-medium transition-colors ${
               activeTab === tab.id
                 ? 'bg-primary-container text-on-primary-container'
                 : 'bg-surface-container text-on-surface-variant hover:bg-surface-container-high'
@@ -260,14 +262,7 @@ export default function AdminSettingsPage() {
 
       {/* Form */}
       {isLoading ? (
-        <div className="space-y-6">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="animate-pulse">
-              <div className="mb-2 h-4 w-24 rounded bg-surface-container" />
-              <div className="h-12 w-full rounded-xl bg-surface-container" />
-            </div>
-          ))}
-        </div>
+        <LoadingSpinner minHeight="min-h-[30vh]" />
       ) : (
         <div className="rounded-2xl bg-surface-container-lowest p-6 md:p-8">
           <div className="space-y-6">

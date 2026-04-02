@@ -1,6 +1,6 @@
-import { Injectable, Logger, NotFoundException, Inject, forwardRef } from '@nestjs/common';
+import { Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, IsNull } from 'typeorm';
 import {
   Consultation,
   ConsultationStatus,
@@ -9,19 +9,27 @@ import { BaseService } from '../../common/base/base.service';
 import { CreateConsultationDto } from './dto/create-consultation.dto';
 import { UpdateConsultationDto } from './dto/update-consultation.dto';
 import { PaginationDto } from '../../common/dto/pagination.dto';
-import { validateUlid } from '../../common/helpers/ulid.helper';
 import { NotificationsService } from '../notifications/notifications.service';
 import { MailQueueService } from '../../common/services/mail-queue.service';
+import { buildSortAllowlist } from '../../common/helpers/sort-validator';
 
 interface ConsultationFilters {
   status?: ConsultationStatus;
   search?: string;
 }
 
+/** Sort allowlist cho consultation queries */
+const SORT_ALLOWLIST = buildSortAllowlist('c', [
+  'created_at',
+  'updated_at',
+  'name',
+  'email',
+  'status',
+  'status_changed_at',
+]);
+
 @Injectable()
 export class ConsultationsService extends BaseService<Consultation> {
-  private readonly logger = new Logger(ConsultationsService.name);
-
   constructor(
     @InjectRepository(Consultation)
     private readonly consultationsRepository: Repository<Consultation>,
@@ -29,7 +37,7 @@ export class ConsultationsService extends BaseService<Consultation> {
     private readonly notificationsService: NotificationsService,
     private readonly mailQueueService: MailQueueService,
   ) {
-    super(consultationsRepository);
+    super(consultationsRepository, 'Consultation');
   }
 
   /**
@@ -42,7 +50,7 @@ export class ConsultationsService extends BaseService<Consultation> {
   ): Promise<Consultation> {
     // Honeypot check — if filled, silently accept but don't save
     if (dto.honeypot) {
-      this.logger.warn(`Honeypot triggered from IP ${ip}`);
+      this.actionLogger.warn(`Honeypot triggered from IP ${ip}`);
       // Return a fake entity to avoid revealing spam detection
       return { id: 'spam-detected' } as Consultation;
     }
@@ -61,13 +69,13 @@ export class ConsultationsService extends BaseService<Consultation> {
     });
 
     const saved = await this.consultationsRepository.save(consultation);
-    this.logger.log(`New consultation ${saved.id} from ${dto.email}`);
+    this.actionLogger.log(`New consultation ${saved.id} from ${dto.email}`);
 
     // Queue confirmation email to user
     this.mailQueueService
       .queueConsultationConfirmation(dto.email, dto.name)
       .catch((err) =>
-        this.logger.error('Failed to queue confirmation email', err),
+        this.actionLogger.error('Failed to queue confirmation email', err),
       );
 
     // Queue notification email to admin
@@ -80,7 +88,7 @@ export class ConsultationsService extends BaseService<Consultation> {
         message: dto.message,
       })
       .catch((err) =>
-        this.logger.error('Failed to queue admin notification email', err),
+        this.actionLogger.error('Failed to queue admin notification email', err),
       );
 
     // Emit real-time Socket.io notification to admin room
@@ -98,48 +106,36 @@ export class ConsultationsService extends BaseService<Consultation> {
    * Admin: list all consultations with pagination, status filter, and search.
    */
   async findAllAdmin(pagination: PaginationDto, filters?: ConsultationFilters) {
-    const { page, limit, sort, order } = pagination;
-    const skip = (page - 1) * limit;
+    const qb = this.createBaseQuery('c')
+      .leftJoinAndSelect('c.product', 'product')
+      .leftJoinAndSelect('c.assignee', 'assignee');
 
-    const qb = this.consultationsRepository
-      .createQueryBuilder('consultation')
-      .leftJoinAndSelect('consultation.product', 'product')
-      .leftJoinAndSelect('consultation.assignee', 'assignee')
-      .where('consultation.deleted_at IS NULL');
-
+    // Apply status filter via standard filters mechanism
+    const standardFilters: Record<string, unknown> = {};
     if (filters?.status) {
-      qb.andWhere('consultation.status = :status', {
-        status: filters.status,
-      });
+      standardFilters.status = filters.status;
     }
 
+    // Apply search manually (LIKE pattern not supported by applyFilters)
     if (filters?.search) {
       qb.andWhere(
-        '(consultation.name LIKE :search OR consultation.email LIKE :search)',
+        '(c.name LIKE :search OR c.email LIKE :search)',
         { search: `%${filters.search}%` },
       );
     }
 
-    qb.orderBy(`consultation.${sort}`, order).skip(skip).take(limit);
-
-    const [data, total] = await qb.getManyAndCount();
-
-    return {
-      data,
-      meta: { page, limit, total, totalPages: Math.ceil(total / limit) },
-    };
+    return this.executePaginatedQuery(qb, 'c', pagination, {
+      filters: Object.keys(standardFilters).length ? standardFilters : undefined,
+      sortAllowlist: SORT_ALLOWLIST,
+    });
   }
 
   /**
    * Admin: get a single consultation by ID with all relations.
    */
   async findByIdAdmin(id: string): Promise<Consultation> {
-    if (!validateUlid(id)) {
-      throw new NotFoundException('Invalid consultation ID');
-    }
-
     const consultation = await this.consultationsRepository.findOne({
-      where: { id, deleted_at: null as any },
+      where: { id, deleted_at: IsNull() } as any,
       relations: ['product', 'assignee'],
     });
 
@@ -159,11 +155,7 @@ export class ConsultationsService extends BaseService<Consultation> {
     changedBy: string,
     notes?: string,
   ): Promise<Consultation> {
-    if (!validateUlid(id)) {
-      throw new NotFoundException('Invalid consultation ID');
-    }
-
-    const consultation = await this.findByIdAdmin(id);
+    await this.findByIdAdmin(id);
 
     const updateData: Partial<Consultation> = {
       status,
@@ -176,7 +168,7 @@ export class ConsultationsService extends BaseService<Consultation> {
     }
 
     await this.consultationsRepository.update(id, updateData as any);
-    this.logger.log(
+    this.actionLogger.log(
       `Consultation ${id} status updated to ${status} by ${changedBy}`,
     );
 
@@ -187,17 +179,10 @@ export class ConsultationsService extends BaseService<Consultation> {
    * Admin: assign a consultation to an admin user.
    */
   async assignTo(id: string, userId: string): Promise<Consultation> {
-    if (!validateUlid(id)) {
-      throw new NotFoundException('Invalid consultation ID');
-    }
-    if (!validateUlid(userId)) {
-      throw new NotFoundException('Invalid user ID');
-    }
-
     await this.findByIdAdmin(id);
 
     await this.consultationsRepository.update(id, { assigned_to: userId });
-    this.logger.log(`Consultation ${id} assigned to ${userId}`);
+    this.actionLogger.log(`Consultation ${id} assigned to ${userId}`);
 
     return this.findByIdAdmin(id);
   }
@@ -210,10 +195,6 @@ export class ConsultationsService extends BaseService<Consultation> {
     dto: UpdateConsultationDto,
     changedBy: string,
   ): Promise<Consultation> {
-    if (!validateUlid(id)) {
-      throw new NotFoundException('Invalid consultation ID');
-    }
-
     await this.findByIdAdmin(id);
 
     if (dto.status) {
@@ -227,19 +208,5 @@ export class ConsultationsService extends BaseService<Consultation> {
     }
 
     return this.findByIdAdmin(id);
-  }
-
-  /**
-   * Admin: soft delete a consultation by setting deleted_at.
-   */
-  async softDelete(id: string): Promise<void> {
-    if (!validateUlid(id)) {
-      throw new NotFoundException('Invalid consultation ID');
-    }
-
-    await this.findByIdAdmin(id);
-
-    await this.consultationsRepository.update(id, { deleted_at: new Date() });
-    this.logger.log(`Soft deleted consultation ${id}`);
   }
 }

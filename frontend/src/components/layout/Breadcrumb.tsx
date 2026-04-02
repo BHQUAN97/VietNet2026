@@ -18,7 +18,7 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
   return (
     <nav
       aria-label="Breadcrumb"
-      className={cn('flex items-center gap-1 text-body-sm', className)}
+      className={cn('flex items-center gap-1 overflow-x-auto text-body-sm', className)}
     >
       <Link
         href="/"
@@ -38,7 +38,7 @@ export function Breadcrumb({ items, className }: BreadcrumbProps) {
               {item.label}
             </Link>
           ) : (
-            <span className="text-on-surface">{item.label}</span>
+            <span className="truncate max-w-[200px] text-on-surface">{item.label}</span>
           )}
         </span>
       ))}

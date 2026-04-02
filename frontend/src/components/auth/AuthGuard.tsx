@@ -7,17 +7,21 @@ import { useAuth } from '@/contexts/auth.context'
 
 interface AuthGuardProps {
   children: React.ReactNode
+  requireAdmin?: boolean
 }
 
-export function AuthGuard({ children }: AuthGuardProps) {
-  const { user, loading } = useAuth()
+export function AuthGuard({ children, requireAdmin = false }: AuthGuardProps) {
+  const { user, loading, isAdmin } = useAuth()
   const router = useRouter()
 
   useEffect(() => {
     if (!loading && !user) {
       router.push('/admin/login')
+    } else if (!loading && user && requireAdmin && !isAdmin) {
+      // Authenticated but not admin — redirect to home
+      router.push('/')
     }
-  }, [loading, user, router])
+  }, [loading, user, requireAdmin, isAdmin, router])
 
   if (loading) {
     return (
@@ -32,7 +36,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
     )
   }
 
-  if (!user) {
+  if (!user || (requireAdmin && !isAdmin)) {
     return null
   }
 
