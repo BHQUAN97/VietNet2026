@@ -114,9 +114,13 @@ export abstract class BaseService<T extends ObjectLiteral & { id: string }> {
   /** Update voi hooks */
   async update(id: string, data: DeepPartial<T>): Promise<T> {
     await this.findById(id);
+    // Gan id vao data de validateSlugUnique co excludeId
+    (data as any).id = id;
     const enriched = await this.beforeSave(data);
     await this.validate(enriched);
-    await this.repository.update(id, enriched as any);
+    // Xoa id khoi enriched truoc khi update (tranh ghi de PK)
+    const { id: _excludedId, ...updateData } = enriched as any;
+    await this.repository.update(id, updateData);
     const updated = await this.findById(id);
     await this.afterSave(updated);
     return updated;
