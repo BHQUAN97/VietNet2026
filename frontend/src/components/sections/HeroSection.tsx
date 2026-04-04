@@ -1,5 +1,6 @@
 'use client'
 
+import { useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowRight } from 'lucide-react'
@@ -10,19 +11,49 @@ interface Props {
 }
 
 export function HeroSection({ config }: Props) {
+  // Gom bg_images + fallback bg_image_url (backward compat)
+  const images = config.bg_images?.length
+    ? config.bg_images
+    : config.bg_image_url
+      ? [config.bg_image_url]
+      : []
+
+  const hasMultiple = images.length > 1
+  const [currentIndex, setCurrentIndex] = useState(0)
+
+  // Auto-slide moi 5 giay khi co nhieu anh
+  const goNext = useCallback(() => {
+    setCurrentIndex((prev) => (prev + 1) % images.length)
+  }, [images.length])
+
+  useEffect(() => {
+    if (!hasMultiple) return
+    const timer = setInterval(goNext, 5000)
+    return () => clearInterval(timer)
+  }, [hasMultiple, goNext])
+
   return (
     <section className="relative flex h-screen w-full items-center justify-center overflow-hidden">
-      {/* Background image */}
+      {/* Background image(s) */}
       <div className="absolute inset-0 z-0">
-        {config.bg_image_url ? (
-          <Image
-            src={config.bg_image_url}
-            alt="VietNet Interior"
-            fill
-            priority
-            className="object-cover scale-105"
-            sizes="100vw"
-          />
+        {images.length > 0 ? (
+          images.map((url, i) => (
+            <div
+              key={url}
+              className={`absolute inset-0 transition-opacity duration-1000 ${
+                i === currentIndex ? 'opacity-100' : 'opacity-0'
+              }`}
+            >
+              <Image
+                src={url}
+                alt="VietNet Interior"
+                fill
+                priority={i === 0}
+                className="object-cover scale-105"
+                sizes="100vw"
+              />
+            </div>
+          ))
         ) : (
           /* Placeholder gradient khi chua co anh */
           <div className="h-full w-full bg-gradient-to-br from-primary via-primary-container to-primary" />
@@ -31,6 +62,22 @@ export function HeroSection({ config }: Props) {
         <div className="absolute inset-0 bg-primary/20 mix-blend-multiply" />
         <div className="absolute inset-0 bg-gradient-to-t from-primary/60 via-transparent to-transparent" />
       </div>
+
+      {/* Slide indicators — chi hien khi nhieu anh */}
+      {hasMultiple && (
+        <div className="absolute bottom-4 left-1/2 z-20 flex -translate-x-1/2 gap-1.5 md:bottom-8">
+          {images.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrentIndex(i)}
+              className={`h-1 rounded-full transition-all ${
+                i === currentIndex ? 'w-6 bg-white' : 'w-1.5 bg-white/40'
+              }`}
+              aria-label={`Ảnh ${i + 1}`}
+            />
+          ))}
+        </div>
+      )}
 
       {/* Content — mobile: bottom-aligned, desktop: centered */}
       <div className="z-10 w-full max-w-4xl px-6 md:px-4 md:text-center absolute bottom-0 left-0 pb-8 md:static md:pb-0">

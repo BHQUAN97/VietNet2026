@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import {
   Save,
   Eye,
@@ -14,8 +14,11 @@ import {
   Undo2,
   History,
   Loader2,
+  ImageIcon,
+  X,
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { uploadMedia, validateImageFile, fileToBase64 } from '@/lib/media'
 import api from '@/lib/api'
 import { formatDateTime } from '@/lib/date'
 import type {
@@ -553,6 +556,89 @@ function FieldNumber({
   )
 }
 
+/**
+ * PageImageList — upload + quản lý danh sách ảnh cho Page Builder sections.
+ * Dùng cho Hero bg_images và About images.
+ */
+function PageImageList({
+  label,
+  images,
+  onChange,
+  max = 10,
+}: {
+  label: string
+  images: string[]
+  onChange: (urls: string[]) => void
+  max?: number
+}) {
+  const [uploading, setUploading] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  async function handleFiles(files: FileList) {
+    const fileArr = Array.from(files)
+    if (images.length + fileArr.length > max) return
+    setUploading(true)
+    const newUrls = [...images]
+    for (const file of fileArr) {
+      if (validateImageFile(file)) continue
+      try {
+        const media = await uploadMedia(file)
+        newUrls.push(media.preview_url || media.original_url)
+      } catch { /* skip */ }
+    }
+    onChange(newUrls)
+    setUploading(false)
+  }
+
+  return (
+    <div>
+      <label className="mb-1 block font-label text-label-md text-on-surface-variant">
+        {label} ({images.length}/{max})
+      </label>
+      {/* Thumbnails */}
+      {images.length > 0 && (
+        <div className="mb-2 flex flex-wrap gap-2">
+          {images.map((url, i) => (
+            <div key={i} className="group relative h-16 w-24 overflow-hidden rounded-lg bg-surface-container">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={url} alt="" className="h-full w-full object-cover" />
+              <button
+                type="button"
+                onClick={() => onChange(images.filter((_, idx) => idx !== i))}
+                className="absolute right-0.5 top-0.5 rounded-full bg-error/80 p-0.5 text-white opacity-0 transition-opacity group-hover:opacity-100"
+              >
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+      {/* Upload button */}
+      {images.length < max && (
+        <>
+          <input
+            ref={inputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            className="hidden"
+            onChange={(e) => { if (e.target.files) handleFiles(e.target.files); e.target.value = '' }}
+          />
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            disabled={uploading}
+            className="flex items-center gap-2 rounded-lg border border-dashed border-on-surface/20 px-3 py-2 text-body-sm text-on-surface-variant hover:border-primary hover:text-primary disabled:opacity-50"
+          >
+            {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-4 w-4" />}
+            {uploading ? 'Đang tải...' : 'Chọn ảnh'}
+          </button>
+        </>
+      )}
+    </div>
+  )
+}
+
 function SectionConfigEditor({ section, index, onUpdate }: ConfigEditorProps) {
   const config = section.config as Record<string, any>
 
@@ -570,7 +656,12 @@ function SectionConfigEditor({ section, index, onUpdate }: ConfigEditorProps) {
           <FieldInput label="Nút phụ - Text" value={config.cta_secondary_text || ''} onChange={(v) => onUpdate(index, 'cta_secondary_text', v)} />
           <FieldInput label="Nút phụ - Link" value={config.cta_secondary_link || ''} onChange={(v) => onUpdate(index, 'cta_secondary_link', v)} />
           <div className="sm:col-span-2">
-            <FieldInput label="URL ảnh nền" value={config.bg_image_url || ''} onChange={(v) => onUpdate(index, 'bg_image_url', v || null)} />
+            <PageImageList
+              label="Ảnh nền (1 ảnh = tĩnh, nhiều ảnh = tự động lướt)"
+              images={config.bg_images || (config.bg_image_url ? [config.bg_image_url] : [])}
+              onChange={(urls) => onUpdate(index, 'bg_images', urls)}
+              max={10}
+            />
           </div>
         </div>
       )
@@ -594,6 +685,12 @@ function SectionConfigEditor({ section, index, onUpdate }: ConfigEditorProps) {
             <FieldInput label="Tiêu đề" value={config.title || ''} onChange={(v) => onUpdate(index, 'title', v)} />
           </div>
           <FieldInput label="Mô tả" value={config.description || ''} onChange={(v) => onUpdate(index, 'description', v)} multiline />
+          <PageImageList
+            label="Ảnh minh họa (2 ảnh hiển thị song song)"
+            images={config.images || []}
+            onChange={(urls) => onUpdate(index, 'images', urls)}
+            max={2}
+          />
           <div>
             <label className="mb-2 block font-label text-label-md text-on-surface-variant">
               Thống kê

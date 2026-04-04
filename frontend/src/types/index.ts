@@ -216,7 +216,10 @@ export interface HeroConfig {
   cta_primary_link: string
   cta_secondary_text: string
   cta_secondary_link: string
+  /** @deprecated Dung bg_images thay the */
   bg_image_url?: string | null
+  /** Danh sach anh nen — 1 anh = static, nhieu anh = auto-slide */
+  bg_images?: string[]
 }
 
 export interface FeaturedProjectsConfig {

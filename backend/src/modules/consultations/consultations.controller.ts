@@ -30,7 +30,7 @@ export class ConsultationsController {
    */
   @Public()
   @Post()
-  @Throttle({ default: { ttl: 60000, limit: 1 } }) // 1 request per minute per IP
+  @Throttle({ default: { ttl: 60000, limit: 3 } }) // 3 requests per minute per IP
   async submit(@Body() dto: CreateConsultationDto, @Req() req: Request) {
     const consultation = await this.consultationsService.submit(
       dto,
