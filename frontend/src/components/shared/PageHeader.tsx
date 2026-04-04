@@ -35,7 +35,7 @@ export function PageHeader({
               {label}
             </p>
           )}
-          <h1 className="mt-2 font-headline text-headline-sm text-gradient-primary md:text-headline-md lg:text-headline-lg">
+          <h1 className="mt-2 font-headline text-headline-sm text-gradient-primary md:text-headline-md">
             {title}
           </h1>
           {description && (

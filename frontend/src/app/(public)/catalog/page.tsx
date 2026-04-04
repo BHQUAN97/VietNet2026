@@ -9,7 +9,7 @@ import { DataStates } from '@/components/shared/DataStates'
 import { Pagination } from '@/components/shared/Pagination'
 import { usePaginatedList } from '@/hooks/usePaginatedList'
 import { CardGridSkeleton } from '@/components/ui/Skeleton'
-import { PageHeader } from '@/components/shared/PageHeader'
+
 import {
   ArrowUpRight,
   Sparkles,
@@ -89,19 +89,24 @@ function CatalogContent() {
     <section className="section-surface">
       <PageContainer>
         {/* Page Header — compact with total count */}
-        <PageHeader
-          label="Bộ sưu tập"
-          title="Bộ Sưu Tập Tủ Bếp"
-          description="Khám phá những không gian bếp được chế tác tỉ mỉ, kết hợp giữa chất liệu cao cấp và thiết kế hiện đại."
-          showDecoLine={false}
-        />
-        <div className="-mt-4 mb-8 flex items-center gap-4">
-          <span className="deco-line flex-1" />
-          {meta && !loading && (
-            <span className="font-label text-label-md text-on-surface-variant">
-              {meta.total} Sản phẩm
-            </span>
-          )}
+        <div className="mb-6">
+          <p className="font-label text-label-sm uppercase tracking-[0.08em] text-primary/70">
+            Bộ sưu tập
+          </p>
+          <div className="mt-1 flex items-end justify-between gap-4">
+            <h1 className="font-headline text-headline-sm text-gradient-primary md:text-headline-md">
+              Bộ Sưu Tập Tủ Bếp
+            </h1>
+            {meta && !loading && (
+              <span className="shrink-0 font-label text-label-md text-on-surface-variant">
+                {meta.total} Sản phẩm
+              </span>
+            )}
+          </div>
+          <p className="mt-1.5 max-w-2xl text-body-sm text-on-surface-variant">
+            Khám phá những không gian bếp được chế tác tỉ mỉ, kết hợp giữa chất liệu cao cấp và thiết kế hiện đại.
+          </p>
+          <span className="deco-line mt-3" />
         </div>
 
         {/* Mobile Filter Toggle */}
@@ -164,9 +169,9 @@ function CatalogContent() {
           </div>
         )}
 
-        <div className="flex gap-10 lg:flex-row">
+        <div className="flex gap-8 lg:flex-row">
           {/* Desktop Sidebar Filter */}
-          <aside className="hidden shrink-0 lg:block lg:w-64">
+          <aside className="hidden shrink-0 lg:block lg:w-56">
             <div className="lg:sticky lg:top-[calc(var(--nav-height)+2rem)]">
               <h3 className="mb-5 font-label text-label-lg uppercase tracking-[0.06em] text-on-surface">
                 Material Filters
@@ -231,8 +236,8 @@ function CatalogContent() {
                     href={`/catalog/${product.slug}`}
                     className="card-premium group overflow-hidden rounded-2xl bg-surface-container-lowest"
                   >
-                    {/* Image - aspect 4/5 matching design */}
-                    <div className="relative aspect-[4/5] overflow-hidden bg-surface-container">
+                    {/* Image */}
+                    <div className="relative aspect-[4/3] overflow-hidden bg-surface-container">
                       {product.cover_image?.preview_url ? (
                         <Image
                           src={product.cover_image.preview_url}

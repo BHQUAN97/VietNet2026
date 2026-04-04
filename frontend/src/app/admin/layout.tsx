@@ -3,7 +3,12 @@
 import { usePathname } from 'next/navigation'
 import Link from 'next/link'
 import { AuthProvider } from '@/contexts/auth.context'
-import { SocketProvider } from '@/contexts/socket.context'
+import dynamic from 'next/dynamic'
+
+const SocketProvider = dynamic(
+  () => import('@/contexts/socket.context').then(mod => mod.SocketProvider),
+  { ssr: false }
+)
 import { AuthGuard } from '@/components/auth/AuthGuard'
 import { AdminSidebar } from '@/components/layout/AdminSidebar'
 import { NotificationBell } from '@/components/admin/NotificationBell'

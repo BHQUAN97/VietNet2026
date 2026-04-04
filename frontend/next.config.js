@@ -30,9 +30,19 @@ const nextConfig = {
     formats: ['image/avif', 'image/webp'],
     deviceSizes: [375, 640, 768, 1024, 1280, 1536],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    // Cache image da optimize 7 ngay — giam re-process
+    minimumCacheTTL: 604800,
   },
   experimental: {
-    optimizePackageImports: ['lucide-react', '@radix-ui/react-dialog', '@radix-ui/react-dropdown-menu'],
+    optimizePackageImports: [
+      'lucide-react',
+      '@radix-ui/react-dialog',
+      '@radix-ui/react-dropdown-menu',
+      '@radix-ui/react-select',
+      '@radix-ui/react-tabs',
+      '@radix-ui/react-toast',
+      '@radix-ui/react-accordion',
+    ],
   },
   // Enable standalone output for smaller Docker images
   output: 'standalone',

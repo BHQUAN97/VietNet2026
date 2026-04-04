@@ -61,7 +61,7 @@ export default function AboutPage() {
             <p className="font-label text-label-sm uppercase tracking-[0.08em] text-primary/70">
               Về chúng tôi
             </p>
-            <h1 className="mt-2 font-headline text-headline-sm text-gradient-primary md:text-headline-md lg:text-headline-lg">
+            <h1 className="mt-2 font-headline text-headline-sm text-gradient-primary md:text-headline-md">
               Kiến Tạo Không Gian Sống Tinh Tế
             </h1>
             <span className="deco-line deco-line-center mt-4" />

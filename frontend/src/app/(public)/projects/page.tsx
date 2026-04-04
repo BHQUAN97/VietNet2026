@@ -6,7 +6,7 @@ import Image from 'next/image'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { PageContainer } from '@/components/layout/PageContainer'
 import { CardGridSkeleton } from '@/components/ui/Skeleton'
-import { PageHeader } from '@/components/shared/PageHeader'
+
 import { DataStates } from '@/components/shared/DataStates'
 import { Pagination } from '@/components/shared/Pagination'
 import { usePaginatedList } from '@/hooks/usePaginatedList'
@@ -73,26 +73,30 @@ function ProjectsContent() {
   return (
     <section className="section-surface">
       <PageContainer>
-        {/* Page Header */}
-        <PageHeader
-          label="Dự án"
-          title="Dự Án Nội Thất Tiêu Biểu"
-          description="Khám phá các dự án thiết kế nội thất đã hoàn thành bởi đội ngũ VietNet Interior."
-          showDecoLine={false}
-        />
-        {/* Deco line voi tong so du an */}
-        <div className="-mt-4 mb-8 flex items-center gap-4">
-          <span className="deco-line flex-1" />
-          {meta && !loading && (
-            <span className="font-label text-label-md text-on-surface-variant">
-              {meta.total} Dự án
-            </span>
-          )}
+        {/* Page Header — compact */}
+        <div className="mb-6">
+          <p className="font-label text-label-sm uppercase tracking-[0.08em] text-primary/70">
+            Dự án
+          </p>
+          <div className="mt-1 flex items-end justify-between gap-4">
+            <h1 className="font-headline text-headline-sm text-gradient-primary md:text-headline-md">
+              Dự Án Nội Thất Tiêu Biểu
+            </h1>
+            {meta && !loading && (
+              <span className="shrink-0 font-label text-label-md text-on-surface-variant">
+                {meta.total} Dự án
+              </span>
+            )}
+          </div>
+          <p className="mt-1.5 max-w-2xl text-body-sm text-on-surface-variant">
+            Khám phá các dự án thiết kế nội thất đã hoàn thành bởi đội ngũ VietNet Interior.
+          </p>
+          <span className="deco-line mt-3" />
         </div>
 
         {/* Category Filter */}
         {categories.length > 0 && (
-          <div className="mb-8 flex flex-wrap gap-2">
+          <div className="mb-6 flex flex-wrap gap-2">
             <button
               onClick={() => updateParams({ category: '', page: '' })}
               className={`rounded-full px-4 py-2.5 min-h-[44px] font-label text-label-md uppercase tracking-label-wide transition-all duration-300 ${

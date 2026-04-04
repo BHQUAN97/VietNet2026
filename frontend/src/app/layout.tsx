@@ -34,7 +34,7 @@ export default function RootLayout({
         {/* Google Sans Flex — variable font for all text */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Google+Sans+Flex:wght@400;500;600;700&subset=latin,vietnamese&display=swap" rel="stylesheet" />
         {/* Preconnect to R2 CDN for faster image loading */}
         <link rel="preconnect" href="https://pub-vietnet.r2.dev" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://pub-vietnet.r2.dev" />
