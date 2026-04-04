@@ -30,16 +30,16 @@ services:
       JWT_EXPIRATION: 3600
       REFRESH_TOKEN_EXPIRATION: 604800
       ALLOWED_ORIGINS: https://${DOMAIN:-bhquan.store}
-      R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID}
-      R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY}
-      R2_ENDPOINT: ${R2_ENDPOINT}
-      R2_BUCKET_PRIVATE: vietnet-private
-      R2_BUCKET_PUBLIC: vietnet-public
-      R2_PUBLIC_URL: ${R2_PUBLIC_URL}
+      # R2 disabled — dung local storage (/app/uploads)
+      # R2_ACCESS_KEY_ID: ${R2_ACCESS_KEY_ID}
+      # R2_SECRET_ACCESS_KEY: ${R2_SECRET_ACCESS_KEY}
+      # R2_ENDPOINT: ${R2_ENDPOINT}
       RESEND_API_KEY: ${RESEND_API_KEY}
       ADMIN_EMAIL: admin@${DOMAIN:-bhquan.store}
       REVALIDATE_SECRET: ${REVALIDATE_SECRET}
       NEXT_REVALIDATE_URL: http://vietnet-frontend:3000
+    volumes:
+      - vietnet_uploads:/app/uploads
     healthcheck:
       test: ['CMD-SHELL', 'wget -qO- http://localhost:4000/api/health || exit 1']
       interval: 30s
@@ -59,8 +59,9 @@ services:
     ports:
       - '3100:3000'
     environment:
-      NEXT_PUBLIC_API_URL: https://${DOMAIN:-bhquan.store}/api
+      NEXT_PUBLIC_API_URL: /api
       NEXT_PUBLIC_SITE_URL: https://${DOMAIN:-bhquan.store}
+      INTERNAL_API_URL: http://backend:4000/api
     depends_on:
       backend:
         condition: service_healthy
@@ -72,11 +73,16 @@ services:
     networks:
       - vietnet_frontend
 
+volumes:
+  vietnet_uploads:
+    name: vietnet_uploads
+
 networks:
-  # Dùng chung network của WebPhoto
+  # Dùng chung network với WebPhoto (MySQL, Redis)
   webphoto_backend:
-    external: true
     name: webphoto_backend
-  # Network riêng — photo-nginx cũng join network này (xem WebPhoto docker-compose)
+    external: true
+  # Network riêng — photo-nginx cũng join network này
   vietnet_frontend:
     name: vietnet_frontend
+    external: true

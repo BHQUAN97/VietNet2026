@@ -111,6 +111,7 @@ export function ConsultationForm() {
     if (emailErr) newErrors.email = emailErr
 
     if (!formData.message.trim()) newErrors.message = 'Vui lòng nhập nội dung'
+    else if (formData.message.trim().length < 5) newErrors.message = 'Nội dung cần ít nhất 5 ký tự'
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0

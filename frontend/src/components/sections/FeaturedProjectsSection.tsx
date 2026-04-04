@@ -4,7 +4,7 @@ import { ScrollReveal } from '@/components/ui/ScrollReveal'
 import { ArrowRight } from 'lucide-react'
 import type { FeaturedProjectsConfig, Project } from '@/types'
 
-import { getServerApiUrl } from '@/lib/api-url'
+import { getServerApiUrl, resolveMediaUrl } from '@/lib/api-url'
 
 const API_URL = getServerApiUrl()
 
@@ -85,7 +85,7 @@ export async function FeaturedProjectsSection({ config }: Props) {
                   <div className={`group relative overflow-hidden rounded-xl bg-surface h-[400px] md:h-[500px] ${index === 1 ? 'md:mt-12' : ''}`}>
                     {project.cover_image?.preview_url ? (
                       <Image
-                        src={project.cover_image.preview_url}
+                        src={resolveMediaUrl(project.cover_image.preview_url)}
                         alt={project.cover_image.alt_text || project.title}
                         fill
                         className="object-cover transition-transform duration-700 group-hover:scale-110"

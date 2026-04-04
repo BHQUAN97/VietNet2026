@@ -6,7 +6,7 @@ import { ArrowUpRight } from 'lucide-react'
 import type { LatestArticlesConfig, Article } from '@/types'
 import { formatDate } from '@/lib/date'
 
-import { getServerApiUrl } from '@/lib/api-url'
+import { getServerApiUrl, resolveMediaUrl } from '@/lib/api-url'
 
 const API_URL = getServerApiUrl()
 
@@ -58,7 +58,7 @@ export async function LatestArticlesSection({ config }: Props) {
                   <div className="relative aspect-[16/9] overflow-hidden bg-surface-container">
                     {article.cover_image?.preview_url ? (
                       <Image
-                        src={article.cover_image.preview_url}
+                        src={resolveMediaUrl(article.cover_image.preview_url)}
                         alt={article.cover_image.alt_text || article.title}
                         fill
                         className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06]"

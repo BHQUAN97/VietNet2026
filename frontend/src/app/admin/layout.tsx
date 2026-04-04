@@ -1,6 +1,7 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
+import Link from 'next/link'
 import { AuthProvider } from '@/contexts/auth.context'
 import { SocketProvider } from '@/contexts/socket.context'
 import { AuthGuard } from '@/components/auth/AuthGuard'
@@ -32,9 +33,15 @@ export default function AdminLayout({
             <div className="min-h-screen md:ml-[var(--sidebar-width)]">
               {/* Top bar with notification bell */}
               <div className="flex items-center justify-between px-4 py-2.5 pl-14 md:justify-end md:px-6 md:pl-6 md:py-3">
-                <span className="font-body text-body-sm text-on-surface-variant md:hidden">
-                  Quản trị
-                </span>
+                <Link
+                  href="/"
+                  className="flex items-center gap-2 font-headline text-title-sm text-primary transition-opacity hover:opacity-80 md:hidden"
+                >
+                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/8">
+                    <span className="font-headline text-body-sm text-primary">V</span>
+                  </span>
+                  VietNet
+                </Link>
                 <NotificationBell />
               </div>
               {/* No footer in admin */}

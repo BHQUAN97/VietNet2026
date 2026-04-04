@@ -6,8 +6,10 @@ import { PageContainer } from '@/components/layout/PageContainer'
 import { Breadcrumb } from '@/components/layout/Breadcrumb'
 import { articleJsonLd } from '@/lib/jsonld'
 import { sanitizeHtml } from '@/lib/sanitize'
+import { tiptapJsonToHtml } from '@/lib/tiptap-html'
 import { serverFetch, serverFetchList } from '@/lib/server-fetch'
 import { buildDetailMetadata } from '@/lib/seo-helpers'
+import { resolveMediaUrl } from '@/lib/api-url'
 import { ArrowLeft } from 'lucide-react'
 import { formatDate } from '@/lib/date'
 
@@ -60,14 +62,14 @@ export default async function ArticleDetailPage({ params }: { params: Promise<{ 
           {article.cover_image?.preview_url && (
             <div className="mx-auto mt-8 max-w-4xl">
               <div className="relative aspect-[16/9] overflow-hidden rounded-xl bg-surface-container">
-                <Image src={article.cover_image.preview_url} alt={article.cover_image.alt_text || article.title} fill className="object-cover" sizes="(max-width: 768px) 100vw, 900px" priority />
+                <Image src={resolveMediaUrl(article.cover_image.preview_url)} alt={article.cover_image.alt_text || article.title} fill className="object-cover" sizes="(max-width: 768px) 100vw, 900px" priority />
               </div>
             </div>
           )}
 
           {/* Content */}
           {article.content && (
-            <div className="prose prose-lg mx-auto mt-10 max-w-4xl text-on-surface" dangerouslySetInnerHTML={{ __html: sanitizeHtml(article.content) }} />
+            <div className="prose prose-lg mx-auto mt-10 max-w-4xl text-on-surface" dangerouslySetInnerHTML={{ __html: sanitizeHtml(tiptapJsonToHtml(article.content)) }} />
           )}
 
           {/* Related Articles */}
@@ -79,7 +81,7 @@ export default async function ArticleDetailPage({ params }: { params: Promise<{ 
                   <Link key={item.id} href={`/articles/${item.slug}`} className="group overflow-hidden rounded-xl bg-surface-container-lowest shadow-ambient-sm transition-shadow hover:shadow-ambient-lg">
                     <div className="relative aspect-[16/9] overflow-hidden bg-surface-container">
                       {item.cover_image?.preview_url ? (
-                        <Image src={item.cover_image.preview_url} alt={item.cover_image.alt_text || item.title} fill className="object-cover transition-transform duration-500 group-hover:scale-105" sizes="(max-width: 640px) 100vw, 25vw" />
+                        <Image src={resolveMediaUrl(item.cover_image.preview_url)} alt={item.cover_image.alt_text || item.title} fill className="object-cover transition-transform duration-500 group-hover:scale-105" sizes="(max-width: 640px) 100vw, 25vw" />
                       ) : (
                         <div className="flex h-full items-center justify-center text-on-surface-variant/30"><span className="text-3xl">&#9633;</span></div>
                       )}

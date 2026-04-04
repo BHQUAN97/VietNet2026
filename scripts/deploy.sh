@@ -67,6 +67,11 @@ NEXT_PUBLIC_SITE_URL=https://bhquan.store
 ENVEOF
 fi
 
+# ─── Ensure shared networks (app nào start trước cũng được) ──
+log "Ensuring shared Docker networks..."
+docker network create webphoto_backend 2>/dev/null || true
+docker network create vietnet_frontend 2>/dev/null || true
+
 # ─── Build & Deploy ─────────────────────
 log "Building Docker images..."
 cd "${APP_DIR}"
@@ -81,6 +86,16 @@ ${COMPOSE} -f ${COMPOSE_FILE} down --timeout 30
 # Start new containers
 log "Starting new containers..."
 ${COMPOSE} -f ${COMPOSE_FILE} up -d
+
+# ─── Run DB changelogs ──────────────────
+log "Running DB changelogs..."
+if [ -d "${APP_DIR}/db/changelog" ]; then
+    for f in $(find "${APP_DIR}/db/changelog" -name 'V*.sql' -type f 2>/dev/null | sort); do
+        FNAME=$(basename "$f")
+        echo -n "  $FNAME ... "
+        docker exec -i photo-mysql mysql -u vietnet -p"${VIETNET_DB_PASSWORD}" vietnet < "$f" 2>&1 && echo "OK" || echo "SKIP"
+    done
+fi
 
 # ─── Wait for health checks ─────────────
 log "Waiting for services to start..."

@@ -175,6 +175,10 @@ step "5/8 — Build Docker images + Start"
 ssh "${VPS_HOST}" "
   cd ${APP_DIR}
 
+  # Ensure shared networks (app nào start trước cũng được)
+  docker network create webphoto_backend 2>/dev/null || true
+  docker network create vietnet_frontend 2>/dev/null || true
+
   echo '  Building Docker images...'
   docker compose build 2>&1 | tail -5
 

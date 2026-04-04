@@ -140,7 +140,9 @@ export function BottomNav() {
                     menuOpen ? 'rotate-0 opacity-100 scale-100' : '-rotate-90 opacity-0 scale-75'
                   )} />
                 </span>
-{/* Icon only — no label text on mobile nav */}
+                <span className="mt-0.5 text-[10px] font-medium leading-none">
+                  {menuOpen ? 'Đóng' : item.label}
+                </span>
               </button>
             )
           }
@@ -158,6 +160,7 @@ export function BottomNav() {
               aria-label={item.label}
             >
               {Icon && <Icon className="h-5 w-5" />}
+              <span className="mt-0.5 text-[10px] font-medium leading-none">{item.label}</span>
             </Link>
           )
         })}

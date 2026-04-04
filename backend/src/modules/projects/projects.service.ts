@@ -23,6 +23,8 @@ export class ProjectsService extends PublishableService<Project> {
     ['display_order', 'ASC'],
     ['created_at', 'DESC'],
   ];
+  // Content la TipTap JSON, sanitize HTML o frontend khi render
+  protected readonly sanitizeContent = false;
 
   constructor(
     @InjectRepository(Project)
@@ -53,6 +55,31 @@ export class ProjectsService extends PublishableService<Project> {
   async findPublishedBySlug(slug: string): Promise<Project & { gallery: ProjectGallery[] }> {
     const project = await super.findPublishedBySlug(slug);
     return this.loadWithGallery(project);
+  }
+
+  // ─── Admin list voi LIKE search ──────────────────────────────
+
+  async findAllAdmin(
+    pagination: PaginationDto,
+    filters?: Record<string, unknown>,
+    search?: string,
+  ) {
+    const qb = this.createBaseQuery(this.queryAlias);
+
+    for (const rel of this.defaultRelations) {
+      qb.leftJoinAndSelect(`${this.queryAlias}.${rel}`, rel);
+    }
+
+    // LIKE search tren title va description
+    if (search?.trim()) {
+      const searchTerm = `%${search.trim()}%`;
+      qb.andWhere(
+        `(${this.queryAlias}.title LIKE :search OR ${this.queryAlias}.description LIKE :search)`,
+        { search: searchTerm },
+      );
+    }
+
+    return this.executeWithDefaultSort(qb, pagination, filters);
   }
 
   // ─── Override findPublished: category slug + is_featured ─────

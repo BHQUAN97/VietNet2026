@@ -44,8 +44,17 @@ export class ArticlesController extends CrudController<any> {
   async findAllAdmin(@Query() query: QueryArticleAdminDto) {
     const { category_id, is_featured, status, search, ...pagination } = query;
     const filters = { category_id, status, is_featured };
-    const result = await this.service.findAll(pagination, filters);
+    const result = await this.service.findAllAdmin(pagination, filters, search);
     return paginated(result.data, result.meta);
+  }
+
+  // ─── Admin detail by ID (draft + published) ─────────────────
+
+  @Get('admin/:id')
+  @AdminOnly()
+  async findOneAdmin(@Param('id', ParseUlidPipe) id: string) {
+    const article = await this.service.findById(id);
+    return ok(article);
   }
 
   // ─── Override: detail + view count ───────────────────────────

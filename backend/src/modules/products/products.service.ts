@@ -4,6 +4,7 @@ import { Repository, DeepPartial } from 'typeorm';
 import { Product } from './entities/product.entity';
 import { ProductImage } from './entities/product-image.entity';
 import { PublishableService } from '../../common/base/base-publishable.service';
+import { PaginationDto } from '../../common/dto/pagination.dto';
 import { MediaAssociation } from '../../common/services/base-media-association.service';
 
 @Injectable()
@@ -32,6 +33,31 @@ export class ProductsService extends PublishableService<Product> {
     private readonly productImagesRepository: Repository<ProductImage>,
   ) {
     super(productsRepository, 'Product');
+  }
+
+  // ─── Admin list voi LIKE search ──────────────────────────────
+
+  async findAllAdmin(
+    pagination: PaginationDto,
+    filters?: Record<string, unknown>,
+    search?: string,
+  ) {
+    const qb = this.createBaseQuery(this.queryAlias);
+
+    for (const rel of this.defaultRelations) {
+      qb.leftJoinAndSelect(`${this.queryAlias}.${rel}`, rel);
+    }
+
+    // LIKE search tren name va description
+    if (search?.trim()) {
+      const searchTerm = `%${search.trim()}%`;
+      qb.andWhere(
+        `(${this.queryAlias}.name LIKE :search OR ${this.queryAlias}.description LIKE :search)`,
+        { search: searchTerm },
+      );
+    }
+
+    return this.executeWithDefaultSort(qb, pagination, filters);
   }
 
   // ─── Create voi images ───────────────────────────────────────

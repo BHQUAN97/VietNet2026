@@ -5,6 +5,7 @@ export const NAV_LINKS = [
   { label: 'Trang chủ', href: '/' },
   { label: 'Dự án', href: '/projects' },
   { label: 'Danh mục', href: '/catalog' },
+  { label: 'Bài viết', href: '/articles' },
   { label: 'Tư vấn', href: '/contact' },
 ] as const
 
@@ -20,6 +21,7 @@ export const ADMIN_NAV_ITEMS = [
   { label: 'Dashboard', href: '/admin', icon: 'LayoutDashboard' },
   { label: 'Trang', href: '/admin/pages', icon: 'FileText' },
   { label: 'Dự án', href: '/admin/projects', icon: 'Briefcase' },
+  { label: 'Bài viết', href: '/admin/articles', icon: 'Newspaper' },
   { label: 'Sản phẩm', href: '/admin/products', icon: 'Package' },
   { label: 'Tư vấn', href: '/admin/consultations', icon: 'MessageCircle' },
   { label: 'Phân tích', href: '/admin/analytics', icon: 'BarChart3' },

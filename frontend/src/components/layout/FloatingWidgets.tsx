@@ -110,14 +110,14 @@ export function FloatingWidgets() {
         aria-label="Liên hệ nhanh"
         role="group"
       >
-        {/* Expanded actions */}
+        {/* Expanded actions — show lên trên FAB */}
         <div className={cn(
-          'flex flex-col gap-2.5 mb-2.5 transition-all duration-300 origin-bottom',
+          'flex flex-col-reverse gap-2.5 mb-2.5 transition-all duration-300 origin-bottom',
           mobileOpen
             ? 'scale-100 opacity-100 pointer-events-auto'
             : 'scale-75 opacity-0 pointer-events-none'
         )}>
-          {widgets.map((widget) => {
+          {widgets.map((widget, i) => {
             const Icon = widget.icon
             return (
               <a
@@ -127,6 +127,7 @@ export function FloatingWidgets() {
                 rel={widget.href.startsWith('tel:') ? undefined : 'noopener noreferrer'}
                 aria-label={widget.label}
                 onClick={() => setMobileOpen(false)}
+                style={{ transitionDelay: mobileOpen ? `${i * 50}ms` : '0ms' }}
                 className={cn(
                   'flex h-11 w-11 items-center justify-center rounded-full text-on-primary shadow-ambient-md transition-all duration-200 active:scale-90',
                   widget.bgClass
@@ -145,8 +146,8 @@ export function FloatingWidgets() {
           className={cn(
             'flex h-12 w-12 items-center justify-center rounded-full shadow-ambient-lg transition-all duration-300 active:scale-90',
             mobileOpen
-              ? 'bg-inverse-surface text-inverse-on-surface rotate-0'
-              : 'bg-primary-container text-on-primary rotate-0 animate-widget-pulse'
+              ? 'bg-inverse-surface text-inverse-on-surface'
+              : 'bg-primary-container text-on-primary animate-widget-pulse'
           )}
         >
           <MessageCircle className={cn(

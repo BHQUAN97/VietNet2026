@@ -4,9 +4,12 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { PageContainer } from '@/components/layout/PageContainer'
 import { Breadcrumb } from '@/components/layout/Breadcrumb'
+import { GalleryWithLightbox } from '@/components/ui/GalleryWithLightbox'
 import { Button } from '@/components/ui/Button'
 import { productJsonLd } from '@/lib/jsonld'
 import { sanitizeHtml } from '@/lib/sanitize'
+import { tiptapJsonToHtml } from '@/lib/tiptap-html'
+import { resolveMediaUrl } from '@/lib/api-url'
 import { serverFetch, serverFetchList } from '@/lib/server-fetch'
 import { buildDetailMetadata } from '@/lib/seo-helpers'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
@@ -35,6 +38,33 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     width?: number; height?: number; depth?: number; unit?: string
   } | null
 
+  // Gom cover + images thành gallery items cho GalleryWithLightbox
+  const galleryItems: any[] = []
+  if (product.cover_image?.preview_url) {
+    galleryItems.push({
+      id: 'cover',
+      caption: null,
+      media: {
+        preview_url: product.cover_image.preview_url,
+        alt_text: product.cover_image.alt_text || product.name,
+      },
+    })
+  }
+  if (product.images && product.images.length > 0) {
+    for (const img of product.images) {
+      if (img.media?.preview_url) {
+        galleryItems.push({
+          id: img.id,
+          caption: img.caption || null,
+          media: {
+            preview_url: img.media.preview_url,
+            alt_text: img.caption || img.media.alt_text || '',
+          },
+        })
+      }
+    }
+  }
+
   return (
     <>
       <script type="application/ld+json" dangerouslySetInnerHTML={{
@@ -51,28 +81,17 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
           </Link>
 
           <div className="grid gap-10 lg:grid-cols-2">
-            {/* Image Gallery */}
+            {/* Image Gallery — Instagram style */}
             <div>
-              <div className="relative aspect-square overflow-hidden rounded-xl bg-surface-container">
-                {product.cover_image?.preview_url ? (
-                  <Image src={product.cover_image.preview_url} alt={product.cover_image.alt_text || product.name} fill className="object-cover" sizes="(max-width: 1024px) 100vw, 50vw" priority />
-                ) : (
-                  <div className="flex h-full items-center justify-center text-on-surface-variant/30"><span className="text-7xl">&#9633;</span></div>
-                )}
-                {product.is_new && (
-                  <span className="absolute left-4 top-4 rounded-full bg-primary px-4 py-1.5 font-label text-label-md uppercase text-on-primary">New</span>
-                )}
-              </div>
-              {product.images && product.images.length > 0 && (
-                <div className="mt-4 grid grid-cols-4 gap-3">
-                  {product.images.map((img: any) => (
-                    <div key={img.id} className="relative aspect-square overflow-hidden rounded-lg bg-surface-container">
-                      {img.media?.preview_url && (
-                        <Image src={img.media.preview_url} alt={img.caption || img.media.alt_text || ''} fill className="object-cover" sizes="120px" />
-                      )}
-                    </div>
-                  ))}
+              {galleryItems.length > 0 ? (
+                <GalleryWithLightbox items={galleryItems} />
+              ) : (
+                <div className="flex aspect-square items-center justify-center rounded-xl bg-surface-container text-on-surface-variant/30">
+                  <span className="text-7xl">&#9633;</span>
                 </div>
+              )}
+              {product.is_new && galleryItems.length > 0 && (
+                <span className="mt-3 inline-flex rounded-full bg-primary px-4 py-1.5 font-label text-label-md uppercase text-on-primary">New</span>
               )}
             </div>
 
@@ -88,7 +107,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
               )}
 
               {product.description && (
-                <div className="prose mt-6 max-w-none text-on-surface-variant" dangerouslySetInnerHTML={{ __html: sanitizeHtml(product.description) }} />
+                <div className="prose mt-6 max-w-none text-on-surface-variant" dangerouslySetInnerHTML={{ __html: sanitizeHtml(tiptapJsonToHtml(product.description)) }} />
               )}
 
               <div className="mt-8 space-y-4 rounded-xl bg-surface-container-low p-6">
@@ -133,7 +152,7 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
                   <Link key={rp.id} href={`/catalog/${rp.slug}`} className="group overflow-hidden rounded-xl bg-surface-container-lowest shadow-ambient-sm transition-shadow hover:shadow-ambient-lg">
                     <div className="relative aspect-square overflow-hidden bg-surface-container">
                       {rp.cover_image?.preview_url ? (
-                        <Image src={rp.cover_image.preview_url} alt={rp.cover_image.alt_text || rp.name} fill className="object-cover transition-transform duration-500 group-hover:scale-105" sizes="(max-width: 1024px) 50vw, 25vw" />
+                        <Image src={resolveMediaUrl(rp.cover_image.preview_url)} alt={rp.cover_image.alt_text || rp.name} fill className="object-cover transition-transform duration-500 group-hover:scale-105" sizes="(max-width: 1024px) 50vw, 25vw" />
                       ) : (
                         <div className="flex h-full items-center justify-center text-on-surface-variant/30"><span className="text-4xl">&#9633;</span></div>
                       )}

@@ -7,8 +7,10 @@ import { Breadcrumb } from '@/components/layout/Breadcrumb'
 import { GalleryWithLightbox } from '@/components/ui/GalleryWithLightbox'
 import { projectJsonLd } from '@/lib/jsonld'
 import { sanitizeHtml } from '@/lib/sanitize'
+import { tiptapJsonToHtml } from '@/lib/tiptap-html'
 import { serverFetch, serverFetchList } from '@/lib/server-fetch'
 import { buildDetailMetadata } from '@/lib/seo-helpers'
+import { resolveMediaUrl } from '@/lib/api-url'
 import { ArrowLeft } from 'lucide-react'
 
 const SEO_CONFIG = { entityName: 'Dự án', basePath: '/projects' }
@@ -100,13 +102,13 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
           {/* Cover Image */}
           {project.cover_image?.preview_url && (
             <div className="relative mb-10 aspect-[16/9] overflow-hidden rounded-xl bg-surface-container">
-              <Image src={project.cover_image.preview_url} alt={project.cover_image.alt_text || project.title} fill className="object-cover" sizes="(max-width: 768px) 100vw, 1200px" priority />
+              <Image src={resolveMediaUrl(project.cover_image.preview_url)} alt={project.cover_image.alt_text || project.title} fill className="object-cover" sizes="(max-width: 768px) 100vw, 1200px" priority />
             </div>
           )}
 
           {/* Content */}
           {project.content && (
-            <div className="prose prose-lg mx-auto max-w-4xl text-on-surface" dangerouslySetInnerHTML={{ __html: sanitizeHtml(project.content) }} />
+            <div className="prose prose-lg mx-auto max-w-4xl text-on-surface" dangerouslySetInnerHTML={{ __html: sanitizeHtml(tiptapJsonToHtml(project.content)) }} />
           )}
 
           {/* Gallery */}
@@ -126,7 +128,7 @@ export default async function ProjectDetailPage({ params }: { params: Promise<{ 
                   <Link key={rp.id} href={`/projects/${rp.slug}`} className="group overflow-hidden rounded-xl bg-surface shadow-ambient-sm transition-shadow hover:shadow-ambient-lg">
                     <div className="relative aspect-[4/3] overflow-hidden bg-surface-container">
                       {rp.cover_image?.preview_url ? (
-                        <Image src={rp.cover_image.preview_url} alt={rp.cover_image.alt_text || rp.title} fill className="object-cover transition-transform duration-500 group-hover:scale-105" sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" />
+                        <Image src={resolveMediaUrl(rp.cover_image.preview_url)} alt={rp.cover_image.alt_text || rp.title} fill className="object-cover transition-transform duration-500 group-hover:scale-105" sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" />
                       ) : (
                         <div className="flex h-full items-center justify-center text-on-surface-variant/30"><span className="text-4xl">&#9633;</span></div>
                       )}

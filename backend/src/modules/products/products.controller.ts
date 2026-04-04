@@ -45,7 +45,7 @@ export class ProductsController extends CrudController<any> {
   async findAllAdmin(@Query() query: QueryProductAdminDto) {
     const { category_id, is_featured, status, search, material_type, finish, ...pagination } = query as any;
     const filters = { category_id, material_type, finish, status, is_featured };
-    const result = await this.service.findAll(pagination, filters);
+    const result = await this.service.findAllAdmin(pagination, filters, search);
     return paginated(result.data, result.meta);
   }
 

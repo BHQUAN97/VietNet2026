@@ -82,6 +82,10 @@ log "Nginx config updated"
 # 5. Rebuild + Restart
 step "5/6 — Rebuild Docker + Restart"
 ssh "${VPS_HOST}" "
+  # Ensure shared networks (app nào start trước cũng được)
+  docker network create webphoto_backend 2>/dev/null || true
+  docker network create vietnet_frontend 2>/dev/null || true
+
   cd ${APP_DIR}
   docker compose build backend frontend 2>&1 | tail -5
   docker compose up -d backend frontend

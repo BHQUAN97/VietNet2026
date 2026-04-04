@@ -384,7 +384,15 @@ export default function AdminPagesPage() {
           >
             {/* Section header — wraps to 2 rows on narrow mobile */}
             <div className="flex flex-wrap items-center gap-2 px-4 py-3">
-              <div className="flex min-w-0 flex-1 items-center gap-2">
+              <button
+                type="button"
+                onClick={() =>
+                  setExpandedSection(
+                    expandedSection === section.id ? null : section.id,
+                  )
+                }
+                className="flex min-w-0 flex-1 items-center gap-2 text-left"
+              >
                 <GripVertical className="h-5 w-5 shrink-0 text-on-surface-variant/40" />
                 <span className="truncate font-label text-label-lg text-on-surface">
                   {SECTION_TYPE_LABELS[section.type]}
@@ -392,7 +400,7 @@ export default function AdminPagesPage() {
                 {!section.visible && (
                   <span className="shrink-0 text-body-sm text-on-surface-variant">(Ẩn)</span>
                 )}
-              </div>
+              </button>
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => moveSection(index, 'up')}

@@ -37,7 +37,7 @@ export class CreateConsultationDto {
   budget_range?: string;
 
   @IsString()
-  @MinLength(10)
+  @MinLength(5, { message: 'Nội dung yêu cầu cần ít nhất 5 ký tự' })
   @MaxLength(2000)
   message!: string;
 

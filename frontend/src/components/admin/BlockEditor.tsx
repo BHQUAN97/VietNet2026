@@ -446,13 +446,6 @@ function BlockHoverToolbar({ editor }: { editor: Editor }) {
     }
   }, [editor])
 
-  // Dùng dispatch trực tiếp để không steal focus khỏi editor
-  const dispatchTr = useCallback((fn: (tr: any) => any) => {
-    const { state, dispatch } = editor.view
-    const tr = fn(state.tr)
-    if (tr) dispatch(tr)
-  }, [editor])
-
   const moveUp = useCallback(() => {
     if (!hoverPos) return
     const { blockPos } = hoverPos
@@ -492,8 +485,7 @@ function BlockHoverToolbar({ editor }: { editor: Editor }) {
     setShowMenu(false)
   }, [editor, hoverPos])
 
-  // Nút + thêm block — dùng dispatch trực tiếp, không steal focus
-  // ProseMirror doc structure: doc(0) > [block(1..n)] — insertPos phải nằm trong doc child range
+  // Nút + thêm block và focus cursor vào paragraph mới
   const addBelow = useCallback((e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
@@ -503,25 +495,27 @@ function BlockHoverToolbar({ editor }: { editor: Editor }) {
       const node = doc.nodeAt(hoverPos.blockPos)
       if (!node) return
       const endOfBlock = hoverPos.blockPos + node.nodeSize
-      const newNode = editor.state.schema.nodes.paragraph.create()
-      // Nếu block cuối cùng thì append vào cuối doc content
-      if (endOfBlock >= doc.content.size) {
-        dispatchTr(tr => tr.insert(doc.content.size, newNode))
-      } else {
-        dispatchTr(tr => tr.insert(endOfBlock, newNode))
-      }
+      const insertPos = endOfBlock >= doc.content.size ? doc.content.size : endOfBlock
+      editor.chain().focus().insertContentAt(insertPos, { type: 'paragraph' }).run()
+      // Đặt cursor vào paragraph mới (insertPos + 1 = bên trong paragraph node)
+      setTimeout(() => {
+        editor.commands.focus(insertPos + 1)
+      }, 0)
     } catch { /* ignore */ }
     setShowMenu(false)
-  }, [editor, hoverPos, dispatchTr])
+  }, [editor, hoverPos])
 
   const addAbove = useCallback(() => {
     if (!hoverPos) return
     try {
-      const newNode = editor.state.schema.nodes.paragraph.create()
-      dispatchTr(tr => tr.insert(Math.max(0, hoverPos.blockPos), newNode))
+      const insertPos = Math.max(0, hoverPos.blockPos)
+      editor.chain().focus().insertContentAt(insertPos, { type: 'paragraph' }).run()
+      setTimeout(() => {
+        editor.commands.focus(insertPos + 1)
+      }, 0)
     } catch { /* ignore */ }
     setShowMenu(false)
-  }, [editor, hoverPos, dispatchTr])
+  }, [editor, hoverPos])
 
   const duplicateBlock = useCallback(() => {
     if (!hoverPos) return
@@ -531,21 +525,21 @@ function BlockHoverToolbar({ editor }: { editor: Editor }) {
       if (!node) return
       const endOfBlock = hoverPos.blockPos + node.nodeSize
       const insertPos = Math.min(endOfBlock, doc.content.size)
-      dispatchTr(tr => tr.insert(insertPos, node.copy(node.content)))
+      editor.chain().focus().insertContentAt(insertPos, node.toJSON()).run()
     } catch { /* ignore */ }
     setShowMenu(false)
-  }, [editor, hoverPos, dispatchTr])
+  }, [editor, hoverPos])
 
   const deleteBlock = useCallback(() => {
     if (!hoverPos) return
     try {
       const node = editor.state.doc.nodeAt(hoverPos.blockPos)
       if (!node) return
-      dispatchTr(tr => tr.delete(hoverPos.blockPos, hoverPos.blockPos + node.nodeSize))
+      editor.chain().focus().deleteRange({ from: hoverPos.blockPos, to: hoverPos.blockPos + node.nodeSize }).run()
     } catch { /* ignore */ }
     setHoverPos(null)
     setShowMenu(false)
-  }, [editor, hoverPos, dispatchTr])
+  }, [editor, hoverPos])
 
   if (!hoverPos) return null
 
@@ -558,10 +552,10 @@ function BlockHoverToolbar({ editor }: { editor: Editor }) {
     >
       {/* Drag handle + quick actions */}
       <div className="flex items-center gap-0.5 rounded-lg bg-surface-container/90 p-0.5 shadow-md ring-1 ring-on-surface/8 backdrop-blur-sm">
-        {/* Grip / Drag handle */}
+        {/* Block actions menu */}
         <button
           type="button"
-          title="Kéo để sắp xếp"
+          title="Thao tác block"
           onClick={() => setShowMenu(!showMenu)}
           className="flex h-7 w-7 items-center justify-center rounded-md text-on-surface-variant/50 transition-colors hover:bg-primary/10 hover:text-primary"
         >

@@ -36,5 +36,8 @@ npm-debug.log*
 # Claude Code local
 .claude/
 
+# SDD specs (local only)
+.sdd/
+
 # Misc
 *.zip

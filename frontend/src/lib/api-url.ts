@@ -10,3 +10,24 @@ export function getServerApiUrl(): string {
     'http://localhost:4000/api'
   )
 }
+
+/**
+ * Chuyen relative media URL (/uploads/...) thanh absolute URL.
+ * SSR: dung INTERNAL_API_URL (backend container).
+ * Client: dung window.location.origin.
+ */
+export function resolveMediaUrl(url: string | null | undefined): string {
+  if (!url) return ''
+  if (url.startsWith('http') || url.startsWith('data:')) return url
+  if (!url.startsWith('/uploads/')) return url
+
+  // SSR context — prepend backend origin
+  if (typeof window === 'undefined') {
+    const internal = process.env.INTERNAL_API_URL || 'http://localhost:4000/api'
+    const origin = internal.replace(/\/api\/?$/, '')
+    return origin + url
+  }
+
+  // Client context
+  return window.location.origin + url
+}

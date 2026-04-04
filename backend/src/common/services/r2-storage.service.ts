@@ -25,6 +25,7 @@ export class R2StorageService implements OnModuleInit {
   constructor(private readonly configService: ConfigService) {}
 
   onModuleInit(): void {
+    const endpoint = this.configService.get<string>('r2.endpoint');
     const accountId = this.configService.get<string>('r2.accountId');
     const accessKey = this.configService.get<string>('r2.accessKey');
     const secretKey = this.configService.get<string>('r2.secretKey');
@@ -33,8 +34,10 @@ export class R2StorageService implements OnModuleInit {
     this.bucketPublic = this.configService.get<string>('r2.bucketPublic')!;
     this.publicUrl = this.configService.get<string>('r2.publicUrl')!;
 
-    // Kiểm tra R2 credentials — nếu trống thì dùng local storage
-    if (!accountId || !accessKey || !secretKey) {
+    // Cần ít nhất accessKey + secretKey + (endpoint hoặc accountId)
+    const resolvedEndpoint = endpoint || (accountId ? `https://${accountId}.r2.cloudflarestorage.com` : '');
+
+    if (!accessKey || !secretKey || !resolvedEndpoint) {
       this.useLocal = true;
       fs.mkdirSync(this.localDir, { recursive: true });
       this.logger.warn(
@@ -45,14 +48,14 @@ export class R2StorageService implements OnModuleInit {
 
     this.s3Client = new S3Client({
       region: 'auto',
-      endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
+      endpoint: resolvedEndpoint,
       credentials: {
         accessKeyId: accessKey,
         secretAccessKey: secretKey,
       },
     });
 
-    this.logger.log('R2 storage client initialized');
+    this.logger.log('R2 storage client initialized (endpoint: ' + resolvedEndpoint + ')');
   }
 
   private resolveBucket(bucket: 'private' | 'public'): string {

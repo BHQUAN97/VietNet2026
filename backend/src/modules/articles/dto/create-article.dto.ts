@@ -8,7 +8,7 @@ import {
   MaxLength,
   Min,
 } from 'class-validator';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import { ArticleStatus } from '../entities/article.entity';
 
 export class CreateArticleDto {
@@ -41,6 +41,7 @@ export class CreateArticleDto {
   status?: ArticleStatus;
 
   @IsOptional()
+  @Transform(({ value }) => value === true || value === 1 || value === '1' || value === 'true')
   @IsBoolean()
   is_featured?: boolean;
 

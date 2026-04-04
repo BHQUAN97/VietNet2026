@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   FileText,
   Briefcase,
+  Newspaper,
   Package,
   MessageCircle,
   BarChart3,
@@ -25,6 +26,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   LayoutDashboard,
   FileText,
   Briefcase,
+  Newspaper,
   Package,
   MessageCircle,
   BarChart3,
@@ -44,8 +46,6 @@ export function AdminSidebar() {
       <div className="flex h-[var(--nav-height)] items-center justify-between px-5">
         <Link
           href="/"
-          target="_blank"
-          rel="noopener noreferrer"
           className="flex items-center gap-2.5 font-headline text-title-lg text-primary transition-opacity hover:opacity-80"
           onClick={() => setMobileOpen(false)}
         >

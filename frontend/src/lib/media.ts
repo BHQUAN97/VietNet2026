@@ -54,7 +54,7 @@ export async function uploadMedia(file: File): Promise<Media> {
 
   const res = await axios.post(`${API_URL}/media/upload`, formData, {
     headers: {
-      'Content-Type': 'multipart/form-data',
+      // Không set Content-Type — axios tự thêm multipart/form-data + boundary
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     withCredentials: true,

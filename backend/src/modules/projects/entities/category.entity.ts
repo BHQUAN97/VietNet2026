@@ -14,6 +14,8 @@ import { generateUlid } from '../../../common/helpers/ulid.helper';
 export enum CategoryType {
   PROJECT = 'project',
   PRODUCT = 'product',
+  ARTICLE = 'article',
+  MATERIAL = 'material',
 }
 
 @Entity('categories')

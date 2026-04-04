@@ -12,8 +12,7 @@ import BlockEditor, { type BlockEditorRef } from '@/components/admin/BlockEditor
 import api from '@/lib/api'
 import { fileToBase64, uploadMedia, validateImageFile } from '@/lib/media'
 import { sanitizeHtml } from '@/lib/sanitize'
-import { GalleryEditor, apiGalleryToImages, imagesToMediaIds, type GalleryImage } from '@/components/admin/GalleryEditor'
-import type { Project, Category, ApiResponse } from '@/types'
+import type { Article, Category, ApiResponse } from '@/types'
 
 /* ================================================================
    COVER IMAGE UPLOAD
@@ -90,15 +89,11 @@ function EditorSidebar({
   setFormData,
   categories,
   status,
-  galleryImages,
-  onGalleryChange,
 }: {
-  formData: ProjectFormData
-  setFormData: React.Dispatch<React.SetStateAction<ProjectFormData>>
+  formData: ArticleFormData
+  setFormData: React.Dispatch<React.SetStateAction<ArticleFormData>>
   categories: Category[]
   status: 'draft' | 'published'
-  galleryImages: GalleryImage[]
-  onGalleryChange: (images: GalleryImage[]) => void
 }) {
   const inputClass = 'w-full rounded-lg bg-surface-container px-3 py-2 text-body-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/30'
   const labelClass = 'mb-1 block text-[11px] font-medium uppercase tracking-wider text-on-surface-variant/70'
@@ -116,7 +111,7 @@ function EditorSidebar({
         </div>
       </div>
 
-      {/* Category & Style */}
+      {/* Category */}
       <div>
         <label className={labelClass}>Danh mục</label>
         <select value={formData.category_id} onChange={(e) => setFormData(f => ({ ...f, category_id: e.target.value }))}
@@ -124,31 +119,6 @@ function EditorSidebar({
           <option value="">-- Chọn --</option>
           {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
         </select>
-      </div>
-
-      <div>
-        <label className={labelClass}>Phong cách</label>
-        <input type="text" value={formData.style} placeholder="Modern, Classic..."
-          onChange={(e) => setFormData(f => ({ ...f, style: e.target.value }))} className={inputClass} />
-      </div>
-
-      <div className="grid grid-cols-2 gap-3">
-        <div>
-          <label className={labelClass}>Diện tích</label>
-          <input type="text" value={formData.area} placeholder="120m²"
-            onChange={(e) => setFormData(f => ({ ...f, area: e.target.value }))} className={inputClass} />
-        </div>
-        <div>
-          <label className={labelClass}>Năm</label>
-          <input type="number" value={formData.year_completed} placeholder="2025"
-            onChange={(e) => setFormData(f => ({ ...f, year_completed: e.target.value }))} className={inputClass} />
-        </div>
-      </div>
-
-      <div>
-        <label className={labelClass}>Địa điểm</label>
-        <input type="text" value={formData.location}
-          onChange={(e) => setFormData(f => ({ ...f, location: e.target.value }))} className={inputClass} />
       </div>
 
       {/* SEO */}
@@ -173,17 +143,8 @@ function EditorSidebar({
         <input type="checkbox" checked={formData.is_featured}
           onChange={(e) => setFormData(f => ({ ...f, is_featured: e.target.checked }))}
           className="h-4 w-4 rounded accent-primary" />
-        <span className="text-body-sm text-on-surface">Dự án nổi bật</span>
+        <span className="text-body-sm text-on-surface">Bài viết nổi bật</span>
       </label>
-
-      {/* Gallery */}
-      <div className="rounded-xl bg-surface-container-low p-4">
-        <GalleryEditor
-          images={galleryImages}
-          onChange={onGalleryChange}
-          maxImages={30}
-        />
-      </div>
     </div>
   )
 }
@@ -194,13 +155,13 @@ function EditorSidebar({
 
 function PreviewModal({
   title,
-  description,
+  excerpt,
   contentHtml,
   coverUrl,
   onClose,
 }: {
   title: string
-  description: string
+  excerpt: string
   contentHtml: string
   coverUrl: string | null
   onClose: () => void
@@ -248,8 +209,8 @@ function PreviewModal({
             <h1 className="font-headline text-headline-lg text-on-surface md:text-display-sm">
               {title || 'Tiêu đề bài viết'}
             </h1>
-            {description && (
-              <p className="mt-3 text-body-lg text-on-surface-variant">{description}</p>
+            {excerpt && (
+              <p className="mt-3 text-body-lg text-on-surface-variant">{excerpt}</p>
             )}
             {contentHtml && (
               <div className="prose prose-lg mt-8 max-w-none text-on-surface"
@@ -263,101 +224,83 @@ function PreviewModal({
 }
 
 /* ================================================================
-   MAIN PROJECT EDITOR
+   MAIN ARTICLE EDITOR
    ================================================================ */
 
-interface ProjectFormData {
+interface ArticleFormData {
   title: string
-  description: string
+  excerpt: string
   category_id: string
-  style: string
-  area: string
-  location: string
-  year_completed: string
   seo_title: string
   seo_description: string
   is_featured: boolean
 }
 
-// Save status hiển thị trên top bar
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error'
 
-export default function ProjectEditor({ projectId }: { projectId?: string }) {
+export default function ArticleEditor({ articleId }: { articleId?: string }) {
   const router = useRouter()
   const editorRef = useRef<BlockEditorRef>(null)
 
-  const [project, setProject] = useState<Project | null>(null)
+  const [article, setArticle] = useState<Article | null>(null)
   const [categories, setCategories] = useState<Category[]>([])
-  const [formData, setFormData] = useState<ProjectFormData>({
-    title: '', description: '', category_id: '', style: '',
-    area: '', location: '', year_completed: '',
+  const [formData, setFormData] = useState<ArticleFormData>({
+    title: '', excerpt: '', category_id: '',
     seo_title: '', seo_description: '', is_featured: false,
   })
   const [coverImageUrl, setCoverImageUrl] = useState<string | null>(null)
   const [coverImageId, setCoverImageId] = useState<string | null>(null)
-  const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([])
   const [contentJson, setContentJson] = useState<any>(null)
   const [initialContent, setInitialContent] = useState<any>(null)
 
-  const [loading, setLoading] = useState(!!projectId)
+  const [loading, setLoading] = useState(!!articleId)
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
   const [savedTime, setSavedTime] = useState<string | null>(null)
   const [showSidebar, setShowSidebar] = useState(true)
   const [showPreview, setShowPreview] = useState(false)
   const [distraction, setDistraction] = useState(false)
 
-  // ID hiện tại (có thể thay đổi khi tạo mới)
-  const [currentId, setCurrentId] = useState<string | null>(projectId || null)
+  const [currentId, setCurrentId] = useState<string | null>(articleId || null)
 
-  // Auto-save timer ref
   const autoSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const lastSavedRef = useRef<string>('')
-  // Mutex to prevent concurrent saves (manual + auto-save race condition)
   const isSavingRef = useRef(false)
 
   /* ── Load data ─────────────────────────────────── */
 
   useEffect(() => {
-    api.get('/categories?type=project&limit=100').then((res: any) => {
+    api.get('/categories?type=article&limit=100').then((res: any) => {
       setCategories(res.data || [])
     }).catch(() => {})
   }, [])
 
   useEffect(() => {
-    if (!projectId) { setLoading(false); return }
-    api.get(`/projects/admin/${projectId}`).then((res: any) => {
-      const p: Project = res.data
-      setProject(p)
-      setCurrentId(p.id)
+    if (!articleId) { setLoading(false); return }
+    api.get(`/articles/admin/${articleId}`).then((res: any) => {
+      const a: Article = res.data
+      setArticle(a)
+      setCurrentId(a.id)
       setFormData({
-        title: p.title, description: p.description || '',
-        category_id: p.category_id || '', style: p.style || '',
-        area: p.area || '', location: p.location || '',
-        year_completed: p.year_completed?.toString() || '',
-        seo_title: p.seo_title || '', seo_description: p.seo_description || '',
-        is_featured: !!p.is_featured,
+        title: a.title, excerpt: a.excerpt || '',
+        category_id: a.category_id || '',
+        seo_title: a.seo_title || '', seo_description: a.seo_description || '',
+        is_featured: !!a.is_featured,
       })
-      setCoverImageUrl(p.cover_image?.preview_url || p.cover_image?.original_url || null)
-      setCoverImageId(p.cover_image_id || null)
+      setCoverImageUrl(a.cover_image?.preview_url || a.cover_image?.original_url || null)
+      setCoverImageId(a.cover_image_id || null)
 
-      // Load gallery images
-      if ((p as any).gallery) {
-        setGalleryImages(apiGalleryToImages((p as any).gallery))
-      }
-
-      // Nội dung: thử parse JSON, fallback HTML
-      if (p.content) {
+      if (a.content) {
         try {
-          const json = JSON.parse(p.content)
+          const json = JSON.parse(a.content)
           setInitialContent(json)
         } catch {
-          setInitialContent(p.content)
+          setInitialContent(a.content)
         }
       }
     }).catch(() => {
-      router.push('/admin/projects')
+      router.push('/admin/articles')
     }).finally(() => setLoading(false))
-  }, [projectId, router])
+  }, [articleId, router])
 
   /* ── Build payload ─────────────────────────────── */
 
@@ -365,13 +308,9 @@ export default function ProjectEditor({ projectId }: { projectId?: string }) {
     const json = editorRef.current?.getJSON()
     const payload: Record<string, unknown> = {
       title: formData.title || 'Untitled',
-      description: formData.description || undefined,
+      excerpt: formData.excerpt || undefined,
       content: json ? JSON.stringify(json) : undefined,
       category_id: formData.category_id || undefined,
-      style: formData.style || undefined,
-      area: formData.area || undefined,
-      location: formData.location || undefined,
-      year_completed: formData.year_completed ? parseInt(formData.year_completed) : undefined,
       seo_title: formData.seo_title || undefined,
       seo_description: formData.seo_description || undefined,
       is_featured: formData.is_featured,
@@ -386,7 +325,6 @@ export default function ProjectEditor({ projectId }: { projectId?: string }) {
     if (isSavingRef.current) return false
     isSavingRef.current = true
 
-    // Cancel pending auto-save khi manual save bat dau
     if (autoSaveTimerRef.current) {
       clearTimeout(autoSaveTimerRef.current)
       autoSaveTimerRef.current = null
@@ -395,28 +333,19 @@ export default function ProjectEditor({ projectId }: { projectId?: string }) {
     setSaveStatus('saving')
     try {
       const payload = buildPayload()
-      let saveId = currentId
       if (currentId) {
-        await api.patch(`/projects/${currentId}`, payload)
+        await api.patch(`/articles/${currentId}`, payload)
       } else {
-        const res = await api.post('/projects', payload) as any
+        const res = await api.post('/articles', payload) as any
         const newId = res.data?.id
         if (newId) {
-          saveId = newId
           setCurrentId(newId)
-          window.history.replaceState(null, '', `/admin/projects/editor?id=${newId}`)
+          window.history.replaceState(null, '', `/admin/articles/editor?id=${newId}`)
         }
       }
-      // Luu gallery images
-      if (saveId) {
-        const mediaIds = imagesToMediaIds(galleryImages)
-        await api.patch(`/projects/${saveId}/gallery`, { media_ids: mediaIds }).catch(() => {})
-      }
-
       setSaveStatus('saved')
       setSavedTime(new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }))
-      // Backup localStorage
-      if (currentId) localStorage.removeItem(`project-draft-${currentId}`)
+      if (currentId) localStorage.removeItem(`article-draft-${currentId}`)
       return true
     } catch {
       setSaveStatus('error')
@@ -424,7 +353,7 @@ export default function ProjectEditor({ projectId }: { projectId?: string }) {
     } finally {
       isSavingRef.current = false
     }
-  }, [buildPayload, currentId, galleryImages])
+  }, [buildPayload, currentId])
 
   /* ── Auto-save (debounced 10s) ─────────────────── */
 
@@ -432,7 +361,7 @@ export default function ProjectEditor({ projectId }: { projectId?: string }) {
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
     setSaveStatus('idle')
 
-    const snapshot = JSON.stringify({ formData, contentJson, coverImageId, galleryImages })
+    const snapshot = JSON.stringify({ formData, contentJson, coverImageId })
     if (snapshot === lastSavedRef.current) return
 
     autoSaveTimerRef.current = setTimeout(async () => {
@@ -443,44 +372,35 @@ export default function ProjectEditor({ projectId }: { projectId?: string }) {
       setSaveStatus('saving')
       try {
         const payload = buildPayload()
-        let autoSaveId = currentId
         if (currentId) {
-          await api.patch(`/projects/${currentId}`, payload)
+          await api.patch(`/articles/${currentId}`, payload)
         } else {
-          const res = await api.post('/projects', payload) as any
+          const res = await api.post('/articles', payload) as any
           const newId = res.data?.id
           if (newId) {
-            autoSaveId = newId
             setCurrentId(newId)
-            window.history.replaceState(null, '', `/admin/projects/editor?id=${newId}`)
+            window.history.replaceState(null, '', `/admin/articles/editor?id=${newId}`)
           }
-        }
-        // Auto-save gallery
-        if (autoSaveId) {
-          const mediaIds = imagesToMediaIds(galleryImages)
-          await api.patch(`/projects/${autoSaveId}/gallery`, { media_ids: mediaIds }).catch(() => {})
         }
         lastSavedRef.current = snapshot
         setSaveStatus('saved')
         setSavedTime(new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }))
       } catch {
         setSaveStatus('error')
-        // Backup localStorage phòng lỗi
         if (typeof window !== 'undefined') {
-          localStorage.setItem(`project-draft-${currentId || 'new'}`, JSON.stringify({ formData, contentJson }))
+          localStorage.setItem(`article-draft-${currentId || 'new'}`, JSON.stringify({ formData, contentJson }))
         }
       } finally {
         isSavingRef.current = false
       }
     }, 10000)
-  }, [formData, contentJson, coverImageId, galleryImages, currentId, buildPayload])
+  }, [formData, contentJson, coverImageId, currentId, buildPayload])
 
-  // Trigger auto-save khi data thay đổi
   useEffect(() => {
     if (loading) return
     scheduleAutoSave()
     return () => { if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current) }
-  }, [formData, contentJson, coverImageId, galleryImages, loading, scheduleAutoSave])
+  }, [formData, contentJson, coverImageId, loading, scheduleAutoSave])
 
   /* ── Publish ───────────────────────────────────── */
 
@@ -488,8 +408,8 @@ export default function ProjectEditor({ projectId }: { projectId?: string }) {
     const saved = await handleSave()
     if (!saved || !currentId) return
     try {
-      await api.patch(`/projects/${currentId}/publish`)
-      setProject(prev => prev ? { ...prev, status: 'published' } : prev)
+      await api.patch(`/articles/${currentId}/publish`)
+      setArticle(prev => prev ? { ...prev, status: 'published' } : prev)
     } catch {}
   }, [handleSave, currentId])
 
@@ -504,9 +424,7 @@ export default function ProjectEditor({ projectId }: { projectId?: string }) {
       const media = await uploadMedia(file)
       setCoverImageUrl(media.preview_url || media.original_url)
       setCoverImageId(media.id)
-    } catch {
-      // Giu lai base64 preview neu upload fail
-    }
+    } catch {}
   }, [])
 
   /* ── Keyboard shortcuts ────────────────────────── */
@@ -535,7 +453,7 @@ export default function ProjectEditor({ projectId }: { projectId?: string }) {
     )
   }
 
-  const status = project?.status || 'draft'
+  const status = article?.status || 'draft'
 
   return (
     <div className={`fixed inset-0 z-50 flex flex-col bg-surface ${distraction ? '' : ''}`}>
@@ -543,12 +461,11 @@ export default function ProjectEditor({ projectId }: { projectId?: string }) {
       {!distraction && (
         <div className="flex shrink-0 items-center justify-between border-b border-on-surface/8 bg-surface px-4 py-2">
           <div className="flex items-center gap-3">
-            <button type="button" onClick={() => router.push('/admin/projects')}
+            <button type="button" onClick={() => router.push('/admin/articles')}
               className="flex items-center gap-1.5 rounded-lg px-2 py-1.5 text-body-sm text-on-surface-variant hover:bg-on-surface/5 hover:text-on-surface">
               <ArrowLeft className="h-4 w-4" />
-              <span className="hidden sm:inline">Dự án</span>
+              <span className="hidden sm:inline">Bài viết</span>
             </button>
-            {/* Save status */}
             <div className="flex items-center gap-1.5 text-body-sm">
               {saveStatus === 'saving' && <><Loader2 className="h-3.5 w-3.5 animate-spin text-on-surface-variant" /><span className="text-on-surface-variant">Đang lưu...</span></>}
               {saveStatus === 'saved' && <><Check className="h-3.5 w-3.5 text-success" /><span className="text-success">Đã lưu {savedTime}</span></>}
@@ -580,7 +497,6 @@ export default function ProjectEditor({ projectId }: { projectId?: string }) {
         </div>
       )}
 
-      {/* Distraction-free minimize bar */}
       {distraction && (
         <button type="button" onClick={() => setDistraction(false)}
           className="absolute right-4 top-4 z-10 rounded-lg bg-surface-container p-2 text-on-surface-variant shadow-ambient-sm hover:bg-surface-container-high">
@@ -590,17 +506,14 @@ export default function ProjectEditor({ projectId }: { projectId?: string }) {
 
       {/* ── MAIN CONTENT ──────────────────────────── */}
       <div className="flex min-h-0 flex-1 overflow-hidden">
-        {/* Editor area */}
         <div className="flex-1 overflow-y-auto">
           <div className={`mx-auto ${distraction ? 'max-w-3xl px-4 py-8' : 'max-w-4xl px-4 py-6 md:px-8'}`}>
-            {/* Cover Image */}
             <CoverImageUpload
               imageUrl={coverImageUrl}
               onUpload={handleCoverUpload}
               onRemove={() => { setCoverImageUrl(null); setCoverImageId(null) }}
             />
 
-            {/* Title — large, no-border, WordPress style */}
             <input
               type="text"
               value={formData.title}
@@ -609,16 +522,14 @@ export default function ProjectEditor({ projectId }: { projectId?: string }) {
               className="mt-6 w-full bg-transparent font-headline text-display-sm text-on-surface placeholder:text-on-surface-variant/30 focus:outline-none md:text-display-md"
             />
 
-            {/* Description */}
             <textarea
-              value={formData.description}
-              onChange={(e) => setFormData(f => ({ ...f, description: e.target.value }))}
-              placeholder="Mô tả ngắn về dự án..."
+              value={formData.excerpt}
+              onChange={(e) => setFormData(f => ({ ...f, excerpt: e.target.value }))}
+              placeholder="Tóm tắt bài viết..."
               rows={2}
               className="mt-3 w-full resize-none bg-transparent text-body-lg text-on-surface-variant placeholder:text-on-surface-variant/30 focus:outline-none"
             />
 
-            {/* Block Editor */}
             <div className="mt-6">
               <BlockEditor
                 ref={editorRef}
@@ -629,7 +540,6 @@ export default function ProjectEditor({ projectId }: { projectId?: string }) {
           </div>
         </div>
 
-        {/* Sidebar */}
         {showSidebar && !distraction && (
           <aside className="hidden w-72 shrink-0 overflow-y-auto border-l border-on-surface/8 bg-surface-container-lowest p-5 lg:block xl:w-80">
             <EditorSidebar
@@ -637,18 +547,15 @@ export default function ProjectEditor({ projectId }: { projectId?: string }) {
               setFormData={setFormData}
               categories={categories}
               status={status}
-              galleryImages={galleryImages}
-              onGalleryChange={setGalleryImages}
             />
           </aside>
         )}
       </div>
 
-      {/* Preview Modal */}
       {showPreview && (
         <PreviewModal
           title={formData.title}
-          description={formData.description}
+          excerpt={formData.excerpt}
           contentHtml={editorRef.current?.getHTML() || ''}
           coverUrl={coverImageUrl}
           onClose={() => setShowPreview(false)}

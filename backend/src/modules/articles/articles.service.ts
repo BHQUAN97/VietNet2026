@@ -22,12 +22,39 @@ export class ArticlesService extends PublishableService<Article> {
     ['display_order', 'ASC'],
     ['created_at', 'DESC'],
   ];
+  // Content la TipTap JSON, sanitize HTML o frontend khi render
+  protected readonly sanitizeContent = false;
 
   constructor(
     @InjectRepository(Article)
     private readonly articleRepo: Repository<Article>,
   ) {
     super(articleRepo, 'Article');
+  }
+
+  // ─── Admin list voi LIKE search ──────────────────────────────
+
+  async findAllAdmin(
+    pagination: PaginationDto,
+    filters?: Record<string, unknown>,
+    search?: string,
+  ) {
+    const qb = this.createBaseQuery(this.queryAlias);
+
+    for (const rel of this.defaultRelations) {
+      qb.leftJoinAndSelect(`${this.queryAlias}.${rel}`, rel);
+    }
+
+    // LIKE search tren title va excerpt
+    if (search?.trim()) {
+      const searchTerm = `%${search.trim()}%`;
+      qb.andWhere(
+        `(${this.queryAlias}.title LIKE :search OR ${this.queryAlias}.excerpt LIKE :search)`,
+        { search: searchTerm },
+      );
+    }
+
+    return this.executeWithDefaultSort(qb, pagination, filters);
   }
 
   // ─── Override findPublished: support category slug filter ────

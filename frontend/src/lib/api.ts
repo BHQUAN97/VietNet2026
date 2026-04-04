@@ -43,11 +43,38 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 )
 
+/**
+ * Chuyen relative media URLs (/uploads/...) thanh absolute URLs.
+ * Can thiet vi backend tra relative path khi dung local storage.
+ */
+function normalizeMediaUrls(obj: any): any {
+  if (!obj || typeof obj !== 'object') return obj
+  if (Array.isArray(obj)) return obj.map(normalizeMediaUrls)
+
+  const mediaFields = ['original_url', 'preview_url', 'thumbnail_url']
+  const result = { ...obj }
+  for (const field of mediaFields) {
+    if (typeof result[field] === 'string' && result[field].startsWith('/uploads/')) {
+      const origin = typeof window !== 'undefined' ? window.location.origin : ''
+      result[field] = origin + result[field]
+    }
+  }
+  // Duyet cac nested objects (cover_image, og_image, media, etc.)
+  for (const key of Object.keys(result)) {
+    if (result[key] && typeof result[key] === 'object') {
+      result[key] = normalizeMediaUrls(result[key])
+    }
+  }
+  return result
+}
+
 // Response interceptor: handle 401 + token refresh
 api.interceptors.response.use(
   (response) => {
-    // Unwrap API response envelope
-    return response.data
+    // Unwrap API response envelope + normalize media URLs
+    const data = response.data
+    if (data?.data) data.data = normalizeMediaUrls(data.data)
+    return data
   },
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & {

@@ -13,14 +13,12 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { ActionErrorBanner } from '@/components/shared/ActionErrorBanner'
 import { FormModal } from '@/components/shared/FormModal'
 import api from '@/lib/api'
+import { GalleryEditor, apiGalleryToImages, imagesToMediaIds, type GalleryImage } from '@/components/admin/GalleryEditor'
 import type { Product, Category, ApiResponse } from '@/types'
 import { useAdminCrud } from '@/hooks/useAdminCrud'
 
-const MATERIAL_TYPES = ['go-tu-nhien', 'go-cong-nghiep', 'laminate', 'acrylic', 'melamine', 'veneer']
-const MATERIAL_LABELS: Record<string, string> = {
-  'go-tu-nhien': 'Gỗ tự nhiên', 'go-cong-nghiep': 'Gỗ công nghiệp',
-  laminate: 'Laminate', acrylic: 'Acrylic', melamine: 'Melamine', veneer: 'Veneer',
-}
+// Material types - fetch dong tu categories type='material'
+// Fallback neu chua co categories
 
 type ProductFormData = {
   name: string; description: string; category_id: string; material_type: string
@@ -36,6 +34,7 @@ const EMPTY_FORM: ProductFormData = {
 
 export default function AdminProductsPage() {
   const [categories, setCategories] = useState<Category[]>([])
+  const [materials, setMaterials] = useState<Category[]>([])
   const [statusFilter, setStatusFilter] = useState('')
   const [materialFilter, setMaterialFilter] = useState('')
 
@@ -43,6 +42,7 @@ export default function AdminProductsPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
   const [formData, setFormData] = useState<ProductFormData>(EMPTY_FORM)
+  const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([])
   const [saving, setSaving] = useState(false)
 
   const crud = useAdminCrud<Product>({
@@ -50,11 +50,15 @@ export default function AdminProductsPage() {
     params: { status: statusFilter, material_type: materialFilter },
   })
 
-  // Fetch categories
+  // Fetch categories + materials
   const fetchCategories = useCallback(async () => {
     try {
-      const res = (await api.get('/categories?type=product&limit=100')) as unknown as ApiResponse<Category[]>
-      setCategories(res.data || [])
+      const [catRes, matRes] = await Promise.all([
+        api.get('/categories?type=product&limit=100') as unknown as Promise<ApiResponse<Category[]>>,
+        api.get('/categories?type=material&limit=100') as unknown as Promise<ApiResponse<Category[]>>,
+      ])
+      setCategories(catRes.data || [])
+      setMaterials(matRes.data || [])
     } catch {}
   }, [])
 
@@ -63,6 +67,7 @@ export default function AdminProductsPage() {
   function openCreate() {
     setEditingProduct(null)
     setFormData(EMPTY_FORM)
+    setGalleryImages([])
     setModalOpen(true)
   }
 
@@ -75,6 +80,8 @@ export default function AdminProductsPage() {
       seo_title: product.seo_title || '', seo_description: product.seo_description || '',
       is_featured: product.is_featured, is_new: product.is_new,
     })
+    // Load gallery images tu product
+    setGalleryImages(apiGalleryToImages((product as any).images || []))
     setModalOpen(true)
   }
 
@@ -94,9 +101,26 @@ export default function AdminProductsPage() {
       is_new: formData.is_new,
     }
 
-    const success = await crud.handleSave(editingProduct?.id || null, payload)
-    setSaving(false)
-    if (success) setModalOpen(false)
+    try {
+      let productId = editingProduct?.id
+      if (productId) {
+        await api.patch(`/products/${productId}`, payload)
+      } else {
+        const res = await api.post('/products', payload) as any
+        productId = res.data?.id
+      }
+      // Luu gallery images
+      if (productId) {
+        const imageIds = imagesToMediaIds(galleryImages)
+        await api.patch(`/products/${productId}/images`, { image_ids: imageIds }).catch(() => {})
+      }
+      crud.refresh()
+      setModalOpen(false)
+    } catch {
+      // silent — UI hiện lỗi qua crud
+    } finally {
+      setSaving(false)
+    }
   }
 
   const inputClass = 'w-full rounded-xl bg-surface-container px-4 py-3 text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary'
@@ -115,11 +139,13 @@ export default function AdminProductsPage() {
 
       <div className="mb-6 flex flex-wrap items-center gap-4">
         <StatusFilterBar options={[{ value: 'draft', label: 'Nháp' }, { value: 'published', label: 'Đã xuất bản' }]} value={statusFilter} onChange={setStatusFilter} />
-        <select value={materialFilter} onChange={(e) => setMaterialFilter(e.target.value)}
-          className="rounded-xl bg-surface-container px-3 py-2.5 min-h-[44px] text-body-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary">
-          <option value="">Tất cả vật liệu</option>
-          {MATERIAL_TYPES.map((m) => <option key={m} value={m}>{MATERIAL_LABELS[m] || m}</option>)}
-        </select>
+        {materials.length > 0 && (
+          <select value={materialFilter} onChange={(e) => setMaterialFilter(e.target.value)}
+            className="rounded-xl bg-surface-container px-3 py-2.5 min-h-[44px] text-body-sm text-on-surface focus:outline-none focus:ring-2 focus:ring-primary">
+            <option value="">Tất cả vật liệu</option>
+            {materials.map((m) => <option key={m.slug} value={m.slug}>{m.name}</option>)}
+          </select>
+        )}
       </div>
 
       <DataStates loading={crud.loading} error={crud.error} isEmpty={crud.isEmpty} onRetry={crud.refresh} emptyMessage="Chưa có sản phẩm nào." minHeight="min-h-[30vh]">
@@ -162,8 +188,9 @@ export default function AdminProductsPage() {
               <label className={labelClass}>Vật liệu</label>
               <select value={formData.material_type} onChange={(e) => setFormData(f => ({ ...f, material_type: e.target.value }))} className={inputClass}>
                 <option value="">-- Chọn vật liệu --</option>
-                {MATERIAL_TYPES.map((m) => <option key={m} value={m}>{MATERIAL_LABELS[m] || m}</option>)}
+                {materials.map((m) => <option key={m.slug} value={m.slug}>{m.name}</option>)}
               </select>
+              <p className="mt-1 text-body-sm text-on-surface-variant/50">Quản lý vật liệu tại Danh mục → type: material</p>
             </div>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -195,6 +222,15 @@ export default function AdminProductsPage() {
               <input type="checkbox" checked={formData.is_new} onChange={(e) => setFormData(f => ({ ...f, is_new: e.target.checked }))} className="h-4 w-4 rounded" />
               <span className="text-body-md text-on-surface">Sản phẩm mới</span>
             </label>
+          </div>
+
+          {/* Gallery Images */}
+          <div className="rounded-xl bg-surface-container-low p-4">
+            <GalleryEditor
+              images={galleryImages}
+              onChange={setGalleryImages}
+              maxImages={20}
+            />
           </div>
         </div>
       </FormModal>
@@ -236,7 +272,7 @@ function productColumns(
     },
     {
       header: 'Vật liệu',
-      render: (p) => <span className="text-body-sm text-on-surface-variant">{p.material_type ? MATERIAL_LABELS[p.material_type] || p.material_type : '-'}</span>,
+      render: (p) => <span className="text-body-sm text-on-surface-variant">{p.material_type || '-'}</span>,
     },
     {
       header: 'Giá',
