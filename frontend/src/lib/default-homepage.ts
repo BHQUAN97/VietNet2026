@@ -8,13 +8,13 @@ export const DEFAULT_HOMEPAGE_CONFIG: PageConfigData = {
       order: 1,
       visible: true,
       config: {
-        title: 'Crafting Silent Elegance.',
+        title: 'Kiến Tạo Không Gian Tinh Tế.',
         subtitle:
-          'VietNet Interior brings the soul of Vietnamese craftsmanship into modern architectural spaces, creating retreats that resonate with warmth and precision.',
-        label: 'Architecture & Curation',
-        cta_primary_text: 'Begin Your Project',
+          'VietNet Interior mang hồn thủ công Việt Nam vào không gian kiến trúc hiện đại, tạo nên những chốn nghỉ ngơi ấm áp và tinh xảo.',
+        label: 'Kiến Trúc & Nghệ Thuật',
+        cta_primary_text: 'Bắt Đầu Dự Án',
         cta_primary_link: '/contact',
-        cta_secondary_text: 'Explore Catalog',
+        cta_secondary_text: 'Khám Phá Sản Phẩm',
         cta_secondary_link: '/catalog',
         bg_image_url: null,
       },
@@ -25,14 +25,14 @@ export const DEFAULT_HOMEPAGE_CONFIG: PageConfigData = {
       order: 2,
       visible: true,
       config: {
-        label: 'The Atelier Philosophy',
-        title: 'Design is a dialogue between light and material.',
+        label: 'Triết Lý Thiết Kế',
+        title: 'Thiết kế là cuộc đối thoại giữa ánh sáng và chất liệu.',
         description:
-          'Founded on the principle of "Meticulous Craft," VietNet Interior transcends traditional design. We curate environments that serve as the silent backdrop to your life\'s most meaningful moments.',
-        quote: 'We don\'t just fill rooms; we compose atmospheres.',
+          'Được thành lập trên nguyên tắc "Thủ Công Tinh Xảo", VietNet Interior vượt qua khuôn khổ thiết kế truyền thống. Chúng tôi kiến tạo không gian sống trở thành bối cảnh lặng lẽ cho những khoảnh khắc ý nghĩa nhất của bạn.',
+        quote: 'Chúng tôi không chỉ trang trí phòng — chúng tôi sáng tạo bầu không khí.',
         stats: [
-          { value: '150+', label: 'Projects Completed' },
-          { value: '12', label: 'Design Awards' },
+          { value: '150+', label: 'Dự Án Hoàn Thành' },
+          { value: '12', label: 'Giải Thưởng Thiết Kế' },
         ],
         images: [],
       },
@@ -43,10 +43,10 @@ export const DEFAULT_HOMEPAGE_CONFIG: PageConfigData = {
       order: 3,
       visible: true,
       config: {
-        label: 'Our Legacy',
-        title: 'Featured Projects',
+        label: 'Di Sản',
+        title: 'Dự Án Tiêu Biểu',
         limit: 3,
-        cta_text: 'View Full Portfolio',
+        cta_text: 'Xem Toàn Bộ Dự Án',
         cta_link: '/projects',
       },
     },
@@ -56,20 +56,20 @@ export const DEFAULT_HOMEPAGE_CONFIG: PageConfigData = {
       order: 4,
       visible: true,
       config: {
-        label: 'Voices of Craft',
-        title: 'Client Perspectives',
+        label: 'Cảm Nhận Khách Hàng',
+        title: 'Phản Hồi Từ Khách Hàng',
         items: [
           {
             name: 'Minh Lan Nguyen',
-            role: 'Founder, Lan Art House',
+            role: 'Nhà sáng lập, Lan Art House',
             content:
-              'VietNet transformed our vision into a space that feels both grand and deeply personal. Their attention to detail in the wood joinery is unlike anything we\'ve seen in the region.',
+              'VietNet đã biến tầm nhìn của chúng tôi thành một không gian vừa sang trọng vừa mang đậm dấu ấn cá nhân. Sự tỉ mỉ trong từng mối ghép gỗ là điều hiếm thấy trong khu vực.',
           },
           {
             name: 'Thomas H.',
-            role: 'Architectural Collector',
+            role: 'Nhà sưu tập kiến trúc',
             content:
-              'Professionalism at every stage. They managed the architectural complexities of our hillside retreat with grace and delivered a home that breathes with the landscape.',
+              'Chuyên nghiệp ở mọi giai đoạn. Họ xử lý sự phức tạp kiến trúc của ngôi nhà nghỉ dưỡng trên đồi một cách tinh tế và mang đến một ngôi nhà hòa mình với cảnh quan.',
           },
         ],
       },
@@ -80,10 +80,10 @@ export const DEFAULT_HOMEPAGE_CONFIG: PageConfigData = {
       order: 5,
       visible: true,
       config: {
-        title: 'Ready to define your space?',
+        title: 'Sẵn sàng định hình không gian của bạn?',
         description:
-          'Whether you are starting a new build or looking to curate an existing interior, our experts are here to guide you through the process.',
-        cta_text: 'Schedule Consultation',
+          'Dù bạn đang xây mới hay muốn cải tạo nội thất hiện tại, đội ngũ chuyên gia của chúng tôi sẵn sàng đồng hành.',
+        cta_text: 'Đặt Lịch Tư Vấn',
         cta_link: '/contact',
         phone: '+84 (0) 90 123 4567',
         email: 'atelier@vietnet-interior.com',

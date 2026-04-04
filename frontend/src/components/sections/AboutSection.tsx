@@ -62,7 +62,7 @@ export function AboutSection({ config }: Props) {
                 <div className="relative h-[320px] md:h-[400px] rounded-2xl overflow-hidden shadow-2xl">
                   <Image
                     src={config.images[0]}
-                    alt="VietNet Interior - Material"
+                    alt="VietNet Interior - Chất liệu"
                     fill
                     className="object-cover"
                     sizes="(max-width: 1024px) 50vw, 33vw"
@@ -73,7 +73,7 @@ export function AboutSection({ config }: Props) {
                 <div className="relative h-[320px] md:h-[400px] rounded-2xl overflow-hidden shadow-2xl">
                   <Image
                     src={config.images[1]}
-                    alt="VietNet Interior - Architecture"
+                    alt="VietNet Interior - Kiến trúc"
                     fill
                     className="object-cover"
                     sizes="(max-width: 1024px) 50vw, 33vw"

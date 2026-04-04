@@ -31,21 +31,21 @@ const PLACEHOLDER_PROJECTS = [
   {
     slug: '#',
     category: 'Residential / 2023',
-    title: 'The Amberwood Estate',
-    description: 'A harmonic blend of tropical warmth and Scandinavian minimalism in the heart of Saigon.',
+    title: 'Biệt Thự Amberwood',
+    description: 'Sự hòa quyện giữa hơi thở nhiệt đới và phong cách tối giản Bắc Âu giữa lòng Sài Gòn.',
   },
   {
     slug: '#',
     category: 'Commercial / 2024',
-    title: 'Zenith Headquarters',
-    description: 'Redefining corporate wellness through architectural transparency and natural textures.',
+    title: 'Trụ Sở Zenith',
+    description: 'Tái định nghĩa không gian làm việc hiện đại qua sự minh bạch kiến trúc và chất liệu tự nhiên.',
     offset: true,
   },
   {
     slug: '#',
     category: 'Hospitality / 2023',
-    title: 'Luna Suite Collection',
-    description: 'Bespoke luxury defined by tactile materials and dramatic lighting compositions.',
+    title: 'Bộ Sưu Tập Luna Suite',
+    description: 'Sang trọng đặt riêng, định hình bởi chất liệu xúc giác và ánh sáng nghệ thuật.',
   },
 ]
 

@@ -112,7 +112,7 @@ function FullCtaSection({ config }: Props) {
         {/* Left: info */}
         <ScrollReveal className="text-surface-bright">
           <span className="font-label text-label-sm tracking-[0.2em] text-on-primary-container uppercase mb-4 block">
-            Begin the Journey
+            Bắt Đầu Hành Trình
           </span>
           <h2 className="font-headline text-headline-lg md:text-display-md font-bold mb-8">
             {config.title}
@@ -129,7 +129,7 @@ function FullCtaSection({ config }: Props) {
                 </div>
                 <div>
                   <p className="font-label text-label-sm tracking-widest text-surface-bright/60 uppercase mb-1">
-                    Direct Line
+                    Đường dây trực tiếp
                   </p>
                   <a href={`tel:${config.phone.replace(/\s/g, '')}`} className="break-all text-title-md md:text-title-lg font-headline font-bold text-surface-bright hover:text-on-primary-container transition-colors">
                     {config.phone}
@@ -144,7 +144,7 @@ function FullCtaSection({ config }: Props) {
                 </div>
                 <div>
                   <p className="font-label text-label-sm tracking-widest text-surface-bright/60 uppercase mb-1">
-                    Email Inquiry
+                    Liên hệ qua Email
                   </p>
                   <a href={`mailto:${config.email}`} className="break-all text-title-md md:text-title-lg font-headline font-bold text-surface-bright hover:text-on-primary-container transition-colors">
                     {config.email}
