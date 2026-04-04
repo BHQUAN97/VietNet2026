@@ -21,6 +21,7 @@ interface FormData {
 
 interface FormErrors {
   name?: string
+  phone?: string
   email?: string
   message?: string
 }
@@ -106,9 +107,15 @@ export function ConsultationForm() {
     const newErrors: FormErrors = {}
 
     if (!formData.name.trim()) newErrors.name = 'Vui lòng nhập họ tên'
+    else if (formData.name.trim().length < 2) newErrors.name = 'Họ tên cần ít nhất 2 ký tự'
 
-    const emailErr = validateEmail(formData.email)
-    if (emailErr) newErrors.email = emailErr
+    if (!formData.phone.trim()) newErrors.phone = 'Vui lòng nhập số điện thoại'
+
+    // Email tùy chọn — chỉ validate format nếu có nhập
+    if (formData.email.trim()) {
+      const emailErr = validateEmail(formData.email)
+      if (emailErr) newErrors.email = emailErr
+    }
 
     if (!formData.message.trim()) newErrors.message = 'Vui lòng nhập nội dung'
     else if (formData.message.trim().length < 5) newErrors.message = 'Nội dung cần ít nhất 5 ký tự'
@@ -129,9 +136,12 @@ export function ConsultationForm() {
     setApiError(null)
 
     try {
-      const { _honey, ...submitData } = formData
-      // Chi gui form data thuc — khong gui honeypot value len backend
-      await api.post('/consultations', submitData)
+      const { _honey, email, ...submitData } = formData
+      // Chi gui email neu co nhap, khong gui honeypot
+      await api.post('/consultations', {
+        ...submitData,
+        email: email.trim() || undefined,
+      })
       setIsSuccess(true)
     } catch (err: unknown) {
       setApiError(getErrorMessage(err))
@@ -263,10 +273,29 @@ export function ConsultationForm() {
               )}
             </div>
 
-            {/* Email */}
+            {/* Phone — bắt buộc */}
+            <div>
+              <label htmlFor="phone" className={labelClasses}>
+                Điện thoại <span className="text-error">*</span>
+              </label>
+              <input
+                id="phone"
+                name="phone"
+                type="tel"
+                value={formData.phone}
+                onChange={handleChange}
+                placeholder="0909 xxx xxx"
+                className={cn(inputBaseClasses, errors.phone && 'ring-2 ring-error/20')}
+              />
+              {errors.phone && (
+                <p className="mt-1.5 text-body-sm text-error">{errors.phone}</p>
+              )}
+            </div>
+
+            {/* Email — tùy chọn */}
             <div>
               <label htmlFor="email" className={labelClasses}>
-                Email <span className="text-error">*</span>
+                Email
               </label>
               <input
                 id="email"
@@ -280,22 +309,6 @@ export function ConsultationForm() {
               {errors.email && (
                 <p className="mt-1.5 text-body-sm text-error">{errors.email}</p>
               )}
-            </div>
-
-            {/* Phone */}
-            <div>
-              <label htmlFor="phone" className={labelClasses}>
-                Điện thoại
-              </label>
-              <input
-                id="phone"
-                name="phone"
-                type="tel"
-                value={formData.phone}
-                onChange={handleChange}
-                placeholder="0909 xxx xxx"
-                className={inputBaseClasses}
-              />
             </div>
 
             {/* Project Type */}

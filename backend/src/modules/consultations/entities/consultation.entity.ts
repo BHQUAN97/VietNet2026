@@ -36,8 +36,8 @@ export class Consultation {
   @Column({ type: 'varchar', length: 100 })
   name!: string;
 
-  @Column({ type: 'varchar', length: 255 })
-  email!: string;
+  @Column({ type: 'varchar', length: 255, nullable: true })
+  email?: string | null;
 
   @Column({ type: 'varchar', length: 20, nullable: true })
   phone!: string | null;
