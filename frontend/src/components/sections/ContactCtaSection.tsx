@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { Phone, Mail, ArrowRight, Send, CheckCircle, AlertTriangle } from 'lucide-react'
 import { ScrollReveal } from '@/components/ui/ScrollReveal'
 import { Button } from '@/components/ui/Button'
+import { validatePhoneVN } from '@/lib/form-validation'
 import api from '@/lib/api'
 import type { ContactCtaConfig } from '@/types'
 
@@ -81,7 +82,8 @@ function FullCtaSection({ config }: Props) {
     if (formData.name.trim().length < 2) { setFormError('Họ tên cần ít nhất 2 ký tự.'); return }
     if (formData.name.trim().length > 100) { setFormError('Họ tên tối đa 100 ký tự.'); return }
     if (!formData.phone.trim()) { setFormError('Vui lòng nhập số điện thoại.'); return }
-    if (!/^[\d\s\-+().]{8,20}$/.test(formData.phone.trim())) { setFormError('Số điện thoại không hợp lệ.'); return }
+    const phoneErr = validatePhoneVN(formData.phone)
+    if (phoneErr) { setFormError(phoneErr); return }
     if (formData.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) { setFormError('Email không hợp lệ.'); return }
     if (formData.message.trim().length < 5) { setFormError('Nội dung yêu cầu cần ít nhất 5 ký tự.'); return }
     if (formData.message.trim().length > 2000) { setFormError('Nội dung tối đa 2000 ký tự.'); return }

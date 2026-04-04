@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
 import api from '@/lib/api'
 import { getErrorMessage } from '@/lib/error'
-import { validateRequired, validateEmail, validateFields } from '@/lib/form-validation'
+import { validateRequired, validateEmail, validatePhoneVN, validateFields } from '@/lib/form-validation'
 
 interface FormData {
   name: string
@@ -114,7 +114,10 @@ export function ConsultationForm() {
 
     // SĐT: bắt buộc, chỉ cho phép số/dấu cách/dấu gạch, 8-20 ký tự
     if (!formData.phone.trim()) newErrors.phone = 'Vui lòng nhập số điện thoại'
-    else if (!/^[\d\s\-+().]{8,20}$/.test(formData.phone.trim())) newErrors.phone = 'Số điện thoại không hợp lệ'
+    else {
+      const phoneErr = validatePhoneVN(formData.phone)
+      if (phoneErr) newErrors.phone = phoneErr
+    }
 
     // Email: tùy chọn — chỉ validate format nếu có nhập
     if (formData.email.trim()) {

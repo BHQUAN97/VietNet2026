@@ -5,6 +5,7 @@ import * as Dialog from '@radix-ui/react-dialog'
 import { X, AlertTriangle } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { cn } from '@/lib/utils'
+import { validatePhoneVN } from '@/lib/form-validation'
 import api from '@/lib/api'
 import type { User, ApiResponse } from '@/types'
 
@@ -113,10 +114,8 @@ export function UserFormModal({ open, onOpenChange, user, onSuccess }: UserFormM
     }
     // Validate phone format neu co nhap
     if (formData.phone.trim()) {
-      const phoneRegex = /^[\d\s\-+()]{8,20}$/
-      if (!phoneRegex.test(formData.phone.trim())) {
-        newErrors.phone = 'Số điện thoại không hợp lệ'
-      }
+      const phoneErr = validatePhoneVN(formData.phone)
+      if (phoneErr) newErrors.phone = phoneErr
     }
 
     setErrors(newErrors)

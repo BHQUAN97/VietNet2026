@@ -28,13 +28,16 @@ export function validateEmail(email: string): ValidationResult {
   return null
 }
 
-/** Vietnam phone validation: 0xxx hoac +84xxx, 9-11 digits */
+/** Vietnam phone validation: 0xxx hoac +84xxx, 10 so */
 export function validatePhoneVN(phone: string): ValidationResult {
   if (!phone || phone.trim() === '') return null // optional field
-  const cleaned = phone.replace(/[\s.-]/g, '')
-  const phoneRegex = /^(\+84|0)\d{8,10}$/
-  if (!phoneRegex.test(cleaned)) {
-    return 'Số điện thoại không hợp lệ.'
+  const cleaned = phone.replace(/[\s\-.()+]/g, '')
+  // Chap nhan: 0xxxxxxxxx (10 so) hoac 84xxxxxxxxx (11 so) hoac +84xxxxxxxxx
+  if (!/^\d{10,11}$/.test(cleaned)) {
+    return 'Số điện thoại cần đủ 10 số (VD: 0909 123 456)'
+  }
+  if (!/^(0|84)/.test(cleaned)) {
+    return 'Số điện thoại phải bắt đầu bằng 0 hoặc +84'
   }
   return null
 }
