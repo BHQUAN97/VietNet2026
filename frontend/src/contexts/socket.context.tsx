@@ -11,6 +11,7 @@ import {
 } from 'react'
 import { io, Socket } from 'socket.io-client'
 import { useAuth } from './auth.context'
+import api from '@/lib/api'
 import type { RealtimeNotification } from '@/types'
 
 interface SocketContextValue {
@@ -33,6 +34,32 @@ export function SocketProvider({ children }: { children: ReactNode }) {
   const [connected, setConnected] = useState(false)
   const [notifications, setNotifications] = useState<RealtimeNotification[]>([])
   const [unreadCount, setUnreadCount] = useState(0)
+
+  // Load notification history + unread count tu DB khi dang nhap
+  useEffect(() => {
+    if (!user) {
+      setNotifications([])
+      setUnreadCount(0)
+      return
+    }
+
+    async function loadHistory() {
+      try {
+        const res = await api.get('/notifications?limit=50')
+        const result = (res as any).data
+        if (result?.data) {
+          setNotifications(result.data)
+        }
+        if (typeof result?.unreadCount === 'number') {
+          setUnreadCount(result.unreadCount)
+        }
+      } catch {
+        // Non-critical — khong block UI
+      }
+    }
+
+    loadHistory()
+  }, [user])
 
   useEffect(() => {
     if (!user) {
@@ -85,8 +112,14 @@ export function SocketProvider({ children }: { children: ReactNode }) {
     }
   }, [user])
 
-  const clearNotifications = useCallback(() => {
+  // Danh dau tat ca da doc — goi API backend + cap nhat UI
+  const clearNotifications = useCallback(async () => {
     setUnreadCount(0)
+    try {
+      await api.patch('/notifications/read-all')
+    } catch {
+      // Non-critical
+    }
   }, [])
 
   return (

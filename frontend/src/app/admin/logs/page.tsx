@@ -12,6 +12,9 @@ import {
   Globe,
   User,
   Code,
+  Trash2,
+  CheckSquare,
+  Square,
 } from 'lucide-react'
 import api from '@/lib/api'
 import { cn } from '@/lib/utils'
@@ -63,6 +66,9 @@ export default function AdminLogsPage() {
   const [search, setSearch] = useState('')
   const [searchInput, setSearchInput] = useState('')
   const [selectedLog, setSelectedLog] = useState<AppLog | null>(null)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [deleting, setDeleting] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<'bulk' | 'all' | null>(null)
 
   // Dung useAdminList thay custom fetch — giam ~30 dong boilerplate
   const {
@@ -87,6 +93,9 @@ export default function AdminLogsPage() {
 
   useEffect(() => { fetchStats() }, [fetchStats])
 
+  // Reset selection khi data thay doi
+  useEffect(() => { setSelectedIds(new Set()) }, [logs])
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     setSearch(searchInput)
@@ -96,6 +105,49 @@ export default function AdminLogsPage() {
     setLevel('')
     setSearch('')
     setSearchInput('')
+  }
+
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  const toggleSelectAll = () => {
+    if (selectedIds.size === logs.length) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(logs.map((l) => l.id)))
+    }
+  }
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return
+    setDeleting(true)
+    try {
+      await api.delete('/logs/bulk', { data: { ids: Array.from(selectedIds) } })
+      setSelectedIds(new Set())
+      setShowDeleteConfirm(null)
+      refresh()
+      fetchStats()
+    } catch {} finally {
+      setDeleting(false)
+    }
+  }
+
+  const handleDeleteAll = async () => {
+    setDeleting(true)
+    try {
+      await api.delete('/logs/all', { params: level ? { level } : {} })
+      setShowDeleteConfirm(null)
+      refresh()
+      fetchStats()
+    } catch {} finally {
+      setDeleting(false)
+    }
   }
 
   return (
@@ -108,14 +160,35 @@ export default function AdminLogsPage() {
             Theo dõi lỗi, cảnh báo và thông tin hệ thống
           </p>
         </div>
-        <button
-          onClick={() => { refresh(); fetchStats() }}
-          disabled={loading}
-          className="rounded-xl p-2.5 min-h-[44px] min-w-[44px] text-on-surface-variant transition-colors hover:bg-surface-container-high disabled:opacity-50"
-          aria-label="Làm mới"
-        >
-          <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
-        </button>
+        <div className="flex items-center gap-2">
+          {selectedIds.size > 0 && (
+            <button
+              onClick={() => setShowDeleteConfirm('bulk')}
+              disabled={deleting}
+              className="flex items-center gap-1.5 rounded-xl bg-error-container px-4 py-2 min-h-[44px] text-label-md text-on-error-container transition-colors hover:bg-error-container/80 disabled:opacity-50"
+            >
+              <Trash2 className="h-4 w-4" />
+              Xóa {selectedIds.size} mục
+            </button>
+          )}
+          <button
+            onClick={() => setShowDeleteConfirm('all')}
+            disabled={deleting || isEmpty}
+            className="flex items-center justify-center rounded-xl p-2.5 min-h-[44px] min-w-[44px] text-error/60 transition-colors hover:bg-error-container/30 disabled:opacity-30"
+            aria-label="Xóa tất cả"
+            title={level ? `Xóa tất cả log ${level}` : 'Xóa tất cả log'}
+          >
+            <Trash2 className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => { refresh(); fetchStats() }}
+            disabled={loading}
+            className="flex items-center justify-center rounded-xl p-2.5 min-h-[44px] min-w-[44px] text-on-surface-variant transition-colors hover:bg-surface-container-high disabled:opacity-50"
+            aria-label="Làm mới"
+          >
+            <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />
+          </button>
+        </div>
       </div>
 
       {/* Stats cards */}
@@ -168,9 +241,32 @@ export default function AdminLogsPage() {
       {/* Log list — dung DataStates thay custom loading/error/empty */}
       <div className="mt-4">
         <DataStates loading={loading} error={error} isEmpty={isEmpty} onRetry={refresh} emptyMessage="Không có log nào" minHeight="min-h-[20vh]">
+          {/* Select all header */}
+          {logs.length > 0 && (
+            <div className="mb-2 flex items-center gap-3 px-1">
+              <button
+                type="button"
+                onClick={toggleSelectAll}
+                className="flex items-center gap-2 rounded-lg px-2 py-1 text-label-sm text-on-surface-variant hover:bg-surface-container"
+              >
+                {selectedIds.size === logs.length ? (
+                  <CheckSquare className="h-4 w-4 text-primary" />
+                ) : (
+                  <Square className="h-4 w-4" />
+                )}
+                {selectedIds.size > 0 ? `Đã chọn ${selectedIds.size}/${logs.length}` : 'Chọn tất cả'}
+              </button>
+            </div>
+          )}
           <div className="space-y-2">
             {logs.map((log) => (
-              <LogRow key={log.id} log={log} onClick={() => setSelectedLog(log)} />
+              <LogRow
+                key={log.id}
+                log={log}
+                selected={selectedIds.has(log.id)}
+                onToggle={() => toggleSelect(log.id)}
+                onClick={() => setSelectedLog(log)}
+              />
             ))}
           </div>
         </DataStates>
@@ -182,6 +278,18 @@ export default function AdminLogsPage() {
       {/* Detail modal */}
       {selectedLog && (
         <LogDetailModal log={selectedLog} onClose={() => setSelectedLog(null)} />
+      )}
+
+      {/* Delete confirmation dialog */}
+      {showDeleteConfirm && (
+        <DeleteConfirmDialog
+          type={showDeleteConfirm}
+          count={showDeleteConfirm === 'bulk' ? selectedIds.size : (meta?.total || 0)}
+          level={level || undefined}
+          deleting={deleting}
+          onConfirm={showDeleteConfirm === 'bulk' ? handleBulkDelete : handleDeleteAll}
+          onCancel={() => setShowDeleteConfirm(null)}
+        />
       )}
     </div>
   )
@@ -211,42 +319,124 @@ function StatCard({ label, value, color }: {
   )
 }
 
-function LogRow({ log, onClick }: { log: AppLog; onClick: () => void }) {
+function LogRow({ log, selected, onToggle, onClick }: {
+  log: AppLog
+  selected: boolean
+  onToggle: () => void
+  onClick: () => void
+}) {
   const config = LEVEL_CONFIG[log.level] || LEVEL_CONFIG.info
   const Icon = config.icon
   const time = formatDateTime(log.created_at)
 
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex w-full items-start gap-3 rounded-xl bg-surface-container-low/50 p-4 text-left transition-colors hover:bg-surface-container-low"
-    >
-      <span className={cn('mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg', config.bg)}>
-        <Icon className="h-4 w-4" />
-      </span>
+    <div className={cn(
+      'flex w-full items-start gap-3 rounded-xl p-4 transition-colors',
+      selected ? 'bg-primary-container/20' : 'bg-surface-container-low/50 hover:bg-surface-container-low',
+    )}>
+      {/* Checkbox */}
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); onToggle() }}
+        className="mt-0.5 shrink-0 p-0.5 text-on-surface-variant hover:text-primary"
+      >
+        {selected ? (
+          <CheckSquare className="h-5 w-5 text-primary" />
+        ) : (
+          <Square className="h-5 w-5" />
+        )}
+      </button>
 
-      <div className="min-w-0 flex-1">
-        <div className="flex items-start justify-between gap-2">
-          <p className="text-body-sm font-medium text-on-surface line-clamp-1">{log.message}</p>
-          {log.status_code && (
-            <span className={cn(
-              'shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-bold',
-              log.status_code >= 500 ? 'bg-error/10 text-error' :
-              log.status_code >= 400 ? 'bg-warning/10 text-warning' :
-              'bg-surface-container text-on-surface-variant'
-            )}>
-              {log.status_code}
-            </span>
-          )}
+      <button
+        type="button"
+        onClick={onClick}
+        className="flex flex-1 items-start gap-3 text-left"
+      >
+        <span className={cn('mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg', config.bg)}>
+          <Icon className="h-4 w-4" />
+        </span>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start justify-between gap-2">
+            <p className="text-body-sm font-medium text-on-surface line-clamp-1">{log.message}</p>
+            {log.status_code && (
+              <span className={cn(
+                'shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-bold',
+                log.status_code >= 500 ? 'bg-error/10 text-error' :
+                log.status_code >= 400 ? 'bg-warning/10 text-warning' :
+                'bg-surface-container text-on-surface-variant'
+              )}>
+                {log.status_code}
+              </span>
+            )}
+          </div>
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-on-surface-variant/60">
+            <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{time}</span>
+            {log.endpoint && <span className="flex items-center gap-1 font-mono"><Globe className="h-3 w-3" />{log.endpoint}</span>}
+            {log.ip && <span>{log.ip}</span>}
+          </div>
         </div>
-        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-[11px] text-on-surface-variant/60">
-          <span className="flex items-center gap-1"><Clock className="h-3 w-3" />{time}</span>
-          {log.endpoint && <span className="flex items-center gap-1 font-mono"><Globe className="h-3 w-3" />{log.endpoint}</span>}
-          {log.ip && <span>{log.ip}</span>}
+      </button>
+    </div>
+  )
+}
+
+function DeleteConfirmDialog({ type, count, level, deleting, onConfirm, onCancel }: {
+  type: 'bulk' | 'all'
+  count: number
+  level?: string
+  deleting: boolean
+  onConfirm: () => void
+  onCancel: () => void
+}) {
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === 'Escape') { e.preventDefault(); onCancel() }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [onCancel])
+
+  const message = type === 'bulk'
+    ? `Xóa ${count} log đã chọn?`
+    : level
+      ? `Xóa tất cả log "${level}"?`
+      : 'Xóa tất cả log?'
+
+  return (
+    <>
+      <div className="fixed inset-0 z-[60] bg-on-surface/30 backdrop-blur-sm" onClick={onCancel} />
+      <div className="fixed inset-x-4 top-1/3 z-[61] mx-auto max-w-sm rounded-2xl bg-surface-container-lowest p-6 shadow-ambient-xl sm:inset-x-auto sm:w-full">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-error-container">
+            <Trash2 className="h-5 w-5 text-on-error-container" />
+          </div>
+          <div>
+            <h3 className="font-headline text-title-md text-on-surface">Xác nhận xóa</h3>
+            <p className="mt-1 text-body-sm text-on-surface-variant">{message}</p>
+          </div>
+        </div>
+        <p className="mt-4 text-body-sm text-on-surface-variant">
+          Hành động này không thể hoàn tác.
+        </p>
+        <div className="mt-6 flex justify-end gap-3">
+          <button
+            onClick={onCancel}
+            disabled={deleting}
+            className="rounded-xl px-5 py-2.5 min-h-[44px] text-label-md text-on-surface-variant hover:bg-surface-container disabled:opacity-50"
+          >
+            Hủy
+          </button>
+          <button
+            onClick={onConfirm}
+            disabled={deleting}
+            className="rounded-xl bg-error px-5 py-2.5 min-h-[44px] text-label-md text-on-error hover:bg-error/90 disabled:opacity-50"
+          >
+            {deleting ? 'Đang xóa...' : 'Xóa'}
+          </button>
         </div>
       </div>
-    </button>
+    </>
   )
 }
 
@@ -277,7 +467,7 @@ function LogDetailModal({ log, onClose }: { log: AppLog; onClose: () => void }) 
               <p className="text-[11px] text-on-surface-variant/50">{log.id}</p>
             </div>
           </div>
-          <button onClick={onClose} className="rounded-lg p-2 text-on-surface-variant hover:bg-surface-container">
+          <button onClick={onClose} className="flex items-center justify-center rounded-lg p-2 text-on-surface-variant hover:bg-surface-container">
             <X className="h-5 w-5" />
           </button>
         </div>

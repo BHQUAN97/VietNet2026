@@ -85,4 +85,25 @@ export class LogsService {
     });
     return result.affected || 0;
   }
+
+  /** Xóa nhiều log theo danh sách ID */
+  async bulkDelete(ids: string[]): Promise<number> {
+    if (ids.length === 0) return 0;
+    const result = await this.logRepo
+      .createQueryBuilder()
+      .delete()
+      .whereInIds(ids)
+      .execute();
+    return result.affected || 0;
+  }
+
+  /** Xóa tất cả log (hoặc theo level) */
+  async deleteAll(level?: LogLevel): Promise<number> {
+    const qb = this.logRepo.createQueryBuilder().delete();
+    if (level) {
+      qb.where('level = :level', { level });
+    }
+    const result = await qb.execute();
+    return result.affected || 0;
+  }
 }

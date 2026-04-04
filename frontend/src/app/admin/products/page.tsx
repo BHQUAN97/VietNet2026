@@ -273,7 +273,7 @@ export default function AdminProductsPage() {
 
 // ─── Column Definitions ────────────────────────────────────────
 
-const actionBtnClass = 'rounded-lg p-2.5 min-h-[44px] min-w-[44px] text-on-surface-variant hover:bg-surface-container-high'
+const actionBtnClass = 'flex items-center justify-center rounded-lg p-2.5 min-h-[44px] min-w-[44px] text-on-surface-variant hover:bg-surface-container-high'
 
 function productColumns(
   onPublish: (p: Product) => void,
@@ -322,7 +322,7 @@ function productColumns(
             <button onClick={() => onPublish(p)} className={actionBtnClass} title="Xuất bản"><Eye className="h-4 w-4" /></button>
           )}
           <button onClick={() => onEdit(p)} className={actionBtnClass} title="Chỉnh sửa"><Pencil className="h-4 w-4" /></button>
-          <button onClick={() => onDelete(p)} className="rounded-lg p-2.5 min-h-[44px] min-w-[44px] text-error hover:bg-error-container" title="Xóa"><Trash2 className="h-4 w-4" /></button>
+          <button onClick={() => onDelete(p)} className="flex items-center justify-center rounded-lg p-2.5 min-h-[44px] min-w-[44px] text-error hover:bg-error-container" title="Xóa"><Trash2 className="h-4 w-4" /></button>
         </div>
       ),
     },

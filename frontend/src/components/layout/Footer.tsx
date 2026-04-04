@@ -24,44 +24,47 @@ export function Footer() {
       {/* Decorative gradient top edge */}
       <div className="absolute left-0 right-0 top-0 h-px bg-gradient-to-r from-transparent via-inverse-primary/20 to-transparent" />
 
-      <div className="mx-auto max-w-[var(--max-width-full)] px-4 md:px-8 lg:px-12">
+      <div className="mx-auto max-w-7xl px-4 md:px-8">
         {/* Main footer content */}
-        <div className="py-10 md:py-12">
-          {/* Top row: Brand + CTA */}
-          <div className="flex flex-col gap-6 md:flex-row md:items-start md:justify-between">
-            {/* Brand */}
-            <div className="max-w-xs">
+        <div className="py-8 md:py-10">
+          {/* Top row: Brand + Nav + Contact inline */}
+          <div className="grid grid-cols-2 gap-x-6 gap-y-6 md:grid-cols-12 md:gap-8">
+            {/* Brand — col 1-4 */}
+            <div className="col-span-2 md:col-span-4">
               <Link href="/" className="inline-flex items-center gap-2">
-                <span aria-hidden="true" className="flex h-8 w-8 items-center justify-center rounded-lg bg-inverse-primary/10">
-                  <span className="font-headline text-body-md font-bold text-inverse-primary">V</span>
+                <span aria-hidden="true" className="flex h-7 w-7 items-center justify-center rounded-lg bg-inverse-primary/10">
+                  <span className="font-headline text-body-sm font-bold text-inverse-primary">V</span>
                 </span>
-                <span className="font-headline text-title-md text-inverse-primary">
+                <span className="font-headline text-title-sm text-inverse-primary">
                   {SITE_NAME}
                 </span>
               </Link>
-              <p className="mt-3 text-body-sm leading-relaxed text-inverse-on-surface/50">
-                Thiết kế & thi công nội thất cao cấp trọn gói cho không gian sống tinh tế.
+              <p className="mt-2 text-body-sm leading-relaxed text-inverse-on-surface/50 max-w-[260px]">
+                Thiết kế & thi công nội thất cao cấp trọn gói.
               </p>
+              {/* Social icons */}
+              <div className="mt-3 flex items-center gap-1.5">
+                {SOCIAL_LINKS.map((social) => (
+                  <a
+                    key={social.label}
+                    href={social.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={social.label}
+                    className="flex h-8 w-8 items-center justify-center rounded-md bg-inverse-on-surface/5 text-inverse-on-surface/40 transition-all duration-300 hover:bg-inverse-primary/15 hover:text-inverse-primary"
+                  >
+                    <SocialIcon type={social.icon} />
+                  </a>
+                ))}
+              </div>
             </div>
 
-            {/* CTA button */}
-            <Link
-              href="/contact"
-              className="group inline-flex items-center gap-2 rounded-full bg-inverse-primary/10 px-5 py-2.5 font-label text-label-md uppercase tracking-label-wide text-inverse-primary transition-all duration-300 hover:bg-inverse-primary/20 hover:gap-3 self-start"
-            >
-              Tư vấn miễn phí
-              <ArrowUpRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
-            </Link>
-          </div>
-
-          {/* Columns grid */}
-          <div className="mt-8 grid grid-cols-2 gap-x-6 gap-y-8 md:mt-10 md:grid-cols-4 md:gap-8">
-            {/* Nav column */}
-            <div>
+            {/* Nav column — col 5-6 */}
+            <div className="md:col-span-2">
               <h4 className="font-label text-[11px] uppercase tracking-[0.08em] text-inverse-on-surface/35">
                 Điều hướng
               </h4>
-              <ul className="mt-3 flex flex-col gap-2">
+              <ul className="mt-2 flex flex-col gap-1.5">
                 {NAV_LINKS.map((link) => (
                   <li key={link.href}>
                     <Link
@@ -75,12 +78,12 @@ export function Footer() {
               </ul>
             </div>
 
-            {/* More links */}
-            <div>
+            {/* More links — col 7-8 */}
+            <div className="md:col-span-2">
               <h4 className="font-label text-[11px] uppercase tracking-[0.08em] text-inverse-on-surface/35">
                 Khám phá
               </h4>
-              <ul className="mt-3 flex flex-col gap-2">
+              <ul className="mt-2 flex flex-col gap-1.5">
                 <li>
                   <Link href="/about" className="text-body-sm text-inverse-on-surface/60 transition-colors duration-200 hover:text-inverse-primary">
                     Về chúng tôi
@@ -99,12 +102,12 @@ export function Footer() {
               </ul>
             </div>
 
-            {/* Contact */}
-            <div>
+            {/* Contact — col 9-12 */}
+            <div className="col-span-2 md:col-span-4">
               <h4 className="font-label text-[11px] uppercase tracking-[0.08em] text-inverse-on-surface/35">
                 Liên hệ
               </h4>
-              <ul className="mt-3 flex flex-col gap-2 text-body-sm text-inverse-on-surface/60">
+              <ul className="mt-2 flex flex-col gap-1.5 text-body-sm text-inverse-on-surface/60">
                 <li>
                   <a href="mailto:contact@vietnetinterior.vn" className="break-all transition-colors duration-200 hover:text-inverse-primary">
                     contact@vietnetinterior.vn
@@ -117,37 +120,23 @@ export function Footer() {
                 </li>
                 <li>TP. Hồ Chí Minh, Việt Nam</li>
               </ul>
-            </div>
-
-            {/* Social */}
-            <div>
-              <h4 className="font-label text-[11px] uppercase tracking-[0.08em] text-inverse-on-surface/35">
-                Kết nối
-              </h4>
-              <div className="mt-3 flex items-center gap-2">
-                {SOCIAL_LINKS.map((social) => (
-                  <a
-                    key={social.label}
-                    href={social.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={social.label}
-                    className="flex h-11 w-11 items-center justify-center rounded-lg bg-inverse-on-surface/5 text-inverse-on-surface/40 transition-all duration-300 hover:bg-inverse-primary/15 hover:text-inverse-primary hover:scale-105"
-                  >
-                    <SocialIcon type={social.icon} />
-                  </a>
-                ))}
-              </div>
+              <Link
+                href="/contact"
+                className="mt-3 group inline-flex items-center gap-1.5 rounded-full bg-inverse-primary/10 px-4 py-2 font-label text-label-sm uppercase tracking-label-wide text-inverse-primary transition-all duration-300 hover:bg-inverse-primary/20"
+              >
+                Tư vấn miễn phí
+                <ArrowUpRight className="h-3 w-3 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+              </Link>
             </div>
           </div>
         </div>
 
         {/* Bottom Bar */}
-        <div className="flex flex-col items-center gap-2 pt-6 mt-6 sm:flex-row sm:justify-between" style={{ background: 'linear-gradient(to bottom, rgba(255,255,255,0.03), transparent)' }}>
-          <p className="text-[12px] text-inverse-on-surface/30">
+        <div className="border-t border-inverse-on-surface/10 flex flex-col items-center gap-1 py-4 sm:flex-row sm:justify-between">
+          <p className="text-[11px] text-inverse-on-surface/30">
             &copy; {new Date().getFullYear()} {SITE_NAME}
           </p>
-          <p className="text-[12px] text-inverse-on-surface/25">
+          <p className="text-[11px] text-inverse-on-surface/25">
             Thiết kế & phát triển bởi VietNet Team
           </p>
         </div>

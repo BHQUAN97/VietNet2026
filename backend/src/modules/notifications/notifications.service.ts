@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, In } from 'typeorm';
 import { Notification } from './entities/notification.entity';
+import { User, UserRole, UserStatus } from '../users/entities/user.entity';
 import { NotificationsGateway } from './notifications.gateway';
 import { ActionLogger } from '../../common/helpers/logger.helper';
 
@@ -20,6 +21,8 @@ export class NotificationsService {
   constructor(
     @InjectRepository(Notification)
     private readonly notificationsRepo: Repository<Notification>,
+    @InjectRepository(User)
+    private readonly userRepo: Repository<User>,
     private readonly gateway: NotificationsGateway,
   ) {}
 
@@ -51,7 +54,7 @@ export class NotificationsService {
   }
 
   /**
-   * Create a notification for ALL admin users and emit to admin room.
+   * Create a notification for ALL admin users: persist to DB + emit to admin room.
    */
   async notifyAdmins(
     type: string,
@@ -59,6 +62,32 @@ export class NotificationsService {
     body?: string,
     link?: string,
   ): Promise<void> {
+    // Luu vao DB cho tat ca admin users de khong mat khi reload
+    try {
+      const admins = await this.userRepo.find({
+        where: [
+          { role: UserRole.ADMIN, status: UserStatus.ACTIVE },
+          { role: UserRole.SUPER_ADMIN, status: UserStatus.ACTIVE },
+        ],
+        select: ['id'],
+      });
+
+      if (admins.length > 0) {
+        const notifications = admins.map((admin) =>
+          this.notificationsRepo.create({
+            user_id: admin.id,
+            type,
+            title,
+            body: body || null,
+            link: link || null,
+          }),
+        );
+        await this.notificationsRepo.save(notifications);
+      }
+    } catch (err) {
+      this.actionLogger.error(`Failed to persist admin notifications: ${err}`);
+    }
+
     // Emit real-time event to admin room
     this.gateway.emitToAdmin('notification', {
       type,
@@ -68,7 +97,7 @@ export class NotificationsService {
       created_at: new Date(),
     });
 
-    this.actionLogger.log(`Admin notification emitted: ${type} - ${title}`);
+    this.actionLogger.log(`Admin notification: ${type} - ${title}`);
   }
 
   /**

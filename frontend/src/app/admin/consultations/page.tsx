@@ -198,7 +198,7 @@ function consultationColumns(onDetail: (c: Consultation) => void): Column<Consul
     {
       header: 'Thao tác',
       render: (c) => (
-        <button onClick={() => onDetail(c)} className="rounded-lg p-2.5 min-h-[44px] min-w-[44px] text-on-surface-variant hover:bg-surface-container-high" title="Chi tiết">
+        <button onClick={() => onDetail(c)} className="flex items-center justify-center rounded-lg p-2.5 min-h-[44px] min-w-[44px] text-on-surface-variant hover:bg-surface-container-high" title="Chi tiết">
           <MessageSquare className="h-4 w-4" />
         </button>
       ),

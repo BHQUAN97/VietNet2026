@@ -1,4 +1,12 @@
-import { Controller, Get, Query, Param, NotFoundException } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Delete,
+  Query,
+  Param,
+  Body,
+  NotFoundException,
+} from '@nestjs/common';
 import { LogsService } from './logs.service';
 import { LogLevel } from './entities/app-log.entity';
 import { AdminOnly } from '../../common/decorators/admin-only.decorator';
@@ -39,6 +47,33 @@ export class LogsController {
   async getStats() {
     const stats = await this.logsService.getStats();
     return ok(stats);
+  }
+
+  /**
+   * DELETE /api/logs/bulk
+   * Xóa nhiều log theo danh sách ID
+   */
+  @Delete('bulk')
+  async bulkDelete(@Body() body: { ids: string[] }) {
+    const ids = body.ids || [];
+    if (ids.length === 0) {
+      return ok({ deleted: 0 }, 'Không có log nào để xóa');
+    }
+    if (ids.length > 500) {
+      return ok({ deleted: 0 }, 'Tối đa 500 log mỗi lần xóa');
+    }
+    const deleted = await this.logsService.bulkDelete(ids);
+    return ok({ deleted }, `Đã xóa ${deleted} log`);
+  }
+
+  /**
+   * DELETE /api/logs/all
+   * Xóa tất cả log (hoặc theo level)
+   */
+  @Delete('all')
+  async deleteAll(@Query('level') level?: LogLevel) {
+    const deleted = await this.logsService.deleteAll(level);
+    return ok({ deleted }, `Đã xóa ${deleted} log`);
   }
 
   /**

@@ -120,7 +120,7 @@ export default function AdminAnalyticsPage() {
           <button
             onClick={fetchData}
             disabled={loading}
-            className="rounded-xl p-2.5 min-h-[44px] min-w-[44px] text-on-surface-variant transition-colors hover:bg-surface-container-high disabled:opacity-50"
+            className="flex items-center justify-center rounded-xl p-2.5 min-h-[44px] min-w-[44px] text-on-surface-variant transition-colors hover:bg-surface-container-high disabled:opacity-50"
             aria-label="Làm mới"
           >
             <RefreshCw className={cn('h-4 w-4', loading && 'animate-spin')} />

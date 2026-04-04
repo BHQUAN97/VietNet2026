@@ -87,7 +87,7 @@ export default function AdminArticlesPage() {
 
 // ─── Column Definitions ────────────────────────────────────────
 
-const actionBtnClass = 'rounded-lg p-2.5 min-h-[44px] min-w-[44px] text-on-surface-variant hover:bg-surface-container-high'
+const actionBtnClass = 'flex items-center justify-center rounded-lg p-2.5 min-h-[44px] min-w-[44px] text-on-surface-variant hover:bg-surface-container-high'
 
 function articleColumns(
   onPublish: (a: Article) => void,
@@ -145,7 +145,7 @@ function articleColumns(
             <button onClick={() => onPublish(a)} className={actionBtnClass} title="Xuất bản"><Eye className="h-4 w-4" /></button>
           )}
           <button onClick={() => onEdit(a)} className={actionBtnClass} title="Chỉnh sửa"><Pencil className="h-4 w-4" /></button>
-          <button onClick={() => onDelete(a)} className="rounded-lg p-2.5 min-h-[44px] min-w-[44px] text-error hover:bg-error-container" title="Xóa"><Trash2 className="h-4 w-4" /></button>
+          <button onClick={() => onDelete(a)} className="flex items-center justify-center rounded-lg p-2.5 min-h-[44px] min-w-[44px] text-error hover:bg-error-container" title="Xóa"><Trash2 className="h-4 w-4" /></button>
         </div>
       ),
     },

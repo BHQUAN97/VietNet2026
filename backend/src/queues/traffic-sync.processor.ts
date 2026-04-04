@@ -55,8 +55,9 @@ export class TrafficSyncProcessor extends WorkerHost {
         return;
       }
 
-      // Collect unique keys
+      // Collect unique keys and device keys
       const uniqueKeys = await this.redisClient.keys('traffic_unique:*');
+      const deviceKeys = await this.redisClient.keys('traffic_device:*');
 
       // Get all values in one pipeline
       const pipeline = this.redisClient.pipeline();
@@ -66,16 +67,33 @@ export class TrafficSyncProcessor extends WorkerHost {
       for (const key of uniqueKeys) {
         pipeline.pfcount(key);
       }
+      for (const key of deviceKeys) {
+        pipeline.get(key);
+      }
       const results = await pipeline.exec();
       if (!results) return;
 
       const trafficValues = results.slice(0, trafficKeys.length);
-      const uniqueValues = results.slice(trafficKeys.length);
+      const uniqueValues = results.slice(
+        trafficKeys.length,
+        trafficKeys.length + uniqueKeys.length,
+      );
+      const deviceValues = results.slice(
+        trafficKeys.length + uniqueKeys.length,
+      );
 
-      // Build a map: { "path:date" -> { views, unique } }
+      // Build a map: { "path:date" -> { views, unique, mobile, desktop, tablet } }
       const aggregated = new Map<
         string,
-        { path: string; date: string; views: number; unique: number }
+        {
+          path: string;
+          date: string;
+          views: number;
+          unique: number;
+          mobile: number;
+          desktop: number;
+          tablet: number;
+        }
       >();
 
       for (let i = 0; i < trafficKeys.length; i++) {
@@ -86,7 +104,15 @@ export class TrafficSyncProcessor extends WorkerHost {
         const views = parseInt((trafficValues[i]?.[1] as string) || '0', 10);
         const mapKey = `${path}:${date}`;
 
-        aggregated.set(mapKey, { path, date, views, unique: 0 });
+        aggregated.set(mapKey, {
+          path,
+          date,
+          views,
+          unique: 0,
+          mobile: 0,
+          desktop: 0,
+          tablet: 0,
+        });
       }
 
       // Merge unique visitor counts
@@ -103,6 +129,22 @@ export class TrafficSyncProcessor extends WorkerHost {
         }
       }
 
+      // Merge device breakdown counts
+      for (let i = 0; i < deviceKeys.length; i++) {
+        // Key format: traffic_device:{path}:{YYYY-MM-DD}:{device}
+        const parts = deviceKeys[i].split(':');
+        const device = parts[parts.length - 1]; // mobile | desktop | tablet
+        const date = parts[parts.length - 2];
+        const path = parts.slice(1, -2).join(':');
+        const mapKey = `${path}:${date}`;
+        const count = parseInt((deviceValues[i]?.[1] as string) || '0', 10);
+
+        const existing = aggregated.get(mapKey);
+        if (existing && (device === 'mobile' || device === 'desktop' || device === 'tablet')) {
+          existing[device] = count;
+        }
+      }
+
       // Upsert into page_view_daily table
       let synced = 0;
       for (const entry of aggregated.values()) {
@@ -115,9 +157,18 @@ export class TrafficSyncProcessor extends WorkerHost {
             view_date: entry.date,
             total_views: entry.views,
             unique_visitors: entry.unique,
+            mobile_views: entry.mobile,
+            desktop_views: entry.desktop,
+            tablet_views: entry.tablet,
           })
           .orUpdate(
-            ['total_views', 'unique_visitors'],
+            [
+              'total_views',
+              'unique_visitors',
+              'mobile_views',
+              'desktop_views',
+              'tablet_views',
+            ],
             ['page_path', 'view_date'],
           )
           .execute();
@@ -129,6 +180,12 @@ export class TrafficSyncProcessor extends WorkerHost {
       const keysToDelete = [
         ...trafficKeys.filter((k) => !k.endsWith(today)),
         ...uniqueKeys.filter((k) => !k.endsWith(today)),
+        ...deviceKeys.filter((k) => {
+          // device key format: traffic_device:{path}:{date}:{device}
+          const parts = k.split(':');
+          const date = parts[parts.length - 2];
+          return date !== today;
+        }),
       ];
 
       if (keysToDelete.length > 0) {

@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Bell } from 'lucide-react'
 import { useSocket } from '@/contexts/socket.context'
 import { cn } from '@/lib/utils'
@@ -11,6 +12,7 @@ export function NotificationBell() {
   const { notifications, unreadCount, clearNotifications } = useSocket()
   const [open, setOpen] = useState(false)
   const panelRef = useRef<HTMLDivElement>(null)
+  const router = useRouter()
 
   // Close panel on outside click or Escape key
   useEffect(() => {
@@ -107,7 +109,18 @@ export function NotificationBell() {
             ) : (
               <ul>
                 {notifications.map((n) => (
-                  <NotificationItem key={n.id || `${n.type}-${n.created_at}`} notification={n} getTypeLabel={getTypeLabel} getTypeColor={getTypeColor} />
+                  <NotificationItem
+                    key={n.id || `${n.type}-${n.created_at}`}
+                    notification={n}
+                    getTypeLabel={getTypeLabel}
+                    getTypeColor={getTypeColor}
+                    onClick={() => {
+                      if (n.link) {
+                        router.push(n.link)
+                        setOpen(false)
+                      }
+                    }}
+                  />
                 ))}
               </ul>
             )}
@@ -122,13 +135,21 @@ function NotificationItem({
   notification,
   getTypeLabel,
   getTypeColor,
+  onClick,
 }: {
   notification: RealtimeNotification
   getTypeLabel: (t: string) => string
   getTypeColor: (t: string) => string
+  onClick?: () => void
 }) {
   return (
-    <li className="px-4 py-2.5 transition-colors hover:bg-surface-container">
+    <li
+      className={cn(
+        'px-4 py-2.5 transition-colors hover:bg-surface-container',
+        onClick && 'cursor-pointer',
+      )}
+      onClick={onClick}
+    >
       <div className="flex items-start gap-2.5">
         <span
           className={cn(
