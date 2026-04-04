@@ -23,6 +23,7 @@ interface FormErrors {
   name?: string
   phone?: string
   email?: string
+  area?: string
   message?: string
 }
 
@@ -106,19 +107,28 @@ export function ConsultationForm() {
   function validate(): boolean {
     const newErrors: FormErrors = {}
 
+    // Họ tên: bắt buộc, 2-100 ký tự
     if (!formData.name.trim()) newErrors.name = 'Vui lòng nhập họ tên'
     else if (formData.name.trim().length < 2) newErrors.name = 'Họ tên cần ít nhất 2 ký tự'
+    else if (formData.name.trim().length > 100) newErrors.name = 'Họ tên tối đa 100 ký tự'
 
+    // SĐT: bắt buộc, chỉ cho phép số/dấu cách/dấu gạch, 8-20 ký tự
     if (!formData.phone.trim()) newErrors.phone = 'Vui lòng nhập số điện thoại'
+    else if (!/^[\d\s\-+().]{8,20}$/.test(formData.phone.trim())) newErrors.phone = 'Số điện thoại không hợp lệ'
 
-    // Email tùy chọn — chỉ validate format nếu có nhập
+    // Email: tùy chọn — chỉ validate format nếu có nhập
     if (formData.email.trim()) {
       const emailErr = validateEmail(formData.email)
       if (emailErr) newErrors.email = emailErr
     }
 
+    // Diện tích: tùy chọn — validate max length
+    if (formData.area.trim().length > 50) newErrors.area = 'Diện tích tối đa 50 ký tự'
+
+    // Nội dung: bắt buộc, 5-2000 ký tự
     if (!formData.message.trim()) newErrors.message = 'Vui lòng nhập nội dung'
     else if (formData.message.trim().length < 5) newErrors.message = 'Nội dung cần ít nhất 5 ký tự'
+    else if (formData.message.trim().length > 2000) newErrors.message = 'Nội dung tối đa 2000 ký tự'
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -343,8 +353,11 @@ export function ConsultationForm() {
                 value={formData.area}
                 onChange={handleChange}
                 placeholder="VD: 120"
-                className={inputBaseClasses}
+                className={cn(inputBaseClasses, errors.area && 'ring-2 ring-error/20')}
               />
+              {errors.area && (
+                <p className="mt-1.5 text-body-sm text-error">{errors.area}</p>
+              )}
             </div>
 
             {/* Budget Range */}

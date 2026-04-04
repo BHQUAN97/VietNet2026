@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { Phone, Mail, ArrowRight, Send, CheckCircle } from 'lucide-react'
+import { Phone, Mail, ArrowRight, Send, CheckCircle, AlertTriangle } from 'lucide-react'
 import { ScrollReveal } from '@/components/ui/ScrollReveal'
 import { Button } from '@/components/ui/Button'
 import api from '@/lib/api'
@@ -76,14 +76,15 @@ function FullCtaSection({ config }: Props) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (formData.name.trim().length < 2) {
-      setFormError('Họ tên cần ít nhất 2 ký tự.')
-      return
-    }
-    if (!formData.phone.trim()) {
-      setFormError('Vui lòng nhập số điện thoại.')
-      return
-    }
+    // Validate tat ca input truoc khi goi API
+    if (!formData.name.trim()) { setFormError('Vui lòng nhập họ tên.'); return }
+    if (formData.name.trim().length < 2) { setFormError('Họ tên cần ít nhất 2 ký tự.'); return }
+    if (formData.name.trim().length > 100) { setFormError('Họ tên tối đa 100 ký tự.'); return }
+    if (!formData.phone.trim()) { setFormError('Vui lòng nhập số điện thoại.'); return }
+    if (!/^[\d\s\-+().]{8,20}$/.test(formData.phone.trim())) { setFormError('Số điện thoại không hợp lệ.'); return }
+    if (formData.email.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email.trim())) { setFormError('Email không hợp lệ.'); return }
+    if (formData.message.trim().length < 5) { setFormError('Nội dung yêu cầu cần ít nhất 5 ký tự.'); return }
+    if (formData.message.trim().length > 2000) { setFormError('Nội dung tối đa 2000 ký tự.'); return }
 
     setIsSubmitting(true)
     setFormError('')
@@ -93,8 +94,10 @@ function FullCtaSection({ config }: Props) {
         email: formData.email.trim() || undefined,
       })
       setIsSuccess(true)
-    } catch {
-      setFormError('Gửi yêu cầu thất bại. Vui lòng thử lại sau.')
+    } catch (err: any) {
+      // Hien thi loi chi tiet tu API
+      const msg = err?.data?.message || err?.message || 'Gửi yêu cầu thất bại. Vui lòng thử lại sau.'
+      setFormError(typeof msg === 'string' ? msg : JSON.stringify(msg))
     } finally {
       setIsSubmitting(false)
     }
@@ -242,9 +245,10 @@ function FullCtaSection({ config }: Props) {
               </div>
 
               {formError && (
-                <p className="text-body-sm text-error bg-error/10 rounded-xl px-4 py-2">
-                  {formError}
-                </p>
+                <div className="flex items-center gap-2 text-body-sm text-error bg-error/10 rounded-xl px-4 py-2.5">
+                  <AlertTriangle className="h-4 w-4 shrink-0" />
+                  <span>{formError}</span>
+                </div>
               )}
 
               <Button
