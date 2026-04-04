@@ -27,6 +27,7 @@ interface FormErrors {
   full_name?: string
   email?: string
   password?: string
+  phone?: string
 }
 
 const ROLES: { value: User['role']; label: string }[] = [
@@ -97,6 +98,8 @@ export function UserFormModal({ open, onOpenChange, user, onSuccess }: UserFormM
 
     if (!formData.full_name.trim()) {
       newErrors.full_name = 'Vui lòng nhập họ tên'
+    } else if (formData.full_name.trim().length < 2) {
+      newErrors.full_name = 'Họ tên phải có ít nhất 2 ký tự'
     }
     if (!formData.email.trim()) {
       newErrors.email = 'Vui lòng nhập email'
@@ -107,6 +110,13 @@ export function UserFormModal({ open, onOpenChange, user, onSuccess }: UserFormM
       newErrors.password = 'Vui lòng nhập mật khẩu'
     } else if (!isEdit && formData.password.length < 8) {
       newErrors.password = 'Mật khẩu tối thiểu 8 ký tự'
+    }
+    // Validate phone format neu co nhap
+    if (formData.phone.trim()) {
+      const phoneRegex = /^[\d\s\-+()]{8,20}$/
+      if (!phoneRegex.test(formData.phone.trim())) {
+        newErrors.phone = 'Số điện thoại không hợp lệ'
+      }
     }
 
     setErrors(newErrors)
@@ -241,8 +251,11 @@ export function UserFormModal({ open, onOpenChange, user, onSuccess }: UserFormM
                 value={formData.phone}
                 onChange={handleChange}
                 placeholder="0909 xxx xxx"
-                className={inputBaseClasses}
+                className={cn(inputBaseClasses, errors.phone && 'ring-2 ring-error/30')}
               />
+              {errors.phone && (
+                <p className="mt-1.5 text-body-sm text-error">{errors.phone}</p>
+              )}
             </div>
 
             {/* Role */}

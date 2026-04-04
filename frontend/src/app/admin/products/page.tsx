@@ -14,6 +14,7 @@ import { ActionErrorBanner } from '@/components/shared/ActionErrorBanner'
 import { FormModal } from '@/components/shared/FormModal'
 import api from '@/lib/api'
 import { GalleryEditor, apiGalleryToImages, imagesToMediaIds, type GalleryImage } from '@/components/admin/GalleryEditor'
+import { validateMinLength, validateMaxLength, validateFields } from '@/lib/form-validation'
 import type { Product, Category, ApiResponse } from '@/types'
 import { useAdminCrud } from '@/hooks/useAdminCrud'
 
@@ -44,6 +45,7 @@ export default function AdminProductsPage() {
   const [formData, setFormData] = useState<ProductFormData>(EMPTY_FORM)
   const [galleryImages, setGalleryImages] = useState<GalleryImage[]>([])
   const [saving, setSaving] = useState(false)
+  const [formErrors, setFormErrors] = useState<Record<string, string>>({})
 
   const crud = useAdminCrud<Product>({
     endpoint: '/products',
@@ -87,6 +89,23 @@ export default function AdminProductsPage() {
 
   async function handleSave(e: React.FormEvent) {
     e.preventDefault()
+    // Validate truoc khi luu
+    const errors = validateFields({
+      name: [
+        !formData.name.trim() ? 'Tên sản phẩm không được để trống.' : null,
+        validateMinLength(formData.name, 2, 'Tên sản phẩm'),
+        validateMaxLength(formData.name, 200, 'Tên sản phẩm'),
+      ],
+      price_range: [validateMaxLength(formData.price_range, 100, 'Khoảng giá')],
+      finish: [validateMaxLength(formData.finish, 100, 'Hoàn thiện')],
+      seo_title: [validateMaxLength(formData.seo_title, 70, 'SEO Title')],
+      seo_description: [validateMaxLength(formData.seo_description, 160, 'SEO Description')],
+    })
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors)
+      return
+    }
+    setFormErrors({})
     setSaving(true)
     const payload: Record<string, unknown> = {
       name: formData.name,
@@ -170,7 +189,8 @@ export default function AdminProductsPage() {
         <div className="space-y-4">
           <div>
             <label className={labelClass}>Tên sản phẩm *</label>
-            <input type="text" required value={formData.name} onChange={(e) => setFormData(f => ({ ...f, name: e.target.value }))} className={inputClass} />
+            <input type="text" required value={formData.name} onChange={(e) => { setFormData(f => ({ ...f, name: e.target.value })); setFormErrors(p => ({ ...p, name: '' })) }} className={`${inputClass} ${formErrors.name ? 'ring-2 ring-error/30' : ''}`} />
+            {formErrors.name && <p className="mt-1 text-body-sm text-error">{formErrors.name}</p>}
           </div>
           <div>
             <label className={labelClass}>Mô tả</label>
@@ -196,21 +216,25 @@ export default function AdminProductsPage() {
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label className={labelClass}>Hoàn thiện</label>
-              <input type="text" value={formData.finish} onChange={(e) => setFormData(f => ({ ...f, finish: e.target.value }))} className={inputClass} placeholder="Matt, Bóng, Sơn PU..." />
+              <input type="text" value={formData.finish} onChange={(e) => { setFormData(f => ({ ...f, finish: e.target.value })); setFormErrors(p => ({ ...p, finish: '' })) }} className={`${inputClass} ${formErrors.finish ? 'ring-2 ring-error/30' : ''}`} placeholder="Matt, Bóng, Sơn PU..." />
+              {formErrors.finish && <p className="mt-1 text-body-sm text-error">{formErrors.finish}</p>}
             </div>
             <div>
               <label className={labelClass}>Khoảng giá</label>
-              <input type="text" value={formData.price_range} onChange={(e) => setFormData(f => ({ ...f, price_range: e.target.value }))} className={inputClass} placeholder="15-25 triệu" />
+              <input type="text" value={formData.price_range} onChange={(e) => { setFormData(f => ({ ...f, price_range: e.target.value })); setFormErrors(p => ({ ...p, price_range: '' })) }} className={`${inputClass} ${formErrors.price_range ? 'ring-2 ring-error/30' : ''}`} placeholder="15-25 triệu" />
+              {formErrors.price_range && <p className="mt-1 text-body-sm text-error">{formErrors.price_range}</p>}
             </div>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label className={labelClass}>SEO Title</label>
-              <input type="text" value={formData.seo_title} onChange={(e) => setFormData(f => ({ ...f, seo_title: e.target.value }))} className={inputClass} />
+              <label className={labelClass}>SEO Title <span className="normal-case tracking-normal font-normal text-on-surface-variant/50">({formData.seo_title.length}/70)</span></label>
+              <input type="text" value={formData.seo_title} onChange={(e) => { setFormData(f => ({ ...f, seo_title: e.target.value })); setFormErrors(p => ({ ...p, seo_title: '' })) }} className={`${inputClass} ${formErrors.seo_title ? 'ring-2 ring-error/30' : ''}`} />
+              {formErrors.seo_title && <p className="mt-1 text-body-sm text-error">{formErrors.seo_title}</p>}
             </div>
             <div>
-              <label className={labelClass}>SEO Description</label>
-              <input type="text" value={formData.seo_description} onChange={(e) => setFormData(f => ({ ...f, seo_description: e.target.value }))} className={inputClass} />
+              <label className={labelClass}>SEO Description <span className="normal-case tracking-normal font-normal text-on-surface-variant/50">({formData.seo_description.length}/160)</span></label>
+              <input type="text" value={formData.seo_description} onChange={(e) => { setFormData(f => ({ ...f, seo_description: e.target.value })); setFormErrors(p => ({ ...p, seo_description: '' })) }} className={`${inputClass} ${formErrors.seo_description ? 'ring-2 ring-error/30' : ''}`} />
+              {formErrors.seo_description && <p className="mt-1 text-body-sm text-error">{formErrors.seo_description}</p>}
             </div>
           </div>
           <div className="flex flex-wrap gap-6">

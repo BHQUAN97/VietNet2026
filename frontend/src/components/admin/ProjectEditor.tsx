@@ -13,6 +13,7 @@ import api from '@/lib/api'
 import { fileToBase64, uploadMedia, validateImageFile } from '@/lib/media'
 import { sanitizeHtml } from '@/lib/sanitize'
 import { GalleryEditor, apiGalleryToImages, imagesToMediaIds, type GalleryImage } from '@/components/admin/GalleryEditor'
+import { validateMinLength, validateMaxLength, validateFields } from '@/lib/form-validation'
 import type { Project, Category, ApiResponse } from '@/types'
 
 /* ================================================================
@@ -156,13 +157,13 @@ function EditorSidebar({
         <p className="mb-3 text-body-sm font-semibold text-on-surface">SEO</p>
         <div className="space-y-3">
           <div>
-            <label className={labelClass}>SEO Title</label>
-            <input type="text" value={formData.seo_title}
+            <label className={labelClass}>SEO Title <span className="normal-case tracking-normal font-normal text-on-surface-variant/50">({formData.seo_title.length}/70)</span></label>
+            <input type="text" value={formData.seo_title} maxLength={70}
               onChange={(e) => setFormData(f => ({ ...f, seo_title: e.target.value }))} className={inputClass} />
           </div>
           <div>
-            <label className={labelClass}>SEO Description</label>
-            <textarea rows={2} value={formData.seo_description}
+            <label className={labelClass}>SEO Description <span className="normal-case tracking-normal font-normal text-on-surface-variant/50">({formData.seo_description.length}/160)</span></label>
+            <textarea rows={2} value={formData.seo_description} maxLength={160}
               onChange={(e) => setFormData(f => ({ ...f, seo_description: e.target.value }))} className={inputClass} />
           </div>
         </div>
@@ -305,6 +306,7 @@ export default function ProjectEditor({ projectId }: { projectId?: string }) {
   const [showSidebar, setShowSidebar] = useState(true)
   const [showPreview, setShowPreview] = useState(false)
   const [distraction, setDistraction] = useState(false)
+  const [validationError, setValidationError] = useState<string | null>(null)
 
   // ID hiện tại (có thể thay đổi khi tạo mới)
   const [currentId, setCurrentId] = useState<string | null>(projectId || null)
@@ -384,6 +386,28 @@ export default function ProjectEditor({ projectId }: { projectId?: string }) {
 
   const handleSave = useCallback(async (): Promise<boolean> => {
     if (isSavingRef.current) return false
+
+    // Validate truoc khi luu
+    const errors = validateFields({
+      title: [
+        !formData.title.trim() ? 'Tiêu đề không được để trống.' : null,
+        validateMinLength(formData.title, 2, 'Tiêu đề'),
+      ],
+      year_completed: [
+        formData.year_completed && (parseInt(formData.year_completed) < 1900 || parseInt(formData.year_completed) > 2100)
+          ? 'Năm phải từ 1900 đến 2100.' : null,
+      ],
+      seo_title: [validateMaxLength(formData.seo_title, 70, 'SEO Title')],
+      seo_description: [validateMaxLength(formData.seo_description, 160, 'SEO Description')],
+    })
+    if (Object.keys(errors).length > 0) {
+      const msg = Object.values(errors).join(' ')
+      setValidationError(msg)
+      setSaveStatus('error')
+      return false
+    }
+    setValidationError(null)
+
     isSavingRef.current = true
 
     // Cancel pending auto-save khi manual save bat dau
@@ -424,7 +448,7 @@ export default function ProjectEditor({ projectId }: { projectId?: string }) {
     } finally {
       isSavingRef.current = false
     }
-  }, [buildPayload, currentId, galleryImages])
+  }, [buildPayload, currentId, galleryImages, formData])
 
   /* ── Auto-save (debounced 10s) ─────────────────── */
 
@@ -552,7 +576,7 @@ export default function ProjectEditor({ projectId }: { projectId?: string }) {
             <div className="flex items-center gap-1.5 text-body-sm">
               {saveStatus === 'saving' && <><Loader2 className="h-3.5 w-3.5 animate-spin text-on-surface-variant" /><span className="text-on-surface-variant">Đang lưu...</span></>}
               {saveStatus === 'saved' && <><Check className="h-3.5 w-3.5 text-success" /><span className="text-success">Đã lưu {savedTime}</span></>}
-              {saveStatus === 'error' && <><AlertCircle className="h-3.5 w-3.5 text-error" /><span className="text-error">Lỗi lưu</span></>}
+              {saveStatus === 'error' && <><AlertCircle className="h-3.5 w-3.5 text-error" /><span className="text-error">{validationError || 'Lỗi lưu'}</span></>}
               {saveStatus === 'idle' && savedTime && <span className="text-on-surface-variant/50">Lưu lần cuối {savedTime}</span>}
             </div>
           </div>

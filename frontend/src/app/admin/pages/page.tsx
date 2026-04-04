@@ -19,6 +19,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { uploadMedia, validateImageFile, fileToBase64 } from '@/lib/media'
+import { validateUrl } from '@/lib/form-validation'
 import api from '@/lib/api'
 import { formatDateTime } from '@/lib/date'
 import type {
@@ -133,6 +134,44 @@ export default function AdminPagesPage() {
   }, [fetchConfig])
 
   const saveDraft = async () => {
+    // Validate sections truoc khi luu
+    const validationErrors: string[] = []
+    sections.forEach((section) => {
+      const cfg = section.config as Record<string, any>
+      const label = SECTION_TYPE_LABELS[section.type]
+
+      // Validate title/subtitle max lengths
+      if (cfg.title && cfg.title.length > 500) {
+        validationErrors.push(`${label}: Tiêu đề không được vượt quá 500 ký tự.`)
+      }
+      if (cfg.subtitle && cfg.subtitle.length > 500) {
+        validationErrors.push(`${label}: Mô tả không được vượt quá 500 ký tự.`)
+      }
+      if (cfg.label && cfg.label.length > 200) {
+        validationErrors.push(`${label}: Nhãn không được vượt quá 200 ký tự.`)
+      }
+      if (cfg.cta_text && cfg.cta_text.length > 200) {
+        validationErrors.push(`${label}: CTA text không được vượt quá 200 ký tự.`)
+      }
+      if (cfg.cta_primary_text && cfg.cta_primary_text.length > 200) {
+        validationErrors.push(`${label}: Nút chính text không được vượt quá 200 ký tự.`)
+      }
+
+      // Validate CTA links format neu co
+      for (const linkKey of ['cta_primary_link', 'cta_secondary_link', 'cta_link']) {
+        const link = cfg[linkKey]
+        if (link && link.trim() && !link.startsWith('/') && !link.startsWith('#')) {
+          const urlErr = validateUrl(link)
+          if (urlErr) validationErrors.push(`${label}: ${linkKey} - URL không hợp lệ.`)
+        }
+      }
+    })
+
+    if (validationErrors.length > 0) {
+      setError(validationErrors.join(' '))
+      return
+    }
+
     setIsSaving(true)
     setSaveStatus(null)
     try {

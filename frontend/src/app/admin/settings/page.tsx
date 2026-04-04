@@ -12,6 +12,7 @@ import { Button } from '@/components/ui/Button'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { LoadingSpinner } from '@/components/shared/DataStates'
 import { getErrorMessage } from '@/lib/error'
+import { validateEmail as valEmail, validateUrl, validatePhoneVN, validateMaxLength } from '@/lib/form-validation'
 import api from '@/lib/api'
 import type { ApiResponse } from '@/types'
 
@@ -143,6 +144,7 @@ export default function AdminSettingsPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [toastMessage, setToastMessage] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
 
   // Track original values for dirty check
   const [originalSettings, setOriginalSettings] = useState<Record<string, string>>({})
@@ -173,6 +175,7 @@ export default function AdminSettingsPage() {
 
   function updateSetting(key: string, value: string) {
     setSettings((prev) => ({ ...prev, [key]: value }))
+    if (fieldErrors[key]) setFieldErrors((prev) => { const n = { ...prev }; delete n[key]; return n })
   }
 
   const currentFields = activeTab === 'site' ? SITE_FIELDS : SEO_FIELDS
@@ -186,6 +189,48 @@ export default function AdminSettingsPage() {
   async function handleSave() {
     setIsSaving(true)
     setError(null)
+    setFieldErrors({})
+
+    // Validate truoc khi luu
+    const newFieldErrors: Record<string, string> = {}
+    const emailVal = settings['email'] || ''
+    if (emailVal.trim()) {
+      const emailErr = valEmail(emailVal)
+      // valEmail returns error for empty too, only check format
+      if (emailVal.trim() && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailVal)) {
+        newFieldErrors['email'] = 'Email không hợp lệ.'
+      }
+    }
+    const phoneVal = settings['phone'] || ''
+    if (phoneVal.trim()) {
+      const phoneErr = validatePhoneVN(phoneVal)
+      if (phoneErr) newFieldErrors['phone'] = phoneErr
+    }
+    // Validate social URLs
+    for (const key of ['social_facebook', 'social_zalo', 'social_instagram', 'social_youtube']) {
+      const val = settings[key] || ''
+      if (val.trim()) {
+        const urlErr = validateUrl(val)
+        if (urlErr) newFieldErrors[key] = urlErr
+      }
+    }
+    // SEO description max 160
+    const seoDescVal = settings['seo_default_description'] || ''
+    if (seoDescVal.length > 160) {
+      newFieldErrors['seo_default_description'] = 'Mô tả SEO không được vượt quá 160 ký tự.'
+    }
+    // OG image URL
+    const ogImageVal = settings['seo_default_og_image'] || ''
+    if (ogImageVal.trim()) {
+      const urlErr = validateUrl(ogImageVal)
+      if (urlErr) newFieldErrors['seo_default_og_image'] = urlErr
+    }
+
+    if (Object.keys(newFieldErrors).length > 0) {
+      setFieldErrors(newFieldErrors)
+      setIsSaving(false)
+      return
+    }
 
     try {
       // Only save changed fields
@@ -288,7 +333,7 @@ export default function AdminSettingsPage() {
                         onChange={(e) => updateSetting(field.key, e.target.value)}
                         placeholder={field.placeholder}
                         maxLength={maxLength}
-                        className="w-full rounded-xl bg-surface-container px-4 py-3 text-body-md text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary"
+                        className={`w-full rounded-xl bg-surface-container px-4 py-3 text-body-md text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 ${fieldErrors[field.key] ? 'ring-error/30' : 'focus:ring-primary'}`}
                       />
                       {maxLength && (
                         <p className="mt-1 text-right text-body-sm text-on-surface-variant">
@@ -302,8 +347,11 @@ export default function AdminSettingsPage() {
                       value={value}
                       onChange={(e) => updateSetting(field.key, e.target.value)}
                       placeholder={field.placeholder}
-                      className="w-full rounded-xl bg-surface-container px-4 py-3 text-body-md text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary"
+                      className={`w-full rounded-xl bg-surface-container px-4 py-3 text-body-md text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 ${fieldErrors[field.key] ? 'ring-error/30' : 'focus:ring-primary'}`}
                     />
+                  )}
+                  {fieldErrors[field.key] && (
+                    <p className="mt-1 text-body-sm text-error">{fieldErrors[field.key]}</p>
                   )}
                 </div>
               )

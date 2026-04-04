@@ -45,6 +45,11 @@ export default function AdminConsultationsPage() {
   async function handleUpdateStatus(e: React.FormEvent) {
     e.preventDefault()
     if (!selectedConsultation) return
+    // Validate notes max length
+    if (notes.length > 2000) {
+      setActionError('Ghi chú không được vượt quá 2000 ký tự.')
+      return
+    }
     setSaving(true)
     try {
       await api.patch(`/consultations/${selectedConsultation.id}`, {
@@ -140,9 +145,10 @@ export default function AdminConsultationsPage() {
 
             <div>
               <label className="mb-1 block font-label text-label-md uppercase tracking-label-wide text-on-surface-variant">Ghi chú nội bộ</label>
-              <textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)}
+              <textarea rows={3} value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={2000}
                 className="w-full rounded-xl bg-surface-container px-4 py-3 text-body-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary"
                 placeholder="Ghi chú cho nội bộ..." />
+              <p className="mt-1 text-right text-body-sm text-on-surface-variant">{notes.length}/2000</p>
             </div>
           </div>
         )}

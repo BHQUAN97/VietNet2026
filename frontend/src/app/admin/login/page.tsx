@@ -7,11 +7,13 @@ import { useAuth } from '@/contexts/auth.context'
 import { Button } from '@/components/ui/Button'
 import { PageContainer } from '@/components/layout/PageContainer'
 import { AxiosError } from 'axios'
+import { validateEmail, validateMinLength } from '@/lib/form-validation'
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({})
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
 
@@ -28,9 +30,21 @@ export default function AdminLoginPage() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError('')
+    setFieldErrors({})
 
-    if (!email.trim() || !password.trim()) {
-      setError('Vui lòng nhập email và mật khẩu')
+    // Validate tung field
+    const errors: { email?: string; password?: string } = {}
+    const emailErr = validateEmail(email)
+    if (emailErr) errors.email = emailErr
+    const pwErr = validateMinLength(password, 6, 'Mật khẩu')
+    if (!password.trim()) {
+      errors.password = 'Mật khẩu không được để trống.'
+    } else if (pwErr) {
+      errors.password = pwErr
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors)
       return
     }
 
@@ -91,13 +105,14 @@ export default function AdminLoginPage() {
               <input
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full rounded-xl bg-surface-container focus:ring-2 focus:ring-primary/30 py-3 pl-11 pr-4 text-body-md text-on-surface outline-none transition-colors"
+                onChange={(e) => { setEmail(e.target.value); if (fieldErrors.email) setFieldErrors(p => ({ ...p, email: undefined })) }}
+                className={`w-full rounded-xl bg-surface-container focus:ring-2 focus:ring-primary/30 py-3 pl-11 pr-4 text-body-md text-on-surface outline-none transition-colors ${fieldErrors.email ? 'ring-2 ring-error/30' : ''}`}
                 placeholder="admin@vietnetinterior.vn"
                 autoComplete="email"
                 disabled={loading}
               />
             </div>
+            {fieldErrors.email && <p className="mt-1 text-body-sm text-error">{fieldErrors.email}</p>}
           </div>
 
           <div>
@@ -109,8 +124,8 @@ export default function AdminLoginPage() {
               <input
                 type={showPassword ? 'text' : 'password'}
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full rounded-xl bg-surface-container focus:ring-2 focus:ring-primary/30 py-3 pl-11 pr-12 text-body-md text-on-surface outline-none transition-colors"
+                onChange={(e) => { setPassword(e.target.value); if (fieldErrors.password) setFieldErrors(p => ({ ...p, password: undefined })) }}
+                className={`w-full rounded-xl bg-surface-container focus:ring-2 focus:ring-primary/30 py-3 pl-11 pr-12 text-body-md text-on-surface outline-none transition-colors ${fieldErrors.password ? 'ring-2 ring-error/30' : ''}`}
                 placeholder="••••••••"
                 autoComplete="current-password"
                 disabled={loading}
@@ -128,6 +143,7 @@ export default function AdminLoginPage() {
                 )}
               </button>
             </div>
+            {fieldErrors.password && <p className="mt-1 text-body-sm text-error">{fieldErrors.password}</p>}
           </div>
 
           <Button
