@@ -76,12 +76,22 @@ function FullCtaSection({ config }: Props) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!formData.name.trim() || !formData.phone.trim()) return
+    if (formData.name.trim().length < 2) {
+      setFormError('Họ tên cần ít nhất 2 ký tự.')
+      return
+    }
+    if (!formData.phone.trim()) {
+      setFormError('Vui lòng nhập số điện thoại.')
+      return
+    }
 
     setIsSubmitting(true)
     setFormError('')
     try {
-      await api.post('/consultations', formData)
+      await api.post('/consultations', {
+        ...formData,
+        email: formData.email.trim() || undefined,
+      })
       setIsSuccess(true)
     } catch {
       setFormError('Gửi yêu cầu thất bại. Vui lòng thử lại sau.')
