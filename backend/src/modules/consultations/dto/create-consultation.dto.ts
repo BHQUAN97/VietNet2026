@@ -14,8 +14,9 @@ export class CreateConsultationDto {
   @MaxLength(100)
   name!: string;
 
+  @IsOptional()
   @IsEmail()
-  email!: string;
+  email?: string;
 
   @IsOptional()
   @IsString()

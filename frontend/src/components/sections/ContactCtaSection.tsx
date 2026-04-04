@@ -13,10 +13,10 @@ interface Props {
 }
 
 const PROJECT_TYPES = [
-  { value: 'residential', label: 'Residential Design' },
-  { value: 'commercial', label: 'Commercial Office' },
-  { value: 'hospitality', label: 'Hospitality / Retail' },
-  { value: 'renovation', label: 'Renovation' },
+  { value: 'residential', label: 'Nhà ở / Căn hộ' },
+  { value: 'commercial', label: 'Văn phòng / Thương mại' },
+  { value: 'hospitality', label: 'Khách sạn / F&B' },
+  { value: 'renovation', label: 'Cải tạo / Sửa chữa' },
 ]
 
 export function ContactCtaSection({ config }: Props) {
@@ -61,9 +61,10 @@ function SimpleCtaSection({ config }: Props) {
 function FullCtaSection({ config }: Props) {
   const [formData, setFormData] = useState({
     name: '',
+    phone: '',
     email: '',
     project_type: 'residential',
-    message: '',
+    message: 'Tôi muốn được tư vấn thiết kế nội thất.',
   })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSuccess, setIsSuccess] = useState(false)
@@ -75,7 +76,7 @@ function FullCtaSection({ config }: Props) {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!formData.name.trim() || !formData.email.trim()) return
+    if (!formData.name.trim() || !formData.phone.trim()) return
 
     setIsSubmitting(true)
     setFormError('')
@@ -154,25 +155,40 @@ function FullCtaSection({ config }: Props) {
               </p>
             </div>
           ) : (
-            <form onSubmit={handleSubmit} className="bg-surface rounded-2xl p-6 md:p-10 shadow-2xl space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <form onSubmit={handleSubmit} className="bg-surface rounded-2xl p-6 md:p-10 shadow-2xl space-y-5">
+              <div className="space-y-2">
+                <label className="font-label text-label-sm tracking-widest text-on-surface-variant uppercase">
+                  Họ tên <span className="text-error">*</span>
+                </label>
+                <input
+                  name="name"
+                  type="text"
+                  value={formData.name}
+                  onChange={handleChange}
+                  placeholder="Nguyễn Văn A"
+                  required
+                  className={inputClasses}
+                />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                 <div className="space-y-2">
                   <label className="font-label text-label-sm tracking-widest text-on-surface-variant uppercase">
-                    Full Name
+                    Số điện thoại <span className="text-error">*</span>
                   </label>
                   <input
-                    name="name"
-                    type="text"
-                    value={formData.name}
+                    name="phone"
+                    type="tel"
+                    value={formData.phone}
                     onChange={handleChange}
-                    placeholder="Nguyen Van A"
+                    placeholder="0909 xxx xxx"
                     required
                     className={inputClasses}
                   />
                 </div>
                 <div className="space-y-2">
                   <label className="font-label text-label-sm tracking-widest text-on-surface-variant uppercase">
-                    Email Address
+                    Email
                   </label>
                   <input
                     name="email"
@@ -180,7 +196,6 @@ function FullCtaSection({ config }: Props) {
                     value={formData.email}
                     onChange={handleChange}
                     placeholder="email@example.com"
-                    required
                     className={inputClasses}
                   />
                 </div>
@@ -188,7 +203,7 @@ function FullCtaSection({ config }: Props) {
 
               <div className="space-y-2">
                 <label className="font-label text-label-sm tracking-widest text-on-surface-variant uppercase">
-                  Project Type
+                  Loại dự án
                 </label>
                 <select
                   name="project_type"
@@ -204,14 +219,14 @@ function FullCtaSection({ config }: Props) {
 
               <div className="space-y-2">
                 <label className="font-label text-label-sm tracking-widest text-on-surface-variant uppercase">
-                  Message
+                  Yêu cầu tư vấn
                 </label>
                 <textarea
                   name="message"
                   value={formData.message}
                   onChange={handleChange}
-                  placeholder="Tell us about your space..."
-                  rows={4}
+                  placeholder="Mô tả yêu cầu thiết kế, phong cách, diện tích..."
+                  rows={3}
                   className={`${inputClasses} resize-none`}
                 />
               </div>
@@ -230,7 +245,7 @@ function FullCtaSection({ config }: Props) {
                 className="w-full"
               >
                 <Send className="mr-2 h-4 w-4" />
-                Schedule Consultation
+                Gửi yêu cầu tư vấn
               </Button>
             </form>
           )}

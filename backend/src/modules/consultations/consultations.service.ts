@@ -69,21 +69,23 @@ export class ConsultationsService extends BaseService<Consultation> {
     });
 
     const saved = await this.consultationsRepository.save(consultation);
-    this.actionLogger.log(`New consultation ${saved.id} from ${dto.email}`);
+    this.actionLogger.log(`New consultation ${saved.id} from ${dto.phone || dto.email}`);
 
-    // Queue confirmation email to user
-    this.mailQueueService
-      .queueConsultationConfirmation(dto.email, dto.name)
-      .catch((err) =>
-        this.actionLogger.error('Failed to queue confirmation email', err),
-      );
+    // Queue confirmation email to user (chi gui khi co email)
+    if (dto.email) {
+      this.mailQueueService
+        .queueConsultationConfirmation(dto.email, dto.name)
+        .catch((err) =>
+          this.actionLogger.error('Failed to queue confirmation email', err),
+        );
+    }
 
     // Queue notification email to admin
     const adminEmail = process.env.ADMIN_EMAIL || 'admin@bhquan.site';
     this.mailQueueService
       .queueConsultationNotification(adminEmail, {
         name: dto.name,
-        email: dto.email,
+        email: dto.email || '',
         phone: dto.phone || '',
         message: dto.message,
       })
