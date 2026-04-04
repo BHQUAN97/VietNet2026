@@ -9,26 +9,26 @@ import { UserRole, UserStatus } from '../entities/user.entity';
 
 export class UpdateUserDto {
   @IsOptional()
-  @IsString()
-  @MinLength(2)
-  @MaxLength(100)
+  @IsString({ message: 'Họ tên không hợp lệ' })
+  @MinLength(2, { message: 'Họ tên cần ít nhất 2 ký tự' })
+  @MaxLength(100, { message: 'Họ tên tối đa 100 ký tự' })
   full_name?: string;
 
   @IsOptional()
-  @IsString()
-  @MaxLength(20)
+  @IsString({ message: 'Số điện thoại không hợp lệ' })
+  @MaxLength(20, { message: 'Số điện thoại tối đa 20 ký tự' })
   phone?: string;
 
   @IsOptional()
-  @IsString()
-  @MaxLength(500)
+  @IsString({ message: 'URL ảnh đại diện không hợp lệ' })
+  @MaxLength(500, { message: 'URL ảnh đại diện tối đa 500 ký tự' })
   avatar_url?: string;
 
   @IsOptional()
-  @IsEnum(UserRole)
+  @IsEnum(UserRole, { message: 'Vai trò không hợp lệ' })
   role?: UserRole;
 
   @IsOptional()
-  @IsEnum(UserStatus)
+  @IsEnum(UserStatus, { message: 'Trạng thái tài khoản không hợp lệ' })
   status?: UserStatus;
 }
