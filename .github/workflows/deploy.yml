@@ -355,6 +355,29 @@ jobs:
       # ══════════════════════════════════════════
       # SHARED STEPS (both init and update)
       # ══════════════════════════════════════════
+      - name: Sync CRON_SECRET to .env
+        run: |
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
+          SECRET="${{ secrets.CRON_SECRET }}"
+
+          if [ -z "$SECRET" ]; then
+            echo "WARNING: CRON_SECRET not set in GitHub Secrets — skipping"
+            exit 0
+          fi
+
+          # Update neu da co, append neu chua
+          sshpass -e ssh -p $PORT $VPS "
+            cd ${APP_DIR}
+            if grep -q '^CRON_SECRET=' .env 2>/dev/null; then
+              sed -i 's|^CRON_SECRET=.*|CRON_SECRET=${SECRET}|' .env
+              echo 'CRON_SECRET updated in .env'
+            else
+              echo 'CRON_SECRET=${SECRET}' >> .env
+              echo 'CRON_SECRET added to .env'
+            fi
+          "
+
       - name: Run DB Changelog (directory-versioned)
         run: |
           VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
