@@ -120,6 +120,7 @@ jobs:
           sshpass -e scp -P $PORT frontend/postcss.config.js $VPS:${APP_DIR}/frontend/ 2>/dev/null || true
 
           # Nginx config (init = HTTP only, chua co SSL)
+          sshpass -e ssh -p $PORT $VPS "mkdir -p ${WEBPHOTO_DIR}/nginx/conf.d"
           sshpass -e scp -P $PORT nginx/conf.d/bhquan.store.init.conf $VPS:${WEBPHOTO_DIR}/nginx/conf.d/bhquan.store.conf
 
           # DB changelog
