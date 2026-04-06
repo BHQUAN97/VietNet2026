@@ -4,7 +4,7 @@ color 0A
 setlocal enabledelayedexpansion
 
 echo ============================================
-echo   VietNet Interior - Local Development
+echo   VietNet Interior - Local Development.
 echo ============================================
 echo.
 
