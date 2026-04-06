@@ -148,13 +148,42 @@ jobs:
             exit 1
           fi
 
+      - name: '[INIT] Check shared infrastructure (photo-mysql, photo-redis)'
+        if: steps.detect.outputs.mode == 'init'
+        run: |
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
+
+          # VietNet dung chung MySQL + Redis voi WebPhoto
+          # Kiem tra photo-mysql da chay chua
+          MYSQL_RUNNING=$(sshpass -e ssh -p $PORT $VPS "docker ps --filter name=photo-mysql --format '{{.Names}}'" 2>/dev/null || echo "")
+          if [ -z "$MYSQL_RUNNING" ]; then
+            echo "ERROR: photo-mysql chua chay!"
+            echo ""
+            echo "VietNet dung chung MySQL + Redis voi WebPhoto."
+            echo "Ban can deploy WebPhoto TRUOC de co photo-mysql va photo-redis."
+            echo ""
+            echo "Hoac start thu cong:"
+            echo "  cd /opt/webphoto && docker compose -f docker-compose.prod.yml up -d mysql redis"
+            echo ""
+            echo "Sau do re-run workflow nay."
+            exit 1
+          fi
+
+          REDIS_RUNNING=$(sshpass -e ssh -p $PORT $VPS "docker ps --filter name=photo-redis --format '{{.Names}}'" 2>/dev/null || echo "")
+          if [ -z "$REDIS_RUNNING" ]; then
+            echo "WARNING: photo-redis chua chay. Trying to start from WebPhoto..."
+            sshpass -e ssh -p $PORT $VPS "cd /opt/webphoto && docker compose -f docker-compose.prod.yml up -d redis 2>/dev/null" || true
+          fi
+
+          echo "Shared infrastructure: photo-mysql=OK photo-redis=${REDIS_RUNNING:-starting}"
+
       - name: '[INIT] Create VietNet DB user + database'
         if: steps.detect.outputs.mode == 'init'
         run: |
           VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
           PORT="${{ secrets.VPS_PORT }}"
 
-          # Doc password tu .env cua VietNet va WebPhoto
           VIETNET_DB_PWD=$(sshpass -e ssh -p $PORT $VPS "grep '^VIETNET_DB_PASSWORD=' ${APP_DIR}/.env | cut -d= -f2-")
           MYSQL_ROOT_PWD=$(sshpass -e ssh -p $PORT $VPS "grep '^MYSQL_ROOT_PASSWORD=' ${WEBPHOTO_DIR}/.env | cut -d= -f2-")
 
@@ -174,7 +203,6 @@ jobs:
 
           VIETNET_DB_PWD=$(sshpass -e ssh -p $PORT $VPS "grep '^VIETNET_DB_PASSWORD=' ${APP_DIR}/.env | cut -d= -f2-")
 
-          # Chay init.sql neu co
           if [ -f "db/schema/init.sql" ]; then
             echo "Running db/schema/init.sql..."
             sshpass -e ssh -p $PORT $VPS "docker exec -i photo-mysql mysql -u vietnet -p${VIETNET_DB_PWD} vietnet" < db/schema/init.sql 2>&1 | tail -5
@@ -195,11 +223,15 @@ jobs:
             docker compose -f docker-compose.prod.yml build backend frontend 2>&1 | tail -10
             docker compose -f docker-compose.prod.yml up -d
 
-            # Ensure photo-nginx on vietnet network
-            docker inspect photo-nginx --format '{{range \$k,\$v := .NetworkSettings.Networks}}{{\$k}} {{end}}' | grep -q vietnet_frontend || \
+            # Ensure photo-nginx on vietnet network (neu da co)
+            if docker ps --filter name=photo-nginx --format '{{.Names}}' | grep -q photo-nginx; then
               docker network connect vietnet_frontend photo-nginx 2>/dev/null || true
+              docker exec photo-nginx nginx -s reload 2>/dev/null || true
+              echo 'photo-nginx connected to vietnet_frontend'
+            else
+              echo 'photo-nginx not running yet — will connect when WebPhoto deploys'
+            fi
 
-            docker exec photo-nginx nginx -s reload 2>/dev/null || true
             echo 'All services started'
           "
 
@@ -209,17 +241,23 @@ jobs:
           VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
           PORT="${{ secrets.VPS_PORT }}"
 
-          sshpass -e ssh -p $PORT $VPS "
-            cd ${WEBPHOTO_DIR}
-            echo 'Requesting SSL certificate for bhquan.store...'
-            docker compose -f docker-compose.prod.yml run --rm certbot certonly \
-              --webroot -w /var/www/certbot \
-              --email admin@bhquan.store --agree-tos --no-eff-email \
-              -d bhquan.store \
-              2>&1 | tail -10
-
-            echo 'SSL request done'
-          "
+          # Certbot chay qua WebPhoto docker-compose (neu co)
+          HAS_WEBPHOTO=$(sshpass -e ssh -p $PORT $VPS "test -f ${WEBPHOTO_DIR}/docker-compose.prod.yml && echo yes || echo no")
+          if [ "$HAS_WEBPHOTO" = "yes" ]; then
+            sshpass -e ssh -p $PORT $VPS "
+              cd ${WEBPHOTO_DIR}
+              echo 'Requesting SSL certificate for bhquan.store...'
+              docker compose -f docker-compose.prod.yml run --rm certbot certonly \
+                --webroot -w /var/www/certbot \
+                --email admin@bhquan.store --agree-tos --no-eff-email \
+                -d bhquan.store \
+                2>&1 | tail -10
+              echo 'SSL request done'
+            "
+          else
+            echo "WebPhoto not deployed yet — skipping SSL (will use HTTP-only config)"
+            echo "Re-run this workflow after WebPhoto is deployed to get SSL"
+          fi
 
       - name: '[INIT] Switch to full SSL Nginx config'
         if: steps.detect.outputs.mode == 'init'
@@ -227,13 +265,19 @@ jobs:
           VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
           PORT="${{ secrets.VPS_PORT }}"
 
-          sshpass -e scp -P $PORT nginx/conf.d/bhquan.store.conf $VPS:${WEBPHOTO_DIR}/nginx/conf.d/bhquan.store.conf
-          sshpass -e ssh -p $PORT $VPS "
-            docker exec photo-nginx nginx -t 2>&1 && \
-            docker exec photo-nginx nginx -s reload && \
-            echo 'Nginx reloaded with SSL config' || \
-            echo 'WARNING: SSL config test failed — keeping init config'
-          "
+          # Chi switch SSL config neu cert da ton tai
+          HAS_CERT=$(sshpass -e ssh -p $PORT $VPS "docker exec photo-nginx test -f /etc/letsencrypt/live/bhquan.store/fullchain.pem 2>/dev/null && echo yes || echo no" 2>/dev/null || echo "no")
+          if [ "$HAS_CERT" = "yes" ]; then
+            sshpass -e scp -P $PORT nginx/conf.d/bhquan.store.conf $VPS:${WEBPHOTO_DIR}/nginx/conf.d/bhquan.store.conf
+            sshpass -e ssh -p $PORT $VPS "
+              docker exec photo-nginx nginx -t 2>&1 && \
+              docker exec photo-nginx nginx -s reload && \
+              echo 'Nginx reloaded with SSL config' || \
+              echo 'WARNING: SSL config test failed — keeping init config'
+            "
+          else
+            echo "SSL cert not found — keeping HTTP-only config for now"
+          fi
 
       - name: '[INIT] Seed data'
         if: steps.detect.outputs.mode == 'init'
