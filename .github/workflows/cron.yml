@@ -10,16 +10,20 @@ jobs:
     if: github.event.schedule == '0 18 * * *'
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - name: Run traffic sync cron
         run: |
-          curl -f -s -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
-            "${{ secrets.API_URL }}/api/cron/traffic-sync"
+          source config/env
+          curl -f -s -H "x-cron-secret: ${CRON_SECRET}" \
+            "${API_URL}/api/cron/traffic-sync"
 
   cleanup-sessions:
     if: github.event.schedule == '0 19 * * *'
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - name: Run cleanup expired sessions
         run: |
-          curl -f -s -H "x-cron-secret: ${{ secrets.CRON_SECRET }}" \
-            "${{ secrets.API_URL }}/api/cron/cleanup-sessions"
+          source config/env
+          curl -f -s -H "x-cron-secret: ${CRON_SECRET}" \
+            "${API_URL}/api/cron/cleanup-sessions"
