@@ -1,10 +1,7 @@
 -- ============================================================
--- Changelog: V002__create_app_logs.sql
--- Date: 2026-04-02
+-- 1.0.0/002: Create app_logs table
+-- Date:   2026-04-02
 -- Author: Claude
--- Description: Create app_logs table (missing from V001 initial schema)
--- Affected tables: app_logs
--- Idempotent: YES
 -- ============================================================
 
 SET @stmt = 'SELECT 1';
@@ -30,7 +27,7 @@ SET @stmt = IF(@exists = 0,
     KEY `IDX_app_logs_created_at` (`created_at`),
     KEY `IDX_app_logs_level_created_at` (`level`, `created_at`)
   ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci',
-  'SELECT ''app_logs already exists'' AS changelog_status');
+  'SELECT ''[SKIP] app_logs already exists'' AS info');
 
 PREPARE dynamic_stmt FROM @stmt;
 EXECUTE dynamic_stmt;
