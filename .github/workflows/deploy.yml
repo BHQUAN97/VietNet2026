@@ -151,26 +151,17 @@ jobs:
           sshpass -e scp -P $PORT docker-compose.prod.yml $VPS:${APP_DIR}/
           sshpass -e scp -P $PORT .env.example $VPS:${APP_DIR}/
 
-          # Backend: src + dist + Dockerfile + packages
-          sshpass -e scp -P $PORT -r backend/src $VPS:${APP_DIR}/backend/
-          sshpass -e scp -P $PORT -r backend/dist $VPS:${APP_DIR}/backend/
-          sshpass -e scp -P $PORT backend/package.json $VPS:${APP_DIR}/backend/
-          sshpass -e scp -P $PORT backend/package-lock.json $VPS:${APP_DIR}/backend/
-          sshpass -e scp -P $PORT backend/Dockerfile $VPS:${APP_DIR}/backend/
-          sshpass -e scp -P $PORT backend/tsconfig.json $VPS:${APP_DIR}/backend/
-          sshpass -e scp -P $PORT backend/tsconfig.build.json $VPS:${APP_DIR}/backend/ 2>/dev/null || true
-          sshpass -e scp -P $PORT backend/nest-cli.json $VPS:${APP_DIR}/backend/ 2>/dev/null || true
+          # Backend: tar pipe thay scp -r (nhanh hon nhieu voi nhieu file nho)
+          tar czf - backend/src backend/dist backend/package.json backend/package-lock.json \
+            backend/Dockerfile backend/tsconfig.json \
+            backend/tsconfig.build.json backend/nest-cli.json 2>/dev/null | \
+            sshpass -e ssh -p $PORT $VPS "tar xzf - -C ${APP_DIR}/"
 
-          # Frontend: src + Dockerfile + packages + config
-          sshpass -e scp -P $PORT -r frontend/src $VPS:${APP_DIR}/frontend/
-          sshpass -e scp -P $PORT -r frontend/public $VPS:${APP_DIR}/frontend/ 2>/dev/null || true
-          sshpass -e scp -P $PORT frontend/package.json $VPS:${APP_DIR}/frontend/
-          sshpass -e scp -P $PORT frontend/package-lock.json $VPS:${APP_DIR}/frontend/
-          sshpass -e scp -P $PORT frontend/Dockerfile $VPS:${APP_DIR}/frontend/
-          sshpass -e scp -P $PORT frontend/next.config.js $VPS:${APP_DIR}/frontend/
-          sshpass -e scp -P $PORT frontend/tailwind.config.ts $VPS:${APP_DIR}/frontend/
-          sshpass -e scp -P $PORT frontend/tsconfig.json $VPS:${APP_DIR}/frontend/
-          sshpass -e scp -P $PORT frontend/postcss.config.js $VPS:${APP_DIR}/frontend/ 2>/dev/null || true
+          # Frontend: tar pipe (113+ files trong src/, scp -r rat cham)
+          tar czf - frontend/src frontend/public frontend/package.json frontend/package-lock.json \
+            frontend/Dockerfile frontend/next.config.js frontend/tailwind.config.ts \
+            frontend/tsconfig.json frontend/postcss.config.js 2>/dev/null | \
+            sshpass -e ssh -p $PORT $VPS "tar xzf - -C ${APP_DIR}/"
 
           # Nginx config (init = HTTP only, chua co SSL)
           sshpass -e ssh -p $PORT $VPS "mkdir -p ${WEBPHOTO_DIR}/nginx/conf.d"
@@ -359,17 +350,14 @@ jobs:
           VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
           PORT="${{ env.VPS_PORT }}"
 
-          # Clean old frontend builds
+          # Clean old frontend src
           sshpass -e ssh -p $PORT $VPS "rm -rf ${APP_DIR}/frontend/src"
 
-          # Frontend
-          sshpass -e scp -P $PORT -r frontend/src $VPS:${APP_DIR}/frontend/
-          sshpass -e scp -P $PORT frontend/package.json $VPS:${APP_DIR}/frontend/
-          sshpass -e scp -P $PORT frontend/package-lock.json $VPS:${APP_DIR}/frontend/
-          sshpass -e scp -P $PORT frontend/next.config.js $VPS:${APP_DIR}/frontend/
-          sshpass -e scp -P $PORT frontend/tailwind.config.ts $VPS:${APP_DIR}/frontend/
-          sshpass -e scp -P $PORT frontend/Dockerfile $VPS:${APP_DIR}/frontend/
-          sshpass -e scp -P $PORT -r frontend/public $VPS:${APP_DIR}/frontend/ 2>/dev/null || true
+          # Frontend: tar pipe (1 stream thay 113+ scp calls)
+          tar czf - frontend/src frontend/public frontend/package.json frontend/package-lock.json \
+            frontend/Dockerfile frontend/next.config.js frontend/tailwind.config.ts \
+            frontend/tsconfig.json frontend/postcss.config.js 2>/dev/null | \
+            sshpass -e ssh -p $PORT $VPS "tar xzf - -C ${APP_DIR}/"
 
           echo "[OK] Frontend uploaded"
 
@@ -382,12 +370,10 @@ jobs:
           # Clean old backend builds
           sshpass -e ssh -p $PORT $VPS "rm -rf ${APP_DIR}/backend/src ${APP_DIR}/backend/dist"
 
-          # Backend
-          sshpass -e scp -P $PORT -r backend/src $VPS:${APP_DIR}/backend/
-          sshpass -e scp -P $PORT -r backend/dist $VPS:${APP_DIR}/backend/
-          sshpass -e scp -P $PORT backend/package.json $VPS:${APP_DIR}/backend/
-          sshpass -e scp -P $PORT backend/package-lock.json $VPS:${APP_DIR}/backend/
-          sshpass -e scp -P $PORT backend/Dockerfile $VPS:${APP_DIR}/backend/
+          # Backend: tar pipe (1 stream thay nhieu scp calls)
+          tar czf - backend/src backend/dist backend/package.json backend/package-lock.json \
+            backend/Dockerfile 2>/dev/null | \
+            sshpass -e ssh -p $PORT $VPS "tar xzf - -C ${APP_DIR}/"
 
           echo "[OK] Backend uploaded"
 
