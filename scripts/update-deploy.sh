@@ -76,7 +76,28 @@ fi
 # 4. Update Nginx config (nếu thay đổi)
 step "4/6 — Update Nginx config"
 scp "$ROOT_DIR/nginx/conf.d/bhquan.store.conf" "${VPS_HOST}:${WEBPHOTO_DIR}/nginx/conf.d/bhquan.store.conf"
-ssh "${VPS_HOST}" "docker exec shared-nginx nginx -t 2>&1 | tail -1 && docker exec shared-nginx nginx -s reload 2>&1"
+
+# Ensure placeholder certs exist before reloading nginx
+ssh "${VPS_HOST}" "
+  if [ -f ${WEBPHOTO_DIR}/docker-compose.prod.yml ]; then
+    cd ${WEBPHOTO_DIR}
+    for DOMAIN in bhquan.store bhquan.site; do
+      CERT_EXISTS=\$(docker compose -f docker-compose.prod.yml run --rm --entrypoint '' certbot \
+        test -f /etc/letsencrypt/live/\${DOMAIN}/fullchain.pem 2>/dev/null && echo yes || echo no)
+      if [ \"\$CERT_EXISTS\" = 'no' ]; then
+        echo \"  Placeholder cert for \${DOMAIN}...\"
+        docker compose -f docker-compose.prod.yml run --rm --entrypoint '' certbot sh -c \"
+          mkdir -p /etc/letsencrypt/live/\${DOMAIN}
+          openssl req -x509 -nodes -days 1 -newkey rsa:2048 \
+            -keyout /etc/letsencrypt/live/\${DOMAIN}/privkey.pem \
+            -out /etc/letsencrypt/live/\${DOMAIN}/fullchain.pem \
+            -subj '/CN=\${DOMAIN}' 2>/dev/null
+        \"
+      fi
+    done
+  fi
+  docker exec shared-nginx nginx -t 2>&1 | tail -1 && docker exec shared-nginx nginx -s reload 2>&1
+"
 log "Nginx config updated"
 
 # 5. Rebuild + Restart
