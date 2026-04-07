@@ -344,33 +344,47 @@ jobs:
             exit 0
           fi
 
-          # Helper: xoa placeholder cert truoc khi certbot certonly
-          CLEAN_AND_CERTONLY='
-            clean_placeholder() {
+          CERTBOT_HELPER='
+            get_real_cert() {
               local D=$1; shift
+              local DC="docker compose -f docker-compose.prod.yml"
               cd /opt/webphoto
-              docker compose -f docker-compose.prod.yml run --rm --entrypoint "" certbot sh -c "
-                rm -rf /etc/letsencrypt/live/$D /etc/letsencrypt/archive/$D /etc/letsencrypt/renewal/$D.conf
+              echo "  Cleaning old certs for $D..."
+              $DC run --rm --entrypoint "" certbot sh -c "
+                rm -rf /etc/letsencrypt/live/${D}* /etc/letsencrypt/archive/${D}* /etc/letsencrypt/renewal/${D}*.conf
               "
-              timeout 120 docker compose -f docker-compose.prod.yml run --rm --entrypoint "" certbot \
+              echo "  Requesting cert for $D..."
+              timeout 120 $DC run --rm --entrypoint "" certbot \
                 certbot certonly --webroot -w /var/www/certbot \
+                --non-interactive --cert-name $D \
                 --email admin@bhquan.site --agree-tos --no-eff-email \
                 "$@"
+              if [ $? -ne 0 ]; then
+                echo "  FAILED — regenerating placeholder..."
+                $DC run --rm --entrypoint "" certbot sh -c "
+                  mkdir -p /etc/letsencrypt/live/$D
+                  openssl req -x509 -nodes -days 1 -newkey rsa:2048 \
+                    -keyout /etc/letsencrypt/live/$D/privkey.pem \
+                    -out /etc/letsencrypt/live/$D/fullchain.pem \
+                    -subj /CN=$D 2>/dev/null
+                "
+                return 1
+              fi
             }
           '
 
           # bhquan.store (timeout 120s)
           echo "--- Certbot: bhquan.store ---"
           sshpass -e ssh -p $PORT $VPS "
-            ${CLEAN_AND_CERTONLY}
-            clean_placeholder bhquan.store -d bhquan.store -d www.bhquan.store
+            ${CERTBOT_HELPER}
+            get_real_cert bhquan.store -d bhquan.store -d www.bhquan.store
           " && echo "[OK] bhquan.store cert" || echo "WARNING: bhquan.store cert failed"
 
           # bhquan.site
           echo "--- Certbot: bhquan.site ---"
           sshpass -e ssh -p $PORT $VPS "
-            ${CLEAN_AND_CERTONLY}
-            clean_placeholder bhquan.site -d bhquan.site -d api.bhquan.site -d ws.bhquan.site
+            ${CERTBOT_HELPER}
+            get_real_cert bhquan.site -d bhquan.site -d api.bhquan.site -d ws.bhquan.site
           " && echo "[OK] bhquan.site cert" || echo "WARNING: bhquan.site cert failed"
 
           # Reload nginx
@@ -942,31 +956,45 @@ jobs:
           else
             echo "Requesting real SSL certs via Certbot (timeout 120s)..."
 
-            # Helper: xoa placeholder cert truoc khi certbot certonly
-            CLEAN_AND_CERTONLY='
-              clean_placeholder() {
+            CERTBOT_HELPER='
+              get_real_cert() {
                 local D=$1; shift
+                local DC="docker compose -f docker-compose.prod.yml"
                 cd /opt/webphoto
-                docker compose -f docker-compose.prod.yml run --rm --entrypoint "" certbot sh -c "
-                  rm -rf /etc/letsencrypt/live/$D /etc/letsencrypt/archive/$D /etc/letsencrypt/renewal/$D.conf
+                echo "  Cleaning old certs for $D..."
+                $DC run --rm --entrypoint "" certbot sh -c "
+                  rm -rf /etc/letsencrypt/live/${D}* /etc/letsencrypt/archive/${D}* /etc/letsencrypt/renewal/${D}*.conf
                 "
-                timeout 120 docker compose -f docker-compose.prod.yml run --rm --entrypoint "" certbot \
+                echo "  Requesting cert for $D..."
+                timeout 120 $DC run --rm --entrypoint "" certbot \
                   certbot certonly --webroot -w /var/www/certbot \
+                  --non-interactive --cert-name $D \
                   --email admin@bhquan.site --agree-tos --no-eff-email \
                   "$@"
+                if [ $? -ne 0 ]; then
+                  echo "  FAILED — regenerating placeholder..."
+                  $DC run --rm --entrypoint "" certbot sh -c "
+                    mkdir -p /etc/letsencrypt/live/$D
+                    openssl req -x509 -nodes -days 1 -newkey rsa:2048 \
+                      -keyout /etc/letsencrypt/live/$D/privkey.pem \
+                      -out /etc/letsencrypt/live/$D/fullchain.pem \
+                      -subj /CN=$D 2>/dev/null
+                  "
+                  return 1
+                fi
               }
             '
 
             # bhquan.store
             sshpass -e ssh -p $PORT $SSH_OPTS $VPS "
-              ${CLEAN_AND_CERTONLY}
-              clean_placeholder bhquan.store -d bhquan.store -d www.bhquan.store
+              ${CERTBOT_HELPER}
+              get_real_cert bhquan.store -d bhquan.store -d www.bhquan.store
             " 2>&1 && echo "[OK] bhquan.store cert" || echo "WARNING: bhquan.store cert failed"
 
             # bhquan.site
             sshpass -e ssh -p $PORT $SSH_OPTS $VPS "
-              ${CLEAN_AND_CERTONLY}
-              clean_placeholder bhquan.site -d bhquan.site -d api.bhquan.site -d ws.bhquan.site
+              ${CERTBOT_HELPER}
+              get_real_cert bhquan.site -d bhquan.site -d api.bhquan.site -d ws.bhquan.site
             " 2>&1 && echo "[OK] bhquan.site cert" || echo "WARNING: bhquan.site cert failed"
           fi
 
