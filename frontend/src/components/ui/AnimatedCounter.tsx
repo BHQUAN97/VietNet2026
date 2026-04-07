@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 
 interface AnimatedCounterProps {
   target: number
@@ -16,23 +16,33 @@ export function AnimatedCounter({
   className,
 }: AnimatedCounterProps) {
   const [count, setCount] = useState(0)
-  const [hasAnimated, setHasAnimated] = useState(false)
   const ref = useRef<HTMLSpanElement>(null)
-  const rafIdRef = useRef<number>(0)
+
+  // Dung useCallback de dam bao callback khong thay doi
+  const targetRef = useRef(target)
+  const durationRef = useRef(duration)
+  targetRef.current = target
+  durationRef.current = duration
 
   useEffect(() => {
     const element = ref.current
     if (!element) return
 
+    let rafId = 0
+    let animated = false
+
     const observer = new IntersectionObserver(
       (entries) => {
-        const entry = entries[0]
-        if (entry.isIntersecting && !hasAnimated) {
-          setHasAnimated(true)
+        if (entries[0].isIntersecting && !animated) {
+          animated = true
+          observer.disconnect()
+
+          const t = targetRef.current
+          const d = durationRef.current
 
           // Skip animation khi user bat reduced motion
           if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-            setCount(target)
+            setCount(t)
             return
           }
 
@@ -40,20 +50,16 @@ export function AnimatedCounter({
 
           function animate(currentTime: number) {
             const elapsed = currentTime - startTime
-            const progress = Math.min(elapsed / duration, 1)
-
-            // Ease-out cubic for a satisfying deceleration
+            const progress = Math.min(elapsed / d, 1)
             const eased = 1 - Math.pow(1 - progress, 3)
-            const current = Math.round(eased * target)
-
-            setCount(current)
+            setCount(Math.round(eased * t))
 
             if (progress < 1) {
-              rafIdRef.current = requestAnimationFrame(animate)
+              rafId = requestAnimationFrame(animate)
             }
           }
 
-          rafIdRef.current = requestAnimationFrame(animate)
+          rafId = requestAnimationFrame(animate)
         }
       },
       { threshold: 0.3 }
@@ -62,9 +68,9 @@ export function AnimatedCounter({
     observer.observe(element)
     return () => {
       observer.disconnect()
-      cancelAnimationFrame(rafIdRef.current)
+      cancelAnimationFrame(rafId)
     }
-  }, [target, duration, hasAnimated])
+  }, []) // Empty deps — run once on mount
 
   return (
     <span ref={ref} className={className}>

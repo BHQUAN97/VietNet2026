@@ -1,16 +1,6 @@
 import Image from 'next/image'
 import { ScrollReveal } from '@/components/ui/ScrollReveal'
-import { AnimatedCounter } from '@/components/ui/AnimatedCounter'
 import type { AboutConfig } from '@/types'
-
-/* Tach so va suffix tu string nhu "150+", "12", "100%" */
-function parseStatValue(value: string): { target: number; suffix: string } {
-  const match = value.match(/^(\d+)(.*)$/)
-  if (match) {
-    return { target: parseInt(match[1], 10), suffix: match[2] || '' }
-  }
-  return { target: 0, suffix: value }
-}
 
 interface Props {
   config: AboutConfig
@@ -43,7 +33,7 @@ export function AboutSection({ config }: Props) {
               {config.stats.map((stat, i) => (
                 <div key={i}>
                   <p className="text-headline-lg md:text-display-md font-headline font-bold text-primary">
-                    <AnimatedCounter {...parseStatValue(stat.value)} />
+                    {stat.value}
                   </p>
                   <p className="font-label text-label-sm tracking-widest text-on-surface-variant uppercase">
                     {stat.label}
