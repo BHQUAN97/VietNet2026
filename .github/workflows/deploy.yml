@@ -22,9 +22,9 @@ env:
   WEBPHOTO_DIR: /opt/webphoto
 
 jobs:
-  # CI phai pass truoc khi deploy
-  typecheck:
-    name: Type Check
+  # CI phai pass truoc khi deploy — chay song song FE + BE
+  typecheck-fe:
+    name: Typecheck Frontend
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -34,12 +34,23 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
       - run: cd frontend && npm ci && npx tsc --noEmit
+
+  typecheck-be:
+    name: Typecheck Backend
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
       - run: cd backend && npm ci && npx tsc --noEmit
 
   deploy:
     name: Deploy to VPS
     runs-on: ubuntu-latest
-    needs: typecheck
+    needs: [typecheck-fe, typecheck-be]
     steps:
       - uses: actions/checkout@v4
 
@@ -56,18 +67,6 @@ jobs:
           node-version: 20
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-
-      - name: Build Backend
-        run: |
-          cd backend
-          npm ci
-          npm run build
-
-      - name: Build Frontend
-        run: |
-          cd frontend
-          npm ci
-          npm run build
 
       - name: Setup SSH with sshpass
         run: |
@@ -88,6 +87,53 @@ jobs:
             echo "mode=init" >> $GITHUB_OUTPUT
             echo "Deploy mode: INIT (first-time)"
           fi
+
+      - name: Detect changes
+        id: changes
+        run: |
+          # So sanh voi commit truoc
+          DIFF=$(git diff --name-only HEAD~1 2>/dev/null || echo "FULL")
+          echo "Changed files:"
+          echo "$DIFF" | head -20
+
+          # Detect categories
+          fe_changed=false; be_changed=false; infra_changed=false; db_changed=false; config_changed=false
+
+          if [ "$DIFF" = "FULL" ]; then
+            fe_changed=true; be_changed=true; infra_changed=true; db_changed=true; config_changed=true
+          else
+            echo "$DIFF" | grep -qE '^frontend/' && fe_changed=true
+            echo "$DIFF" | grep -qE '^backend/' && be_changed=true
+            echo "$DIFF" | grep -qE '^(docker-compose|infra/|nginx/|.*/Dockerfile)' && infra_changed=true
+            echo "$DIFF" | grep -qE '^(db/|backend/src/.*entity)' && db_changed=true
+            echo "$DIFF" | grep -qE '^config/' && config_changed=true
+          fi
+
+          # INIT mode = build everything
+          if [ "${{ steps.detect.outputs.mode }}" = "init" ]; then
+            fe_changed=true; be_changed=true; infra_changed=true; db_changed=true; config_changed=true
+          fi
+
+          echo "fe=$fe_changed" >> $GITHUB_OUTPUT
+          echo "be=$be_changed" >> $GITHUB_OUTPUT
+          echo "infra=$infra_changed" >> $GITHUB_OUTPUT
+          echo "db=$db_changed" >> $GITHUB_OUTPUT
+          echo "config=$config_changed" >> $GITHUB_OUTPUT
+          echo "Changes: fe=$fe_changed be=$be_changed infra=$infra_changed db=$db_changed config=$config_changed"
+
+      - name: Build Backend
+        if: steps.changes.outputs.be == 'true'
+        run: |
+          cd backend
+          npm ci
+          npm run build
+
+      - name: Build Frontend
+        if: steps.changes.outputs.fe == 'true'
+        run: |
+          cd frontend
+          npm ci
+          npm run build
 
       # ══════════════════════════════════════════
       # FIRST-TIME DEPLOYMENT
@@ -293,21 +339,14 @@ jobs:
       # ══════════════════════════════════════════
       # UPDATE DEPLOYMENT (existing VPS)
       # ══════════════════════════════════════════
-      - name: '[UPDATE] Upload to VPS'
-        if: steps.detect.outputs.mode == 'update'
+      - name: '[UPDATE] Upload frontend'
+        if: steps.detect.outputs.mode == 'update' && steps.changes.outputs.fe == 'true'
         run: |
           VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
           PORT="${{ env.VPS_PORT }}"
 
-          # Clean old builds
-          sshpass -e ssh -p $PORT $VPS "rm -rf ${APP_DIR}/backend/src ${APP_DIR}/backend/dist ${APP_DIR}/frontend/src"
-
-          # Backend
-          sshpass -e scp -P $PORT -r backend/src $VPS:${APP_DIR}/backend/
-          sshpass -e scp -P $PORT -r backend/dist $VPS:${APP_DIR}/backend/
-          sshpass -e scp -P $PORT backend/package.json $VPS:${APP_DIR}/backend/
-          sshpass -e scp -P $PORT backend/package-lock.json $VPS:${APP_DIR}/backend/
-          sshpass -e scp -P $PORT backend/Dockerfile $VPS:${APP_DIR}/backend/
+          # Clean old frontend builds
+          sshpass -e ssh -p $PORT $VPS "rm -rf ${APP_DIR}/frontend/src"
 
           # Frontend
           sshpass -e scp -P $PORT -r frontend/src $VPS:${APP_DIR}/frontend/
@@ -318,6 +357,32 @@ jobs:
           sshpass -e scp -P $PORT frontend/Dockerfile $VPS:${APP_DIR}/frontend/
           sshpass -e scp -P $PORT -r frontend/public $VPS:${APP_DIR}/frontend/ 2>/dev/null || true
 
+          echo "[OK] Frontend uploaded"
+
+      - name: '[UPDATE] Upload backend'
+        if: steps.detect.outputs.mode == 'update' && steps.changes.outputs.be == 'true'
+        run: |
+          VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
+          PORT="${{ env.VPS_PORT }}"
+
+          # Clean old backend builds
+          sshpass -e ssh -p $PORT $VPS "rm -rf ${APP_DIR}/backend/src ${APP_DIR}/backend/dist"
+
+          # Backend
+          sshpass -e scp -P $PORT -r backend/src $VPS:${APP_DIR}/backend/
+          sshpass -e scp -P $PORT -r backend/dist $VPS:${APP_DIR}/backend/
+          sshpass -e scp -P $PORT backend/package.json $VPS:${APP_DIR}/backend/
+          sshpass -e scp -P $PORT backend/package-lock.json $VPS:${APP_DIR}/backend/
+          sshpass -e scp -P $PORT backend/Dockerfile $VPS:${APP_DIR}/backend/
+
+          echo "[OK] Backend uploaded"
+
+      - name: '[UPDATE] Sync deploy config'
+        if: steps.detect.outputs.mode == 'update'
+        run: |
+          VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
+          PORT="${{ env.VPS_PORT }}"
+
           # Sync docker-compose
           sshpass -e scp -P $PORT docker-compose.prod.yml $VPS:${APP_DIR}/
 
@@ -326,7 +391,7 @@ jobs:
           sshpass -e scp -P $PORT -r db/changelog $VPS:${APP_DIR}/db/ 2>/dev/null || true
           sshpass -e scp -P $PORT -r db/schema $VPS:${APP_DIR}/db/ 2>/dev/null || true
 
-          echo "[OK] Files uploaded"
+          echo "[OK] Deploy config synced"
 
       - name: '[UPDATE] Sync Nginx config'
         if: steps.detect.outputs.mode == 'update'
@@ -361,37 +426,42 @@ jobs:
           "
           echo "[OK] Infra synced"
 
-      - name: '[UPDATE] Rebuild & Restart containers'
+      - name: '[UPDATE] Rebuild backend'
+        if: steps.detect.outputs.mode == 'update' && (steps.changes.outputs.be == 'true' || steps.changes.outputs.infra == 'true')
+        run: |
+          VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
+          PORT="${{ env.VPS_PORT }}"
+          echo "--- Rebuilding backend ---"
+          sshpass -e ssh -p $PORT $VPS "
+            cd ${APP_DIR}
+            docker compose -f docker-compose.prod.yml build backend 2>&1
+            docker compose -f docker-compose.prod.yml up -d backend 2>&1
+          "
+          echo "[OK] Backend rebuilt"
+
+      - name: '[UPDATE] Rebuild frontend'
+        if: steps.detect.outputs.mode == 'update' && (steps.changes.outputs.fe == 'true' || steps.changes.outputs.infra == 'true')
+        run: |
+          VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
+          PORT="${{ env.VPS_PORT }}"
+          echo "--- Rebuilding frontend ---"
+          sshpass -e ssh -p $PORT $VPS "
+            cd ${APP_DIR}
+            docker compose -f docker-compose.prod.yml build frontend 2>&1
+            docker compose -f docker-compose.prod.yml up -d frontend 2>&1
+          "
+          echo "[OK] Frontend rebuilt"
+
+      - name: '[UPDATE] Ensure nginx connected'
         if: steps.detect.outputs.mode == 'update'
         run: |
           VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
           PORT="${{ env.VPS_PORT }}"
-
-          echo "--- Building backend + frontend ---"
           sshpass -e ssh -p $PORT $VPS "
-            cd ${APP_DIR}
-            docker compose -f docker-compose.prod.yml build backend frontend 2>&1
-          "
-          BUILD_EXIT=$?
-          if [ $BUILD_EXIT -ne 0 ]; then
-            echo "ERROR: Docker build failed (exit=$BUILD_EXIT)"
-            exit 1
-          fi
-          echo "[OK] Images rebuilt"
-
-          echo "--- Restarting backend + frontend ---"
-          sshpass -e ssh -p $PORT $VPS "
-            cd ${APP_DIR}
-            docker compose -f docker-compose.prod.yml up -d backend frontend 2>&1
-
-            # Ensure shared-nginx on vietnet network
             docker network connect vietnet_frontend shared-nginx 2>/dev/null || true
             docker exec shared-nginx nginx -s reload 2>/dev/null || true
           "
-
-          echo "--- Container status ---"
           sshpass -e ssh -p $PORT $VPS "docker ps --format 'table {{.Names}}\t{{.Status}}' | head -10"
-          echo "[OK] Containers restarted"
 
       # ══════════════════════════════════════════
       # SHARED STEPS (both init and update)
@@ -449,6 +519,7 @@ jobs:
           echo "[OK] DB vietnet + user verified"
 
       - name: Ensure DB schema (init.sql)
+        if: steps.changes.outputs.db == 'true'
         run: |
           set +e
           VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
@@ -522,6 +593,7 @@ jobs:
           echo "[OK] Seed complete"
 
       - name: Run DB Changelog
+        if: steps.changes.outputs.db == 'true'
         run: |
           set +e
           VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
