@@ -7,6 +7,8 @@ on:
       - '*.md'
       - 'docs/**'
       - '.github/workflows/cron.yml'
+      - '.github/workflows/backup.yml'
+      - '.github/workflows/restore.yml'
       - '.github/workflows/vps-setup.yml'
 
 # Cancel in-progress deploy khi co push moi
@@ -158,8 +160,9 @@ jobs:
           MYSQL_ROOT_PWD=$(grep '^MYSQL_ROOT_PASSWORD=' config/env | cut -d= -f2-)
           sshpass -e ssh -p $PORT $VPS "echo 'MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PWD}' > ${INFRA_DIR}/.env"
 
-          # Start infra + wait for MySQL
+          # Ensure shared networks exist, then start infra
           sshpass -e ssh -p $PORT $VPS "
+            docker network create webphoto_backend 2>/dev/null || true
             cd ${INFRA_DIR}
             docker compose up -d
 
@@ -341,7 +344,7 @@ jobs:
           sshpass -e scp -P $PORT infra/docker-compose.yml $VPS:${INFRA_DIR}/docker-compose.yml
           MYSQL_ROOT_PWD=$(grep '^MYSQL_ROOT_PASSWORD=' config/env | cut -d= -f2-)
           sshpass -e ssh -p $PORT $VPS "echo 'MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PWD}' > ${INFRA_DIR}/.env"
-          sshpass -e ssh -p $PORT $VPS "cd ${INFRA_DIR} && docker compose up -d"
+          sshpass -e ssh -p $PORT $VPS "docker network create webphoto_backend 2>/dev/null || true && cd ${INFRA_DIR} && docker compose up -d"
 
       - name: '[UPDATE] Rebuild & Restart containers'
         if: steps.detect.outputs.mode == 'update'

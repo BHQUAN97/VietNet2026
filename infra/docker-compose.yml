@@ -53,5 +53,4 @@ volumes:
 networks:
   webphoto_backend:
     name: webphoto_backend
-  vietnet_frontend:
-    name: vietnet_frontend
+    external: true
