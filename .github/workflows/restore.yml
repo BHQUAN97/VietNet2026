@@ -51,11 +51,14 @@ jobs:
       # ── Tim backup date tu WebPhoto repo (backups branch) ──
       - name: Resolve backup date
         id: resolve
+        env:
+          GITHUB_TOKEN: ${{ secrets.CROSS_REPO_TOKEN }}
         run: |
-          # Clone backups branch tu WebPhoto repo (backup chung)
+          # Clone backups branch tu WebPhoto repo (backup chung, private repo)
           git clone --depth 1 --single-branch --branch backups \
-            https://github.com/${BACKUP_REPO}.git /tmp/backups-repo 2>/dev/null || {
-            echo "Branch 'backups' not found in ${BACKUP_REPO}"
+            "https://x-access-token:${GITHUB_TOKEN}@github.com/${BACKUP_REPO}.git" /tmp/backups-repo || {
+            echo "Cannot access backups branch in ${BACKUP_REPO}"
+            echo "Check if branch exists and CROSS_REPO_TOKEN has repo access"
             exit 1
           }
 
@@ -87,6 +90,27 @@ jobs:
           # Copy backup files
           mkdir -p /tmp/restore
           cp -r vietnet/${DATE} /tmp/restore/vietnet
+
+      # ── Decrypt backup files (neu co encrypt) ──
+      - name: Decrypt backups
+        run: |
+          ENCRYPT_KEY=$(grep '^BACKUP_ENCRYPT_KEY=' config/env | cut -d= -f2-)
+          GPG_COUNT=$(find /tmp/restore -name '*.gpg' -type f 2>/dev/null | wc -l)
+          if [ "$GPG_COUNT" -eq 0 ]; then
+            echo "No encrypted files — skip"
+            exit 0
+          fi
+          if [ -z "$ENCRYPT_KEY" ]; then
+            echo "ERROR: Found .gpg files but BACKUP_ENCRYPT_KEY not set!"
+            exit 1
+          fi
+          for f in $(find /tmp/restore -name '*.gpg' -type f); do
+            OUTPUT="${f%.gpg}"
+            gpg --batch --yes --passphrase "${ENCRYPT_KEY}" \
+              --decrypt --output "$OUTPUT" "$f"
+            rm -f "$f"
+            echo "Decrypted: $(basename "$OUTPUT")"
+          done
 
       # ── Upload backup len VPS ──
       - name: Upload backup to VPS
@@ -126,16 +150,35 @@ jobs:
               FLUSH PRIVILEGES;
           EOSQL
 
+            # Safety backup truoc khi DROP
+            PRE_RESTORE=/tmp/pre-restore-vietnet-\$(date +%Y%m%d_%H%M%S).sql.gz
+            echo \"Creating safety backup → \${PRE_RESTORE}\"
+            docker exec photo-mysql mysqldump -u root -p\${MYSQL_ROOT_PWD} \
+              --single-transaction --quick vietnet 2>/dev/null | gzip > \${PRE_RESTORE}
+            echo \"Safety backup: \$(du -h \${PRE_RESTORE} | cut -f1)\"
+
             # Drop + recreate de restore sach
             docker exec -i photo-mysql mysql -u root -p\${MYSQL_ROOT_PWD} -e 'DROP DATABASE vietnet; CREATE DATABASE vietnet CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;'
 
-            # Import dump
-            gunzip -c \$DUMP | docker exec -i photo-mysql mysql -u root -p\${MYSQL_ROOT_PWD} vietnet
-            echo 'Database restored!'
+            # Import dump — rollback neu fail
+            if gunzip -c \$DUMP | docker exec -i photo-mysql mysql -u root -p\${MYSQL_ROOT_PWD} vietnet; then
+              echo 'Database restored!'
+              rm -f \${PRE_RESTORE}
+            else
+              echo 'RESTORE FAILED — rolling back from safety backup...'
+              docker exec -i photo-mysql mysql -u root -p\${MYSQL_ROOT_PWD} -e 'DROP DATABASE IF EXISTS vietnet; CREATE DATABASE vietnet CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;'
+              gunzip -c \${PRE_RESTORE} | docker exec -i photo-mysql mysql -u root -p\${MYSQL_ROOT_PWD} vietnet
+              echo 'Rollback complete. Original data preserved.'
+              exit 1
+            fi
 
             # Verify
             TABLES=\$(docker exec photo-mysql mysql -u root -p\${MYSQL_ROOT_PWD} -N -e 'SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=\"vietnet\"' 2>/dev/null)
             echo \"Tables: \${TABLES}\"
+            if [ \"\${TABLES}\" -lt 1 ]; then
+              echo 'WARNING: No tables found after restore!'
+              exit 1
+            fi
           "
 
       # ── Restore uploads ──
