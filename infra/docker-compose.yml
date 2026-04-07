@@ -1,0 +1,57 @@
+# ============================================
+# SHARED INFRASTRUCTURE — MySQL + Redis
+# Dung chung cho WebPhoto (bhquan.site) va VietNet (bhquan.store)
+# Deploy tai /opt/infra/ tren VPS
+# App nao deploy truoc se start infra nay
+# ============================================
+
+services:
+
+  mysql:
+    image: mysql:8.0
+    container_name: photo-mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command: >
+      --default-authentication-plugin=mysql_native_password
+      --innodb-buffer-pool-size=256M
+      --max-connections=100
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - webphoto_backend
+
+  redis:
+    image: redis:7-alpine
+    container_name: photo-redis
+    restart: always
+    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - webphoto_backend
+
+volumes:
+  mysql_data:
+    name: shared_mysql_data
+  redis_data:
+    name: shared_redis_data
+
+networks:
+  webphoto_backend:
+    name: webphoto_backend
+  vietnet_frontend:
+    name: vietnet_frontend

@@ -20,9 +20,10 @@ API_URL=https://bhquan.store
 # -- Domain --
 DOMAIN=bhquan.store
 
-# -- MySQL (shared: photo-mysql container cua WebPhoto) --
+# -- MySQL (shared: photo-mysql container — /opt/infra/) --
+# Root password (chung voi WebPhoto, dung de tao DB + user)
+MYSQL_ROOT_PASSWORD=8bb34f47771a83d9ab543bc0f47d5e1a
 # Password cho user vietnet (app connect den DB vietnet)
-# KHONG co MYSQL_ROOT — dung root tu WebPhoto .env
 VIETNET_DB_PASSWORD=17f4913345ce13e477de63465ac23c23
 
 # -- JWT --
