@@ -860,3 +860,78 @@ jobs:
 
           echo ""
           echo "Deploy successful! (mode=${{ steps.detect.outputs.mode }}, fe=${{ steps.changes.outputs.fe }}, be=${{ steps.changes.outputs.be }}, infra=${{ steps.changes.outputs.infra }})"
+
+      - name: Ensure SSL Certificates
+        run: |
+          VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
+          PORT="${{ env.VPS_PORT }}"
+          SSH_OPTS="-o ConnectTimeout=10 -o ServerAliveInterval=5 -o ServerAliveCountMax=3"
+
+          # Check cert trong certbot volume (volume thuoc WebPhoto)
+          CERT_EXISTS=$(sshpass -e ssh -p $PORT $SSH_OPTS $VPS "
+            docker run --rm -v webphoto_certbot_data:/certs alpine \
+              test -f /certs/live/bhquan.store/fullchain.pem 2>/dev/null && echo yes || echo no
+          " 2>&1)
+
+          if [ "$CERT_EXISTS" = "yes" ]; then
+            echo "SSL cert for bhquan.store already exists"
+          else
+            echo "SSL cert not found — requesting via Certbot..."
+
+            # Certbot cho bhquan.store — dung certbot container cua WebPhoto
+            sshpass -e ssh -p $PORT $SSH_OPTS $VPS "
+              cd ${WEBPHOTO_DIR}
+              docker compose -f docker-compose.prod.yml run --rm certbot certonly \
+                --webroot -w /var/www/certbot \
+                --email admin@bhquan.site --agree-tos --no-eff-email \
+                -d bhquan.store -d www.bhquan.store \
+                2>&1 | tail -10
+            " 2>&1
+            CERTBOT_EXIT=$?
+
+            if [ $CERTBOT_EXIT -ne 0 ]; then
+              echo "WARNING: Certbot failed for bhquan.store (exit=$CERTBOT_EXIT)"
+              echo "App is running on HTTP — SSL will be retried next deploy"
+              exit 0
+            fi
+            echo "[OK] SSL cert obtained for bhquan.store"
+
+            # Cung xin cert cho bhquan.site neu chua co
+            sshpass -e ssh -p $PORT $SSH_OPTS $VPS "
+              SITE_CERT=\$(docker run --rm -v webphoto_certbot_data:/certs alpine \
+                test -f /certs/live/bhquan.site/fullchain.pem 2>/dev/null && echo yes || echo no)
+              if [ \"\$SITE_CERT\" = 'no' ]; then
+                cd ${WEBPHOTO_DIR}
+                docker compose -f docker-compose.prod.yml run --rm certbot certonly \
+                  --webroot -w /var/www/certbot \
+                  --email admin@bhquan.site --agree-tos --no-eff-email \
+                  -d bhquan.site -d api.bhquan.site -d ws.bhquan.site \
+                  2>&1 | tail -10
+                echo '[OK] SSL cert obtained for bhquan.site'
+              fi
+            " 2>&1 || true
+          fi
+
+          # Restore full SSL nginx configs (neu co backup)
+          sshpass -e ssh -p $PORT $SSH_OPTS $VPS "
+            if [ -f ${WEBPHOTO_DIR}/nginx/conf.d/bhquan.store.conf.ssl.bak ]; then
+              cp ${WEBPHOTO_DIR}/nginx/conf.d/bhquan.store.conf.ssl.bak ${WEBPHOTO_DIR}/nginx/conf.d/bhquan.store.conf
+              echo 'Restored bhquan.store SSL config'
+            fi
+            if [ -f ${WEBPHOTO_DIR}/nginx/conf.d/bhquan.site.conf.ssl.bak ]; then
+              cp ${WEBPHOTO_DIR}/nginx/conf.d/bhquan.site.conf.ssl.bak ${WEBPHOTO_DIR}/nginx/conf.d/bhquan.site.conf
+              echo 'Restored bhquan.site SSL config'
+            fi
+          " 2>&1
+
+          # Reload nginx voi SSL config
+          sshpass -e ssh -p $PORT $SSH_OPTS $VPS "
+            docker exec shared-nginx nginx -t 2>&1
+            if [ \$? -eq 0 ]; then
+              docker exec shared-nginx nginx -s reload
+              echo '[OK] Nginx reloaded with SSL'
+            else
+              echo 'ERROR: Nginx config test failed — keeping current config'
+              docker exec shared-nginx nginx -T 2>&1 | tail -20
+            fi
+          " 2>&1
