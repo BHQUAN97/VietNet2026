@@ -7,6 +7,7 @@ on:
       - '*.md'
       - 'docs/**'
       - '.github/workflows/cron.yml'
+      - '.github/workflows/vps-setup.yml'
 
 # Cancel in-progress deploy khi co push moi
 concurrency:
