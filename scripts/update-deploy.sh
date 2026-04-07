@@ -81,7 +81,7 @@ scp "$ROOT_DIR/nginx/conf.d/bhquan.store.conf" "${VPS_HOST}:${WEBPHOTO_DIR}/ngin
 ssh "${VPS_HOST}" "
   if [ -f ${WEBPHOTO_DIR}/docker-compose.prod.yml ]; then
     cd ${WEBPHOTO_DIR}
-    for DOMAIN in bhquan.store bhquan.site; do
+    for DOMAIN in bhquan.store; do
       CERT_EXISTS=\$(docker compose -f docker-compose.prod.yml run --rm --entrypoint '' certbot \
         test -f /etc/letsencrypt/live/\${DOMAIN}/fullchain.pem 2>/dev/null && echo yes || echo no)
       if [ \"\$CERT_EXISTS\" = 'no' ]; then
