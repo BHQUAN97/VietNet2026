@@ -71,7 +71,7 @@ jobs:
 
       - name: Setup SSH with sshpass
         run: |
-          sudo apt-get update -qq && sudo apt-get install -y -qq sshpass > /dev/null
+          sudo apt-get update -qq && sudo apt-get install -y -qq sshpass mysql-client > /dev/null
           mkdir -p ~/.ssh
           ssh-keyscan -p ${{ env.VPS_PORT }} -H ${{ env.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
 
@@ -130,9 +130,11 @@ jobs:
           sshpass -e ssh -p $PORT $VPS "mkdir -p ${WEBPHOTO_DIR}/nginx/conf.d"
           sshpass -e scp -P $PORT nginx/conf.d/bhquan.store.init.conf $VPS:${WEBPHOTO_DIR}/nginx/conf.d/bhquan.store.conf
 
-          # DB changelog
+          # DB schema + changelog
           sshpass -e scp -P $PORT -r db/changelog $VPS:${APP_DIR}/db/ 2>/dev/null || true
           sshpass -e scp -P $PORT -r db/schema $VPS:${APP_DIR}/db/ 2>/dev/null || true
+
+          echo "[OK] Full project uploaded"
 
       - name: '[INIT] Upload config/env as .env'
         if: steps.detect.outputs.mode == 'init'
@@ -143,7 +145,7 @@ jobs:
           sshpass -e ssh -p $PORT $VPS "mkdir -p ${APP_DIR}/config"
           sshpass -e scp -P $PORT config/env $VPS:${APP_DIR}/config/env
           sshpass -e ssh -p $PORT $VPS "cp ${APP_DIR}/config/env ${APP_DIR}/.env && chmod 600 ${APP_DIR}/.env"
-          echo ".env created from config/env"
+          echo "[OK] .env created from config/env"
 
       - name: '[INIT] Start shared infrastructure (MySQL + Redis)'
         if: steps.detect.outputs.mode == 'init'
@@ -178,13 +180,14 @@ jobs:
                 break
               fi
               if [ \$i -eq 60 ]; then
-                echo 'MySQL not ready after 60s'
+                echo 'ERROR: MySQL not ready after 60s'
                 docker logs shared-mysql --tail 20
                 exit 1
               fi
               sleep 1
             done
           "
+          echo "[OK] Infra started"
 
       - name: '[INIT] Create VietNet DB user + database'
         if: steps.detect.outputs.mode == 'init'
@@ -195,27 +198,16 @@ jobs:
           MYSQL_ROOT_PWD=$(grep '^MYSQL_ROOT_PASSWORD=' config/env | cut -d= -f2-)
           VIETNET_DB_PWD=$(grep '^VIETNET_DB_PASSWORD=' config/env | cut -d= -f2-)
 
-          sshpass -e ssh -p $PORT $VPS "docker exec -i shared-mysql mysql -u root -p'${MYSQL_ROOT_PWD}' <<EOSQL
+          echo "--- Creating DB + user ---"
+          OUTPUT=$(sshpass -e ssh -p $PORT $VPS "docker exec -i shared-mysql mysql -u root -p'${MYSQL_ROOT_PWD}' <<EOSQL
             CREATE DATABASE IF NOT EXISTS vietnet CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
             CREATE USER IF NOT EXISTS 'vietnet'@'%' IDENTIFIED BY '${VIETNET_DB_PWD}';
-            GRANT ALL PRIVILEGES ON vietnet.* TO 'vietnet'@'%';
+            GRANT ALL PRIVILEGES ON *.* TO 'vietnet'@'%';
             FLUSH PRIVILEGES;
-            SELECT '[OK] vietnet database + user ready' AS result;
-          EOSQL"
-
-      - name: '[INIT] Init DB schema'
-        if: steps.detect.outputs.mode == 'init'
-        run: |
-          VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
-          PORT="${{ env.VPS_PORT }}"
-
-          VIETNET_DB_PWD=$(sshpass -e ssh -p $PORT $VPS "grep '^VIETNET_DB_PASSWORD=' ${APP_DIR}/.env | cut -d= -f2-")
-
-          if [ -f "db/schema/init.sql" ]; then
-            echo "Running db/schema/init.sql..."
-            sshpass -e ssh -p $PORT $VPS "docker exec -i shared-mysql mysql -u vietnet -p${VIETNET_DB_PWD} vietnet" < db/schema/init.sql 2>&1 | tail -5
-            echo "Schema init done"
-          fi
+            SELECT '[OK]' AS result;
+          EOSQL" 2>&1)
+          echo "$OUTPUT"
+          echo "[OK] DB vietnet + user created"
 
       - name: '[INIT] Build & Start VietNet services'
         if: steps.detect.outputs.mode == 'init'
@@ -223,10 +215,22 @@ jobs:
           VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
           PORT="${{ env.VPS_PORT }}"
 
+          echo "--- Building backend + frontend images ---"
           sshpass -e ssh -p $PORT $VPS "
             cd ${APP_DIR}
-            docker compose -f docker-compose.prod.yml build backend frontend 2>&1 | tail -10
-            docker compose -f docker-compose.prod.yml up -d
+            docker compose -f docker-compose.prod.yml build backend frontend 2>&1
+          "
+          BUILD_EXIT=$?
+          if [ $BUILD_EXIT -ne 0 ]; then
+            echo "ERROR: Docker build failed (exit=$BUILD_EXIT)"
+            exit 1
+          fi
+          echo "[OK] Images built"
+
+          echo "--- Starting all services ---"
+          sshpass -e ssh -p $PORT $VPS "
+            cd ${APP_DIR}
+            docker compose -f docker-compose.prod.yml up -d 2>&1
 
             # Ensure shared-nginx on vietnet network (neu da co)
             if docker ps --filter name=shared-nginx --format '{{.Names}}' | grep -q shared-nginx; then
@@ -236,9 +240,11 @@ jobs:
             else
               echo 'shared-nginx not running yet — will connect when WebPhoto deploys'
             fi
-
-            echo 'All services started'
           "
+
+          echo "--- Container status ---"
+          sshpass -e ssh -p $PORT $VPS "docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' | head -15"
+          echo "[OK] All services started"
 
       - name: '[INIT] Setup SSL for bhquan.store'
         if: steps.detect.outputs.mode == 'init'
@@ -284,18 +290,6 @@ jobs:
             echo "SSL cert not found — keeping HTTP-only config for now"
           fi
 
-      - name: '[INIT] Seed data'
-        if: steps.detect.outputs.mode == 'init'
-        run: |
-          VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
-          PORT="${{ env.VPS_PORT }}"
-
-          sshpass -e ssh -p $PORT $VPS "
-            cd ${APP_DIR}
-            docker compose -f docker-compose.prod.yml exec -T backend node dist/scripts/seed-admin.js 2>&1 | tail -3 || echo 'Admin seed done (or already seeded)'
-            docker compose -f docker-compose.prod.yml exec -T backend node dist/scripts/seed-data.js 2>&1 | tail -3 || echo 'Data seed done (or already seeded)'
-          "
-
       # ══════════════════════════════════════════
       # UPDATE DEPLOYMENT (existing VPS)
       # ══════════════════════════════════════════
@@ -327,6 +321,13 @@ jobs:
           # Sync docker-compose
           sshpass -e scp -P $PORT docker-compose.prod.yml $VPS:${APP_DIR}/
 
+          # Sync DB schema + changelog
+          sshpass -e ssh -p $PORT $VPS "mkdir -p ${APP_DIR}/db"
+          sshpass -e scp -P $PORT -r db/changelog $VPS:${APP_DIR}/db/ 2>/dev/null || true
+          sshpass -e scp -P $PORT -r db/schema $VPS:${APP_DIR}/db/ 2>/dev/null || true
+
+          echo "[OK] Files uploaded"
+
       - name: '[UPDATE] Sync Nginx config'
         if: steps.detect.outputs.mode == 'update'
         run: |
@@ -335,7 +336,7 @@ jobs:
 
           sshpass -e scp -P $PORT nginx/conf.d/bhquan.store.conf $VPS:${WEBPHOTO_DIR}/nginx/conf.d/bhquan.store.conf 2>/dev/null && {
             sshpass -e ssh -p $PORT $VPS "docker exec shared-nginx nginx -t 2>&1 | tail -1 && docker exec shared-nginx nginx -s reload"
-            echo "Nginx updated"
+            echo "[OK] Nginx updated"
           } || echo "Nginx unchanged (skip)"
 
       - name: '[UPDATE] Sync shared infra'
@@ -358,6 +359,7 @@ jobs:
 
             cd ${INFRA_DIR} && docker compose up -d
           "
+          echo "[OK] Infra synced"
 
       - name: '[UPDATE] Rebuild & Restart containers'
         if: steps.detect.outputs.mode == 'update'
@@ -365,15 +367,31 @@ jobs:
           VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
           PORT="${{ env.VPS_PORT }}"
 
+          echo "--- Building backend + frontend ---"
           sshpass -e ssh -p $PORT $VPS "
             cd ${APP_DIR}
-            docker compose -f docker-compose.prod.yml build backend frontend 2>&1 | tail -5
-            docker compose -f docker-compose.prod.yml up -d backend frontend
+            docker compose -f docker-compose.prod.yml build backend frontend 2>&1
+          "
+          BUILD_EXIT=$?
+          if [ $BUILD_EXIT -ne 0 ]; then
+            echo "ERROR: Docker build failed (exit=$BUILD_EXIT)"
+            exit 1
+          fi
+          echo "[OK] Images rebuilt"
 
-            # Ensure shared-nginx on vietnet network (neu WebPhoto da deploy)
+          echo "--- Restarting backend + frontend ---"
+          sshpass -e ssh -p $PORT $VPS "
+            cd ${APP_DIR}
+            docker compose -f docker-compose.prod.yml up -d backend frontend 2>&1
+
+            # Ensure shared-nginx on vietnet network
             docker network connect vietnet_frontend shared-nginx 2>/dev/null || true
             docker exec shared-nginx nginx -s reload 2>/dev/null || true
           "
+
+          echo "--- Container status ---"
+          sshpass -e ssh -p $PORT $VPS "docker ps --format 'table {{.Names}}\t{{.Status}}' | head -10"
+          echo "[OK] Containers restarted"
 
       # ══════════════════════════════════════════
       # SHARED STEPS (both init and update)
@@ -386,10 +404,126 @@ jobs:
           sshpass -e ssh -p $PORT $VPS "mkdir -p ${APP_DIR}/config"
           sshpass -e scp -P $PORT config/env $VPS:${APP_DIR}/config/env
           sshpass -e ssh -p $PORT $VPS "cp ${APP_DIR}/config/env ${APP_DIR}/.env && chmod 600 ${APP_DIR}/.env"
-          echo "config/env synced to .env"
+          echo "[OK] config/env synced to .env"
 
-      - name: Run DB Changelog (directory-versioned)
+      - name: Ensure DB + user exist
         run: |
+          VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
+          PORT="${{ env.VPS_PORT }}"
+
+          MYSQL_ROOT_PWD=$(grep '^MYSQL_ROOT_PASSWORD=' config/env | cut -d= -f2-)
+          VIETNET_DB_PWD=$(grep '^VIETNET_DB_PASSWORD=' config/env | cut -d= -f2-)
+
+          echo "--- Checking shared-mysql container ---"
+          MYSQL_STATUS=$(sshpass -e ssh -p $PORT $VPS "docker ps --filter name=shared-mysql --format '{{.Names}} {{.Status}}'" 2>&1)
+          if [ -z "$MYSQL_STATUS" ]; then
+            echo "ERROR: shared-mysql container not running!"
+            sshpass -e ssh -p $PORT $VPS "docker ps -a --filter name=mysql --format '{{.Names}} {{.Status}}'"
+            exit 1
+          fi
+          echo "  $MYSQL_STATUS"
+
+          echo "--- Creating DB + user ---"
+          OUTPUT=$(sshpass -e ssh -p $PORT $VPS "docker exec -i shared-mysql mysql -u root -p'${MYSQL_ROOT_PWD}' <<EOSQL
+            CREATE DATABASE IF NOT EXISTS vietnet CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+            CREATE USER IF NOT EXISTS 'vietnet'@'%' IDENTIFIED BY '${VIETNET_DB_PWD}';
+            GRANT ALL PRIVILEGES ON *.* TO 'vietnet'@'%';
+            FLUSH PRIVILEGES;
+            SELECT '[OK]' AS result;
+          EOSQL" 2>&1)
+          EXIT_CODE=$?
+          echo "$OUTPUT"
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "ERROR: Failed to create DB/user (exit=$EXIT_CODE)"
+            exit 1
+          fi
+
+          echo "--- Verifying connection as vietnet ---"
+          VERIFY=$(sshpass -e ssh -p $PORT $VPS "docker exec -i shared-mysql mysql -u vietnet -p'${VIETNET_DB_PWD}' vietnet -e 'SELECT DATABASE() AS db'" 2>&1)
+          VERIFY_EXIT=$?
+          if [ $VERIFY_EXIT -ne 0 ]; then
+            echo "ERROR: vietnet user cannot access vietnet DB (exit=$VERIFY_EXIT)"
+            echo "$VERIFY"
+            exit 1
+          fi
+          echo "[OK] DB vietnet + user verified"
+
+      - name: Ensure DB schema (init.sql)
+        run: |
+          set +e
+          VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
+          PORT="${{ env.VPS_PORT }}"
+          VIETNET_DB_PWD=$(grep '^VIETNET_DB_PASSWORD=' config/env | cut -d= -f2-)
+          MYSQL_CMD="docker exec -i shared-mysql mysql -u vietnet -p${VIETNET_DB_PWD} vietnet"
+
+          # init.sql dung SOURCE — khong chay duoc qua docker exec
+          # Thay vao do, chay tung file table truc tiep theo thu tu FK
+          echo "--- Running schema tables (IF NOT EXISTS) ---"
+          TABLES_ORDER=(
+            users login_attempts refresh_tokens password_reset_tokens
+            categories media projects project_gallery
+            articles products product_images consultations
+            page_configs page_config_history settings notifications
+            page_views page_view_daily email_logs app_logs
+          )
+          PASS=0
+          FAIL=0
+
+          for tbl in "${TABLES_ORDER[@]}"; do
+            FILE="db/schema/tables/${tbl}.sql"
+            if [ ! -f "$FILE" ]; then
+              echo "  $tbl.sql ... NOT FOUND (skip)"
+              continue
+            fi
+
+            OUTPUT=$(sshpass -e ssh -p $PORT $VPS "$MYSQL_CMD" < "$FILE" 2>&1)
+            EXIT_CODE=$?
+            if [ $EXIT_CODE -eq 0 ]; then
+              echo "  $tbl ... OK"
+              ((PASS++))
+            else
+              echo "  $tbl ... FAILED (exit=$EXIT_CODE)"
+              echo "$OUTPUT" | tail -3 | sed 's/^/    /'
+              ((FAIL++))
+            fi
+          done
+
+          echo ""
+          echo "--- Verifying tables ---"
+          TABLE_COUNT=$(sshpass -e ssh -p $PORT $VPS "$MYSQL_CMD -N -e 'SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=\"vietnet\"'" 2>&1)
+          echo "  Tables in vietnet: $TABLE_COUNT"
+
+          if [ "$FAIL" -gt 0 ]; then
+            echo "ERROR: $FAIL tables failed to create"
+            exit 1
+          fi
+          echo "[OK] Schema ready ($PASS tables, $TABLE_COUNT total)"
+
+      - name: Seed database
+        run: |
+          VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
+          PORT="${{ env.VPS_PORT }}"
+
+          echo "--- Running seed-admin ---"
+          OUTPUT=$(sshpass -e ssh -p $PORT $VPS "
+            cd ${APP_DIR}
+            docker compose -f docker-compose.prod.yml exec -T backend node dist/scripts/seed-admin.js 2>&1
+          " 2>&1)
+          echo "$OUTPUT" | tail -5
+          echo ""
+
+          echo "--- Running seed-data ---"
+          OUTPUT=$(sshpass -e ssh -p $PORT $VPS "
+            cd ${APP_DIR}
+            docker compose -f docker-compose.prod.yml exec -T backend node dist/scripts/seed-data.js 2>&1
+          " 2>&1)
+          echo "$OUTPUT" | tail -5
+
+          echo "[OK] Seed complete"
+
+      - name: Run DB Changelog
+        run: |
+          set +e
           VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
           PORT="${{ env.VPS_PORT }}"
 
@@ -398,34 +532,43 @@ jobs:
             exit 0
           fi
 
-          VIETNET_DB_PWD=$(sshpass -e ssh -p $PORT $VPS "grep '^VIETNET_DB_PASSWORD=' ${APP_DIR}/.env | cut -d= -f2-")
+          VIETNET_DB_PWD=$(grep '^VIETNET_DB_PASSWORD=' config/env | cut -d= -f2-)
           MYSQL_CMD="docker exec -i shared-mysql mysql -u vietnet -p${VIETNET_DB_PWD} vietnet"
 
-          # Ensure tracker table exists
+          # Step 1: _init scripts
+          echo "[1/3] Running _init scripts..."
           for f in $(find db/changelog/_init -name '*.sql' -type f 2>/dev/null | sort); do
-            sshpass -e ssh -p $PORT $VPS "$MYSQL_CMD" < "$f" > /dev/null 2>&1
+            echo "  $(basename $f)..."
+            INIT_OUT=$(sshpass -e ssh -p $PORT $VPS "$MYSQL_CMD" < "$f" 2>&1)
+            INIT_EXIT=$?
+            if [ $INIT_EXIT -ne 0 ]; then
+              echo "    WARN: exit=$INIT_EXIT"
+              echo "$INIT_OUT" | tail -3 | sed 's/^/    /'
+            else
+              echo "    OK"
+            fi
           done
 
-          # Get applied migrations
+          # Step 2: Get applied
+          echo "[2/3] Checking applied migrations..."
           APPLIED=$(sshpass -e ssh -p $PORT $VPS "$MYSQL_CMD -N -e \"SELECT CONCAT(version, '/', filename) FROM schema_changelog\"" 2>/dev/null || echo "")
-          echo "Already applied: $(echo "$APPLIED" | tr '\n' ', ' | sed 's/,$//' || echo 'none')"
+          echo "  Already applied: $(echo "$APPLIED" | tr '\n' ', ' | sed 's/,$//' || echo 'none')"
 
-          # Run unapplied
-          PASS=0
-          SKIP=0
-          FAIL=0
+          # Step 3: Run migrations
+          echo "[3/3] Running migrations..."
+          PASS=0; SKIP=0; FAIL=0
 
           for ver_dir in $(find db/changelog -mindepth 1 -maxdepth 1 -type d ! -name '_init' | sort); do
             VER=$(basename "$ver_dir")
             echo ""
-            echo "── Version $VER ──"
+            echo "── $VER ──"
 
             for f in $(find "$ver_dir" -name '*.sql' -type f | sort); do
               FNAME=$(basename "$f")
               KEY="${VER}/${FNAME}"
 
               if echo "$APPLIED" | grep -qF "$KEY"; then
-                echo "  $FNAME ... SKIP (already applied)"
+                echo "  $FNAME ... SKIP"
                 ((SKIP++))
                 continue
               fi
@@ -440,13 +583,12 @@ jobs:
               if [ $EXIT_CODE -eq 0 ]; then
                 DESC=$(echo "$FNAME" | sed 's/^[0-9]*__//; s/\.sql$//; s/_/ /g')
                 CHECKSUM=$(sha256sum "$f" | cut -d' ' -f1)
-
                 sshpass -e ssh -p $PORT $VPS "$MYSQL_CMD -e \"REPLACE INTO schema_changelog (version, filename, description, applied_by, checksum, execution_ms) VALUES ('$VER', '$FNAME', '$DESC', 'ci', '$CHECKSUM', $DURATION_MS)\"" 2>/dev/null
                 echo "OK (${DURATION_MS}ms)"
                 ((PASS++))
               else
-                echo "FAILED"
-                echo "$OUTPUT" | tail -5 | sed 's/^/    /'
+                echo "FAILED (exit=$EXIT_CODE)"
+                echo "$OUTPUT" | sed 's/^/    /'
                 ((FAIL++))
               fi
             done
@@ -461,6 +603,20 @@ jobs:
           VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
           PORT="${{ env.VPS_PORT }}"
           sleep 8
-          sshpass -e ssh -p $PORT $VPS "curl -sf http://localhost:4100/api/health && echo ''" && echo "Backend: OK" || { echo "Backend health check FAILED"; exit 1; }
-          sshpass -e ssh -p $PORT $VPS "curl -sf http://localhost:3100 > /dev/null" && echo "Frontend: OK" || echo "Frontend: WARNING (may still be starting)"
+
+          echo "--- Backend ---"
+          RESULT=$(sshpass -e ssh -p $PORT $VPS "curl -sf http://localhost:4100/api/health" 2>&1) && {
+            echo "  $RESULT"
+            echo "  [OK] Backend healthy"
+          } || {
+            echo "  WARNING: Backend health check failed"
+            echo "  Response: $RESULT"
+            sshpass -e ssh -p $PORT $VPS "docker logs vietnet-api --tail 20 2>&1" | sed 's/^/  /'
+            exit 1
+          }
+
+          echo "--- Frontend ---"
+          sshpass -e ssh -p $PORT $VPS "curl -sf http://localhost:3100 > /dev/null" && echo "  [OK] Frontend healthy" || echo "  WARNING: Frontend may still be starting"
+
+          echo ""
           echo "Deploy successful! (mode: ${{ steps.detect.outputs.mode }})"

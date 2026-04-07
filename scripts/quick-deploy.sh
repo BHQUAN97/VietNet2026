@@ -133,7 +133,7 @@ ssh "${VPS_HOST}" "
   docker exec shared-mysql mysql -u root -p'${MYSQL_ROOT_PASS}' -e \"
     CREATE DATABASE IF NOT EXISTS vietnet CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
     CREATE USER IF NOT EXISTS 'vietnet'@'%' IDENTIFIED WITH mysql_native_password BY '${VIETNET_DB_PASS}';
-    GRANT ALL PRIVILEGES ON vietnet.* TO 'vietnet'@'%';
+    GRANT ALL PRIVILEGES ON *.* TO 'vietnet'@'%';
     FLUSH PRIVILEGES;
   \" 2>&1
 "
