@@ -33,7 +33,7 @@ services:
     image: redis:7-alpine
     container_name: shared-redis
     restart: always
-    command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru --appendonly yes
+    command: redis-server --maxmemory 128mb --maxmemory-policy noeviction --appendonly yes
     volumes:
       - redis_data:/data
     healthcheck:

@@ -262,23 +262,37 @@ jobs:
           PORT="${{ env.VPS_PORT }}"
 
           echo "--- Building backend + frontend images ---"
-          sshpass -e ssh -p $PORT $VPS "
+          BUILD_OUT=$(sshpass -e ssh -p $PORT $VPS "
             cd ${APP_DIR}
             docker compose -f docker-compose.prod.yml build backend frontend 2>&1
-          "
+          ")
           BUILD_EXIT=$?
           if [ $BUILD_EXIT -ne 0 ]; then
             echo "ERROR: Docker build failed (exit=$BUILD_EXIT)"
+            echo "$BUILD_OUT" | tail -30
             exit 1
           fi
           echo "[OK] Images built"
 
           echo "--- Starting all services ---"
-          sshpass -e ssh -p $PORT $VPS "
+          START_OUT=$(sshpass -e ssh -p $PORT $VPS "
             cd ${APP_DIR}
             docker compose -f docker-compose.prod.yml up -d 2>&1
+          ")
+          if [ $? -ne 0 ]; then
+            echo "ERROR: docker compose up failed"
+            echo "$START_OUT"
+            echo ""
+            echo "=== Container status ==="
+            sshpass -e ssh -p $PORT $VPS "docker ps -a --format 'table {{.Names}}\t{{.Status}}' | grep -E 'vietnet|shared'" 2>&1
+            echo ""
+            echo "=== Backend logs ==="
+            sshpass -e ssh -p $PORT $VPS "docker logs vietnet-api --tail 30 2>&1"
+            exit 1
+          fi
 
-            # Ensure shared-nginx on vietnet network (neu da co)
+          # Ensure shared-nginx on vietnet network (neu da co)
+          sshpass -e ssh -p $PORT $VPS "
             if docker ps --filter name=shared-nginx --format '{{.Names}}' | grep -q shared-nginx; then
               docker network connect vietnet_frontend shared-nginx 2>/dev/null || true
               docker exec shared-nginx nginx -s reload 2>/dev/null || true
@@ -405,7 +419,7 @@ jobs:
           } || echo "Nginx unchanged (skip)"
 
       - name: '[UPDATE] Sync shared infra'
-        if: steps.detect.outputs.mode == 'update'
+        if: steps.detect.outputs.mode == 'update' && steps.changes.outputs.infra == 'true'
         run: |
           VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
           PORT="${{ env.VPS_PORT }}"
@@ -418,11 +432,18 @@ jobs:
           sshpass -e ssh -p $PORT $VPS "
             docker network create webphoto_backend 2>/dev/null || true
             docker network create vietnet_frontend 2>/dev/null || true
-
-            # Xoa container cu (ten cu photo-* hoac orphan)
             docker rm -f photo-mysql photo-redis 2>/dev/null || true
+            cd ${INFRA_DIR} && docker compose up -d --force-recreate
 
-            cd ${INFRA_DIR} && docker compose up -d
+            echo 'Waiting for MySQL...'
+            for i in \$(seq 1 60); do
+              if docker exec shared-mysql mysqladmin ping -h localhost --silent 2>/dev/null; then
+                echo 'MySQL ready!'
+                break
+              fi
+              [ \$i -eq 60 ] && echo 'WARNING: MySQL slow to start' && exit 1
+              sleep 1
+            done
           "
           echo "[OK] Infra synced"
 
@@ -432,11 +453,31 @@ jobs:
           VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
           PORT="${{ env.VPS_PORT }}"
           echo "--- Rebuilding backend ---"
-          sshpass -e ssh -p $PORT $VPS "
+          BUILD_OUT=$(sshpass -e ssh -p $PORT $VPS "
             cd ${APP_DIR}
             docker compose -f docker-compose.prod.yml build backend 2>&1
+          ")
+          if [ $? -ne 0 ]; then
+            echo "ERROR: Backend build failed"
+            echo "$BUILD_OUT" | tail -30
+            exit 1
+          fi
+
+          UP_OUT=$(sshpass -e ssh -p $PORT $VPS "
+            cd ${APP_DIR}
             docker compose -f docker-compose.prod.yml up -d backend 2>&1
-          "
+          ")
+          if [ $? -ne 0 ]; then
+            echo "ERROR: Backend start failed"
+            echo "$UP_OUT"
+            echo ""
+            echo "=== Container status ==="
+            sshpass -e ssh -p $PORT $VPS "docker ps -a --format 'table {{.Names}}\t{{.Status}}' | grep -E 'vietnet|shared'" 2>&1
+            echo ""
+            echo "=== Backend logs ==="
+            sshpass -e ssh -p $PORT $VPS "docker logs vietnet-api --tail 30 2>&1"
+            exit 1
+          fi
           echo "[OK] Backend rebuilt"
 
       - name: '[UPDATE] Rebuild frontend'
@@ -445,11 +486,31 @@ jobs:
           VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
           PORT="${{ env.VPS_PORT }}"
           echo "--- Rebuilding frontend ---"
-          sshpass -e ssh -p $PORT $VPS "
+          BUILD_OUT=$(sshpass -e ssh -p $PORT $VPS "
             cd ${APP_DIR}
             docker compose -f docker-compose.prod.yml build frontend 2>&1
+          ")
+          if [ $? -ne 0 ]; then
+            echo "ERROR: Frontend build failed"
+            echo "$BUILD_OUT" | tail -30
+            exit 1
+          fi
+
+          UP_OUT=$(sshpass -e ssh -p $PORT $VPS "
+            cd ${APP_DIR}
             docker compose -f docker-compose.prod.yml up -d frontend 2>&1
-          "
+          ")
+          if [ $? -ne 0 ]; then
+            echo "ERROR: Frontend start failed"
+            echo "$UP_OUT"
+            echo ""
+            echo "=== Container status ==="
+            sshpass -e ssh -p $PORT $VPS "docker ps -a --format 'table {{.Names}}\t{{.Status}}' | grep -E 'vietnet|shared'" 2>&1
+            echo ""
+            echo "=== Frontend logs ==="
+            sshpass -e ssh -p $PORT $VPS "docker logs vietnet-frontend --tail 30 2>&1"
+            exit 1
+          fi
           echo "[OK] Frontend rebuilt"
 
       - name: '[UPDATE] Ensure nginx connected'
@@ -488,7 +549,9 @@ jobs:
           MYSQL_STATUS=$(sshpass -e ssh -p $PORT $VPS "docker ps --filter name=shared-mysql --format '{{.Names}} {{.Status}}'" 2>&1)
           if [ -z "$MYSQL_STATUS" ]; then
             echo "ERROR: shared-mysql container not running!"
-            sshpass -e ssh -p $PORT $VPS "docker ps -a --filter name=mysql --format '{{.Names}} {{.Status}}'"
+            echo ""
+            echo "=== All containers ==="
+            sshpass -e ssh -p $PORT $VPS "docker ps -a --format 'table {{.Names}}\t{{.Status}}' | grep -E 'mysql|redis'" 2>&1
             exit 1
           fi
           echo "  $MYSQL_STATUS"
@@ -566,9 +629,40 @@ jobs:
 
           if [ "$FAIL" -gt 0 ]; then
             echo "ERROR: $FAIL tables failed to create"
+            echo ""
+            echo "=== MySQL error log ==="
+            sshpass -e ssh -p $PORT $VPS "docker logs shared-mysql --tail 10 2>&1"
             exit 1
           fi
           echo "[OK] Schema ready ($PASS tables, $TABLE_COUNT total)"
+
+      - name: Wait for backend container ready
+        run: |
+          VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
+          PORT="${{ env.VPS_PORT }}"
+          echo "Waiting for backend container..."
+          for i in $(seq 1 30); do
+            STATUS=$(sshpass -e ssh -p $PORT $VPS "docker inspect -f '{{.State.Status}}' vietnet-api 2>/dev/null" 2>&1)
+            if [ "$STATUS" = "running" ]; then
+              echo "  Backend container running (${i}s)"
+              sleep 2
+              break
+            fi
+            if [ $i -eq 30 ]; then
+              echo "ERROR: Backend container not running after 30s (status=$STATUS)"
+              echo ""
+              echo "=== Container status ==="
+              sshpass -e ssh -p $PORT $VPS "docker ps -a --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' | grep -E 'vietnet|shared'" 2>&1
+              echo ""
+              echo "=== Backend logs ==="
+              sshpass -e ssh -p $PORT $VPS "docker logs vietnet-api --tail 30 2>&1"
+              echo ""
+              echo "=== Redis policy ==="
+              sshpass -e ssh -p $PORT $VPS "docker exec shared-redis redis-cli CONFIG GET maxmemory-policy" 2>&1
+              exit 1
+            fi
+            sleep 1
+          done
 
       - name: Seed database
         run: |
@@ -580,7 +674,7 @@ jobs:
             cd ${APP_DIR}
             docker compose -f docker-compose.prod.yml exec -T backend node dist/scripts/seed-admin.js 2>&1
           " 2>&1)
-          echo "$OUTPUT" | tail -5
+          echo "$OUTPUT"
           echo ""
 
           echo "--- Running seed-data ---"
@@ -588,9 +682,20 @@ jobs:
             cd ${APP_DIR}
             docker compose -f docker-compose.prod.yml exec -T backend node dist/scripts/seed-data.js 2>&1
           " 2>&1)
-          echo "$OUTPUT" | tail -5
+          EXIT_CODE=$?
+          echo "$OUTPUT"
 
-          echo "[OK] Seed complete"
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo ""
+            echo "WARNING: Seed exit=$EXIT_CODE"
+            echo "=== Backend container status ==="
+            sshpass -e ssh -p $PORT $VPS "docker inspect -f '{{.State.Status}} ({{.State.ExitCode}})' vietnet-api" 2>&1
+            echo "=== Backend logs (last 10) ==="
+            sshpass -e ssh -p $PORT $VPS "docker logs vietnet-api --tail 10 2>&1"
+            echo "(Seed failure is non-blocking — data may already exist)"
+          else
+            echo "[OK] Seed complete"
+          fi
 
       - name: Run DB Changelog
         if: steps.changes.outputs.db == 'true'
@@ -674,21 +779,45 @@ jobs:
         run: |
           VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
           PORT="${{ env.VPS_PORT }}"
-          sleep 8
 
           echo "--- Backend ---"
-          RESULT=$(sshpass -e ssh -p $PORT $VPS "curl -sf http://localhost:4100/api/health" 2>&1) && {
-            echo "  $RESULT"
-            echo "  [OK] Backend healthy"
-          } || {
-            echo "  WARNING: Backend health check failed"
-            echo "  Response: $RESULT"
-            sshpass -e ssh -p $PORT $VPS "docker logs vietnet-api --tail 20 2>&1" | sed 's/^/  /'
-            exit 1
-          }
+          for i in $(seq 1 15); do
+            RESULT=$(sshpass -e ssh -p $PORT $VPS "curl -sf http://localhost:4100/api/health" 2>&1)
+            if [ $? -eq 0 ] && [ -n "$RESULT" ]; then
+              echo "  Backend healthy (${i}s): $RESULT"
+              break
+            fi
+            if [ $i -eq 15 ]; then
+              echo "ERROR: Backend health check failed after 30s"
+              echo "Last response: $RESULT"
+              echo ""
+              echo "=== Container status ==="
+              sshpass -e ssh -p $PORT $VPS "docker ps -a --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' | grep -E 'vietnet|shared'" 2>&1
+              echo ""
+              echo "=== Backend logs (last 30) ==="
+              sshpass -e ssh -p $PORT $VPS "docker logs vietnet-api --tail 30 --no-log-prefix 2>&1"
+              echo ""
+              echo "=== Redis check ==="
+              sshpass -e ssh -p $PORT $VPS "docker exec shared-redis redis-cli CONFIG GET maxmemory-policy" 2>&1
+              exit 1
+            fi
+            sleep 2
+          done
 
           echo "--- Frontend ---"
-          sshpass -e ssh -p $PORT $VPS "curl -sf http://localhost:3100 > /dev/null" && echo "  [OK] Frontend healthy" || echo "  WARNING: Frontend may still be starting"
+          for i in $(seq 1 10); do
+            sshpass -e ssh -p $PORT $VPS "curl -sf http://localhost:3100 > /dev/null" 2>&1
+            if [ $? -eq 0 ]; then
+              echo "  Frontend healthy (${i}s)"
+              break
+            fi
+            if [ $i -eq 10 ]; then
+              echo "  WARNING: Frontend not responding after 20s"
+              echo "=== Frontend logs (last 15) ==="
+              sshpass -e ssh -p $PORT $VPS "docker logs vietnet-frontend --tail 15 --no-log-prefix 2>&1"
+            fi
+            sleep 2
+          done
 
           echo ""
-          echo "Deploy successful! (mode: ${{ steps.detect.outputs.mode }})"
+          echo "Deploy successful! (mode=${{ steps.detect.outputs.mode }}, fe=${{ steps.changes.outputs.fe }}, be=${{ steps.changes.outputs.be }}, infra=${{ steps.changes.outputs.infra }})"
