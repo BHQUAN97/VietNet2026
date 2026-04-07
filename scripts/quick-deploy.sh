@@ -3,10 +3,10 @@
 # VietNet Interior — QUICK DEPLOY TO VPS
 # ============================================================
 # Chạy TỪ MÁY LOCAL — deploy lên VPS đã có WebPhoto
-# Dùng chung MySQL (photo-mysql), Redis (photo-redis), Nginx (photo-nginx)
+# Dùng chung MySQL (shared-mysql), Redis (shared-redis), Nginx (shared-nginx)
 #
 # Yêu cầu:
-#   - VPS đã deploy WebPhoto (photo-mysql, photo-redis, photo-nginx đang chạy)
+#   - VPS đã deploy WebPhoto (shared-mysql, shared-redis, shared-nginx đang chạy)
 #   - SSH key đã cấu hình
 #
 # Usage:
@@ -52,9 +52,9 @@ step "0/8 — Kiem tra truoc khi deploy"
 ssh -o ConnectTimeout=5 -o BatchMode=yes "${VPS_HOST}" "echo SSH_OK" 2>/dev/null || err "Khong the SSH vao ${VPS_HOST}"
 log "SSH connection OK"
 
-ssh "${VPS_HOST}" "docker ps --filter name=photo-mysql --format '{{.Status}}'" | grep -q "Up" || err "photo-mysql khong chay. Deploy WebPhoto truoc."
-ssh "${VPS_HOST}" "docker ps --filter name=photo-redis --format '{{.Status}}'" | grep -q "Up" || err "photo-redis khong chay. Deploy WebPhoto truoc."
-ssh "${VPS_HOST}" "docker ps --filter name=photo-nginx --format '{{.Status}}'" | grep -q "Up" || err "photo-nginx khong chay. Deploy WebPhoto truoc."
+ssh "${VPS_HOST}" "docker ps --filter name=shared-mysql --format '{{.Status}}'" | grep -q "Up" || err "shared-mysql khong chay. Deploy WebPhoto truoc."
+ssh "${VPS_HOST}" "docker ps --filter name=shared-redis --format '{{.Status}}'" | grep -q "Up" || err "shared-redis khong chay. Deploy WebPhoto truoc."
+ssh "${VPS_HOST}" "docker ps --filter name=shared-nginx --format '{{.Status}}'" | grep -q "Up" || err "shared-nginx khong chay. Deploy WebPhoto truoc."
 log "WebPhoto MySQL + Redis + Nginx running"
 
 ssh "${VPS_HOST}" "docker --version && docker compose version" >/dev/null 2>&1 || err "VPS chua cai Docker"
@@ -123,14 +123,14 @@ scp -r "$ROOT_DIR/scripts" "${VPS_HOST}:${APP_DIR}/"
 log "All files uploaded"
 
 # ─── STEP 4: CREATE DB + ENV ──────────────────────────────
-step "4/8 — Tao database vietnet trong photo-mysql + .env"
+step "4/8 — Tao database vietnet trong shared-mysql + .env"
 
 MYSQL_ROOT_PASS=$(ssh "${VPS_HOST}" "grep '^MYSQL_ROOT_PASSWORD=' ${WEBPHOTO_DIR}/.env | cut -d= -f2-")
 [ -n "$MYSQL_ROOT_PASS" ] || err "Khong lay duoc MYSQL_ROOT_PASSWORD tu ${WEBPHOTO_DIR}/.env"
 
 VIETNET_DB_PASS=$(openssl rand -hex 16)
 ssh "${VPS_HOST}" "
-  docker exec photo-mysql mysql -u root -p'${MYSQL_ROOT_PASS}' -e \"
+  docker exec shared-mysql mysql -u root -p'${MYSQL_ROOT_PASS}' -e \"
     CREATE DATABASE IF NOT EXISTS vietnet CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
     CREATE USER IF NOT EXISTS 'vietnet'@'%' IDENTIFIED WITH mysql_native_password BY '${VIETNET_DB_PASS}';
     GRANT ALL PRIVILEGES ON vietnet.* TO 'vietnet'@'%';
@@ -185,12 +185,12 @@ ssh "${VPS_HOST}" "
   echo '  Starting VietNet containers...'
   docker compose up -d
 
-  # Kết nối photo-nginx vào vietnet_frontend network
-  if ! docker inspect photo-nginx --format '{{range \$k,\$v := .NetworkSettings.Networks}}{{\$k}} {{end}}' | grep -q vietnet_frontend; then
-    docker network connect vietnet_frontend photo-nginx
-    echo '  photo-nginx connected to vietnet_frontend'
+  # Kết nối shared-nginx vào vietnet_frontend network
+  if ! docker inspect shared-nginx --format '{{range \$k,\$v := .NetworkSettings.Networks}}{{\$k}} {{end}}' | grep -q vietnet_frontend; then
+    docker network connect vietnet_frontend shared-nginx
+    echo '  shared-nginx connected to vietnet_frontend'
   else
-    echo '  photo-nginx already on vietnet_frontend'
+    echo '  shared-nginx already on vietnet_frontend'
   fi
 "
 log "Containers started"
@@ -204,7 +204,7 @@ ssh "${VPS_HOST}" "
     for f in \$(find ${APP_DIR}/db/changelog -name 'V*.sql' -type f 2>/dev/null | sort); do
       FNAME=\$(basename \"\$f\")
       echo -n \"  \$FNAME ... \"
-      docker exec -i photo-mysql mysql -u vietnet -p'${VIETNET_DB_PASS}' vietnet < \"\$f\" 2>&1 && echo 'OK' || echo 'SKIP'
+      docker exec -i shared-mysql mysql -u vietnet -p'${VIETNET_DB_PASS}' vietnet < \"\$f\" 2>&1 && echo 'OK' || echo 'SKIP'
     done
   fi
   docker compose restart backend
@@ -213,9 +213,9 @@ ssh "${VPS_HOST}" "
 log "Database ready"
 
 # ─── STEP 7: NGINX CONFIG ────────────────────────────────
-step "7/8 — Cau hinh Nginx trong photo-nginx"
+step "7/8 — Cau hinh Nginx trong shared-nginx"
 
-# Upload nginx config vào thư mục mount của photo-nginx
+# Upload nginx config vào thư mục mount của shared-nginx
 scp "$ROOT_DIR/nginx/conf.d/bhquan.store.conf" "${VPS_HOST}:${WEBPHOTO_DIR}/nginx/conf.d/bhquan.store.conf"
 
 # SSL cert — copy vào Docker volume nếu chưa có
@@ -227,8 +227,8 @@ ssh "${VPS_HOST}" "
     if ! [ -d /etc/letsencrypt/live/bhquan.store ]; then
       certbot certonly --standalone -d ${DOMAIN} \
         --non-interactive --agree-tos --email admin@${DOMAIN} \
-        --pre-hook 'docker stop photo-nginx' \
-        --post-hook 'docker start photo-nginx' 2>&1
+        --pre-hook 'docker stop shared-nginx' \
+        --post-hook 'docker start shared-nginx' 2>&1
     fi
 
     # Copy cert vào Docker volume
@@ -243,8 +243,8 @@ ssh "${VPS_HOST}" "
   fi
 
   # Reload nginx
-  docker exec photo-nginx nginx -t 2>&1 | tail -2
-  docker exec photo-nginx nginx -s reload 2>&1
+  docker exec shared-nginx nginx -t 2>&1 | tail -2
+  docker exec shared-nginx nginx -s reload 2>&1
   echo 'Nginx reloaded'
 "
 log "Nginx configured"

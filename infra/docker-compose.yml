@@ -9,7 +9,7 @@ services:
 
   mysql:
     image: mysql:8.0
-    container_name: photo-mysql
+    container_name: shared-mysql
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
@@ -31,7 +31,7 @@ services:
 
   redis:
     image: redis:7-alpine
-    container_name: photo-redis
+    container_name: shared-redis
     restart: always
     command: redis-server --maxmemory 128mb --maxmemory-policy allkeys-lru --appendonly yes
     volumes:

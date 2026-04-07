@@ -18,7 +18,7 @@ concurrency:
 
 env:
   APP_DIR: /opt/vietnet
-  # Nginx config nam tren WebPhoto VPS (photo-nginx serve ca 2 domain)
+  # Nginx config nam tren WebPhoto VPS (shared-nginx serve ca 2 domain)
   WEBPHOTO_DIR: /opt/webphoto
 
 jobs:
@@ -164,18 +164,22 @@ jobs:
           sshpass -e ssh -p $PORT $VPS "
             docker network create webphoto_backend 2>/dev/null || true
             docker network create vietnet_frontend 2>/dev/null || true
+
+            # Xoa container cu (ten cu photo-* hoac orphan)
+            docker rm -f photo-mysql photo-redis 2>/dev/null || true
+
             cd ${INFRA_DIR}
-            docker compose up -d --force-recreate
+            docker compose up -d
 
             echo 'Waiting for MySQL...'
             for i in \$(seq 1 60); do
-              if docker exec photo-mysql mysqladmin ping -h localhost --silent 2>/dev/null; then
+              if docker exec shared-mysql mysqladmin ping -h localhost --silent 2>/dev/null; then
                 echo 'MySQL ready!'
                 break
               fi
               if [ \$i -eq 60 ]; then
                 echo 'MySQL not ready after 60s'
-                docker logs photo-mysql --tail 20
+                docker logs shared-mysql --tail 20
                 exit 1
               fi
               sleep 1
@@ -191,7 +195,7 @@ jobs:
           MYSQL_ROOT_PWD=$(grep '^MYSQL_ROOT_PASSWORD=' config/env | cut -d= -f2-)
           VIETNET_DB_PWD=$(grep '^VIETNET_DB_PASSWORD=' config/env | cut -d= -f2-)
 
-          sshpass -e ssh -p $PORT $VPS "docker exec -i photo-mysql mysql -u root -p'${MYSQL_ROOT_PWD}' <<EOSQL
+          sshpass -e ssh -p $PORT $VPS "docker exec -i shared-mysql mysql -u root -p'${MYSQL_ROOT_PWD}' <<EOSQL
             CREATE DATABASE IF NOT EXISTS vietnet CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
             CREATE USER IF NOT EXISTS 'vietnet'@'%' IDENTIFIED BY '${VIETNET_DB_PWD}';
             GRANT ALL PRIVILEGES ON vietnet.* TO 'vietnet'@'%';
@@ -209,7 +213,7 @@ jobs:
 
           if [ -f "db/schema/init.sql" ]; then
             echo "Running db/schema/init.sql..."
-            sshpass -e ssh -p $PORT $VPS "docker exec -i photo-mysql mysql -u vietnet -p${VIETNET_DB_PWD} vietnet" < db/schema/init.sql 2>&1 | tail -5
+            sshpass -e ssh -p $PORT $VPS "docker exec -i shared-mysql mysql -u vietnet -p${VIETNET_DB_PWD} vietnet" < db/schema/init.sql 2>&1 | tail -5
             echo "Schema init done"
           fi
 
@@ -224,13 +228,13 @@ jobs:
             docker compose -f docker-compose.prod.yml build backend frontend 2>&1 | tail -10
             docker compose -f docker-compose.prod.yml up -d
 
-            # Ensure photo-nginx on vietnet network (neu da co)
-            if docker ps --filter name=photo-nginx --format '{{.Names}}' | grep -q photo-nginx; then
-              docker network connect vietnet_frontend photo-nginx 2>/dev/null || true
-              docker exec photo-nginx nginx -s reload 2>/dev/null || true
-              echo 'photo-nginx connected to vietnet_frontend'
+            # Ensure shared-nginx on vietnet network (neu da co)
+            if docker ps --filter name=shared-nginx --format '{{.Names}}' | grep -q shared-nginx; then
+              docker network connect vietnet_frontend shared-nginx 2>/dev/null || true
+              docker exec shared-nginx nginx -s reload 2>/dev/null || true
+              echo 'shared-nginx connected to vietnet_frontend'
             else
-              echo 'photo-nginx not running yet — will connect when WebPhoto deploys'
+              echo 'shared-nginx not running yet — will connect when WebPhoto deploys'
             fi
 
             echo 'All services started'
@@ -267,12 +271,12 @@ jobs:
           PORT="${{ env.VPS_PORT }}"
 
           # Chi switch SSL config neu cert da ton tai
-          HAS_CERT=$(sshpass -e ssh -p $PORT $VPS "docker exec photo-nginx test -f /etc/letsencrypt/live/bhquan.store/fullchain.pem 2>/dev/null && echo yes || echo no" 2>/dev/null || echo "no")
+          HAS_CERT=$(sshpass -e ssh -p $PORT $VPS "docker exec shared-nginx test -f /etc/letsencrypt/live/bhquan.store/fullchain.pem 2>/dev/null && echo yes || echo no" 2>/dev/null || echo "no")
           if [ "$HAS_CERT" = "yes" ]; then
             sshpass -e scp -P $PORT nginx/conf.d/bhquan.store.conf $VPS:${WEBPHOTO_DIR}/nginx/conf.d/bhquan.store.conf
             sshpass -e ssh -p $PORT $VPS "
-              docker exec photo-nginx nginx -t 2>&1 && \
-              docker exec photo-nginx nginx -s reload && \
+              docker exec shared-nginx nginx -t 2>&1 && \
+              docker exec shared-nginx nginx -s reload && \
               echo 'Nginx reloaded with SSL config' || \
               echo 'WARNING: SSL config test failed — keeping init config'
             "
@@ -330,7 +334,7 @@ jobs:
           PORT="${{ env.VPS_PORT }}"
 
           sshpass -e scp -P $PORT nginx/conf.d/bhquan.store.conf $VPS:${WEBPHOTO_DIR}/nginx/conf.d/bhquan.store.conf 2>/dev/null && {
-            sshpass -e ssh -p $PORT $VPS "docker exec photo-nginx nginx -t 2>&1 | tail -1 && docker exec photo-nginx nginx -s reload"
+            sshpass -e ssh -p $PORT $VPS "docker exec shared-nginx nginx -t 2>&1 | tail -1 && docker exec shared-nginx nginx -s reload"
             echo "Nginx updated"
           } || echo "Nginx unchanged (skip)"
 
@@ -345,7 +349,15 @@ jobs:
           sshpass -e scp -P $PORT infra/docker-compose.yml $VPS:${INFRA_DIR}/docker-compose.yml
           MYSQL_ROOT_PWD=$(grep '^MYSQL_ROOT_PASSWORD=' config/env | cut -d= -f2-)
           sshpass -e ssh -p $PORT $VPS "echo 'MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PWD}' > ${INFRA_DIR}/.env && chmod 600 ${INFRA_DIR}/.env"
-          sshpass -e ssh -p $PORT $VPS "docker network create webphoto_backend 2>/dev/null || true && docker network create vietnet_frontend 2>/dev/null || true && cd ${INFRA_DIR} && docker compose up -d --force-recreate"
+          sshpass -e ssh -p $PORT $VPS "
+            docker network create webphoto_backend 2>/dev/null || true
+            docker network create vietnet_frontend 2>/dev/null || true
+
+            # Xoa container cu (ten cu photo-* hoac orphan)
+            docker rm -f photo-mysql photo-redis 2>/dev/null || true
+
+            cd ${INFRA_DIR} && docker compose up -d
+          "
 
       - name: '[UPDATE] Rebuild & Restart containers'
         if: steps.detect.outputs.mode == 'update'
@@ -358,9 +370,9 @@ jobs:
             docker compose -f docker-compose.prod.yml build backend frontend 2>&1 | tail -5
             docker compose -f docker-compose.prod.yml up -d backend frontend
 
-            # Ensure photo-nginx on vietnet network (neu WebPhoto da deploy)
-            docker network connect vietnet_frontend photo-nginx 2>/dev/null || true
-            docker exec photo-nginx nginx -s reload 2>/dev/null || true
+            # Ensure shared-nginx on vietnet network (neu WebPhoto da deploy)
+            docker network connect vietnet_frontend shared-nginx 2>/dev/null || true
+            docker exec shared-nginx nginx -s reload 2>/dev/null || true
           "
 
       # ══════════════════════════════════════════
@@ -387,7 +399,7 @@ jobs:
           fi
 
           VIETNET_DB_PWD=$(sshpass -e ssh -p $PORT $VPS "grep '^VIETNET_DB_PASSWORD=' ${APP_DIR}/.env | cut -d= -f2-")
-          MYSQL_CMD="docker exec -i photo-mysql mysql -u vietnet -p${VIETNET_DB_PWD} vietnet"
+          MYSQL_CMD="docker exec -i shared-mysql mysql -u vietnet -p${VIETNET_DB_PWD} vietnet"
 
           # Ensure tracker table exists
           for f in $(find db/changelog/_init -name '*.sql' -type f 2>/dev/null | sort); do

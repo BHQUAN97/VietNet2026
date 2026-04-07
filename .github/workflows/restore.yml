@@ -143,7 +143,7 @@ jobs:
             echo 'Restoring vietnet database...'
 
             # Dam bao DB + user ton tai
-            docker exec -i photo-mysql mysql -u root -p\${MYSQL_ROOT_PWD} <<EOSQL
+            docker exec -i shared-mysql mysql -u root -p\${MYSQL_ROOT_PWD} <<EOSQL
               CREATE DATABASE IF NOT EXISTS vietnet CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
               CREATE USER IF NOT EXISTS 'vietnet'@'%' IDENTIFIED BY '\${VIETNET_PWD}';
               GRANT ALL PRIVILEGES ON vietnet.* TO 'vietnet'@'%';
@@ -153,27 +153,27 @@ jobs:
             # Safety backup truoc khi DROP
             PRE_RESTORE=/tmp/pre-restore-vietnet-\$(date +%Y%m%d_%H%M%S).sql.gz
             echo \"Creating safety backup → \${PRE_RESTORE}\"
-            docker exec photo-mysql mysqldump -u root -p\${MYSQL_ROOT_PWD} \
+            docker exec shared-mysql mysqldump -u root -p\${MYSQL_ROOT_PWD} \
               --single-transaction --quick vietnet 2>/dev/null | gzip > \${PRE_RESTORE}
             echo \"Safety backup: \$(du -h \${PRE_RESTORE} | cut -f1)\"
 
             # Drop + recreate de restore sach
-            docker exec -i photo-mysql mysql -u root -p\${MYSQL_ROOT_PWD} -e 'DROP DATABASE vietnet; CREATE DATABASE vietnet CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;'
+            docker exec -i shared-mysql mysql -u root -p\${MYSQL_ROOT_PWD} -e 'DROP DATABASE vietnet; CREATE DATABASE vietnet CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;'
 
             # Import dump — rollback neu fail
-            if gunzip -c \$DUMP | docker exec -i photo-mysql mysql -u root -p\${MYSQL_ROOT_PWD} vietnet; then
+            if gunzip -c \$DUMP | docker exec -i shared-mysql mysql -u root -p\${MYSQL_ROOT_PWD} vietnet; then
               echo 'Database restored!'
               rm -f \${PRE_RESTORE}
             else
               echo 'RESTORE FAILED — rolling back from safety backup...'
-              docker exec -i photo-mysql mysql -u root -p\${MYSQL_ROOT_PWD} -e 'DROP DATABASE IF EXISTS vietnet; CREATE DATABASE vietnet CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;'
-              gunzip -c \${PRE_RESTORE} | docker exec -i photo-mysql mysql -u root -p\${MYSQL_ROOT_PWD} vietnet
+              docker exec -i shared-mysql mysql -u root -p\${MYSQL_ROOT_PWD} -e 'DROP DATABASE IF EXISTS vietnet; CREATE DATABASE vietnet CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;'
+              gunzip -c \${PRE_RESTORE} | docker exec -i shared-mysql mysql -u root -p\${MYSQL_ROOT_PWD} vietnet
               echo 'Rollback complete. Original data preserved.'
               exit 1
             fi
 
             # Verify
-            TABLES=\$(docker exec photo-mysql mysql -u root -p\${MYSQL_ROOT_PWD} -N -e 'SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=\"vietnet\"' 2>/dev/null)
+            TABLES=\$(docker exec shared-mysql mysql -u root -p\${MYSQL_ROOT_PWD} -N -e 'SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=\"vietnet\"' 2>/dev/null)
             echo \"Tables: \${TABLES}\"
             if [ \"\${TABLES}\" -lt 1 ]; then
               echo 'WARNING: No tables found after restore!'
@@ -221,7 +221,7 @@ jobs:
           fi
 
           VIETNET_PWD=$(grep '^VIETNET_DB_PASSWORD=' config/env | cut -d= -f2-)
-          MYSQL_CMD="docker exec -i photo-mysql mysql -u vietnet -p${VIETNET_PWD} vietnet"
+          MYSQL_CMD="docker exec -i shared-mysql mysql -u vietnet -p${VIETNET_PWD} vietnet"
 
           # Init tracker table
           for f in $(find db/changelog/_init -name '*.sql' -type f 2>/dev/null | sort); do

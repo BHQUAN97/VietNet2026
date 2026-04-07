@@ -3,7 +3,7 @@
 # VietNet Interior — UPDATE DEPLOY
 # ============================================================
 # Chay tu may local — chi build + upload + restart
-# Nginx chay trong Docker (photo-nginx), config tai /opt/webphoto/nginx/conf.d/
+# Nginx chay trong Docker (shared-nginx), config tai /opt/webphoto/nginx/conf.d/
 #
 # Usage:
 #   bash scripts/update-deploy.sh <vps-ip>
@@ -66,7 +66,7 @@ if [ -d "$CHANGELOG_DIR" ] && ls "$CHANGELOG_DIR"/V*.sql 1>/dev/null 2>&1; then
   for f in $(find "$CHANGELOG_DIR" -name 'V*.sql' -type f | sort); do
     FNAME=$(basename "$f")
     echo -n "  $FNAME ... "
-    ssh "${VPS_HOST}" "docker exec -i photo-mysql mysql -u vietnet -p'${VIETNET_DB_PASS}' vietnet" < "$f" 2>&1 && echo "OK" || echo "SKIP"
+    ssh "${VPS_HOST}" "docker exec -i shared-mysql mysql -u vietnet -p'${VIETNET_DB_PASS}' vietnet" < "$f" 2>&1 && echo "OK" || echo "SKIP"
   done
   log "DB Changelog done"
 else
@@ -76,7 +76,7 @@ fi
 # 4. Update Nginx config (nếu thay đổi)
 step "4/6 — Update Nginx config"
 scp "$ROOT_DIR/nginx/conf.d/bhquan.store.conf" "${VPS_HOST}:${WEBPHOTO_DIR}/nginx/conf.d/bhquan.store.conf"
-ssh "${VPS_HOST}" "docker exec photo-nginx nginx -t 2>&1 | tail -1 && docker exec photo-nginx nginx -s reload 2>&1"
+ssh "${VPS_HOST}" "docker exec shared-nginx nginx -t 2>&1 | tail -1 && docker exec shared-nginx nginx -s reload 2>&1"
 log "Nginx config updated"
 
 # 5. Rebuild + Restart
@@ -90,10 +90,10 @@ ssh "${VPS_HOST}" "
   docker compose build backend frontend 2>&1 | tail -5
   docker compose up -d backend frontend
 
-  # Đảm bảo photo-nginx trên vietnet_frontend network
-  if ! docker inspect photo-nginx --format '{{range \$k,\$v := .NetworkSettings.Networks}}{{\$k}} {{end}}' | grep -q vietnet_frontend; then
-    docker network connect vietnet_frontend photo-nginx
-    echo 'photo-nginx reconnected to vietnet_frontend'
+  # Đảm bảo shared-nginx trên vietnet_frontend network
+  if ! docker inspect shared-nginx --format '{{range \$k,\$v := .NetworkSettings.Networks}}{{\$k}} {{end}}' | grep -q vietnet_frontend; then
+    docker network connect vietnet_frontend shared-nginx
+    echo 'shared-nginx reconnected to vietnet_frontend'
   fi
 "
 log "Containers restarted"

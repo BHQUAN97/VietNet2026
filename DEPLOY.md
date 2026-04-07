@@ -9,18 +9,18 @@
 ```
   VPS Ubuntu (188.166.190.81)
   ┌──────────────────────────────────────────────┐
-  │  photo-nginx (Docker) :80/:443               │
+  │  shared-nginx (Docker) :80/:443               │
   │  ├─ bhquan.site  → photo-api:4000 (WebPhoto) │
   │  │                 + static /usr/share/nginx  │
   │  └─ bhquan.store → vietnet-api:4000 (API)    │
   │                    + vietnet-frontend:3000    │
   │                                               │
   │  Shared (WebPhoto owns)                       │
-  │  ├─ photo-mysql  :3306                        │
+  │  ├─ shared-mysql  :3306                        │
   │  │   ├─ DB: photo_storage                     │
   │  │   └─ DB: vietnet                           │
-  │  ├─ photo-redis  :6379                        │
-  │  └─ photo-nginx  (serves both domains)        │
+  │  ├─ shared-redis  :6379                        │
+  │  └─ shared-nginx  (serves both domains)        │
   │                                               │
   │  VietNet Containers                           │
   │  ├─ vietnet-api      :4100→4000 (NestJS)     │
@@ -28,8 +28,8 @@
   │                                               │
   │  Docker Networks                              │
   │  ├─ webphoto_backend   (mysql, redis, api)    │
-  │  ├─ webphoto_frontend  (photo-nginx, api)     │
-  │  └─ vietnet_frontend   (photo-nginx, vietnet) │
+  │  ├─ webphoto_frontend  (shared-nginx, api)     │
+  │  └─ vietnet_frontend   (shared-nginx, vietnet) │
   └──────────────────────────────────────────────┘
 ```
 
@@ -76,10 +76,10 @@ docker compose restart backend frontend
 
 # Nginx config (trong WebPhoto dir)
 vim /opt/webphoto/nginx/conf.d/bhquan.store.conf
-docker exec photo-nginx nginx -t && docker exec photo-nginx nginx -s reload
+docker exec shared-nginx nginx -t && docker exec shared-nginx nginx -s reload
 
 # DB backup
-docker exec photo-mysql mysqldump -u root -p"<PASS>" vietnet \
+docker exec shared-mysql mysqldump -u root -p"<PASS>" vietnet \
   --single-transaction | gzip > backup_vietnet_$(date +%Y%m%d).sql.gz
 ```
 
@@ -92,13 +92,13 @@ docker exec photo-mysql mysqldump -u root -p"<PASS>" vietnet \
 docker compose logs backend --tail 50
 
 # Nginx 502 — check network
-docker inspect photo-nginx --format '{{range $k,$v := .NetworkSettings.Networks}}{{$k}} {{end}}'
+docker inspect shared-nginx --format '{{range $k,$v := .NetworkSettings.Networks}}{{$k}} {{end}}'
 # Phải có: webphoto_frontend, vietnet_frontend
-# Nếu thiếu: docker network connect vietnet_frontend photo-nginx
+# Nếu thiếu: docker network connect vietnet_frontend shared-nginx
 
 # SSL cert renew
 certbot renew
 CERT_VOL=$(docker volume inspect webphoto_certbot_data --format '{{.Mountpoint}}')
 cp -rL /etc/letsencrypt/live/bhquan.store/* $CERT_VOL/live/bhquan.store/
-docker exec photo-nginx nginx -s reload
+docker exec shared-nginx nginx -s reload
 ```

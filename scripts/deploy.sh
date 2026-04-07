@@ -93,7 +93,7 @@ if [ -d "${APP_DIR}/db/changelog" ]; then
     for f in $(find "${APP_DIR}/db/changelog" -name 'V*.sql' -type f 2>/dev/null | sort); do
         FNAME=$(basename "$f")
         echo -n "  $FNAME ... "
-        docker exec -i photo-mysql mysql -u vietnet -p"${VIETNET_DB_PASSWORD}" vietnet < "$f" 2>&1 && echo "OK" || echo "SKIP"
+        docker exec -i shared-mysql mysql -u vietnet -p"${VIETNET_DB_PASSWORD}" vietnet < "$f" 2>&1 && echo "OK" || echo "SKIP"
     done
 fi
 

@@ -6,13 +6,26 @@
 
 set -euo pipefail
 
-# Configuration
-BACKUP_DIR="/opt/vietnet/backups/mysql"
-RETENTION_DAYS=7
-DB_CONTAINER="vietnet2026-mysql-1"
-DB_NAME="vietnet"
-DB_USER="vietnet"
-DB_PASSWORD="${MYSQL_BACKUP_PASSWORD:-vietnet_dev}"
+# Configuration — override via env vars
+BACKUP_DIR="${BACKUP_DIR:-/opt/vietnet/backups/mysql}"
+RETENTION_DAYS="${RETENTION_DAYS:-7}"
+DB_CONTAINER="${DB_CONTAINER:-shared-mysql}"
+DB_NAME="${DB_NAME:-vietnet}"
+DB_USER="${DB_USER:-vietnet}"
+
+# Password bat buoc tu env var, khong co default
+if [ -z "${MYSQL_BACKUP_PASSWORD:-}" ]; then
+  # Thu doc tu .env neu co
+  if [ -f /opt/vietnet/.env ]; then
+    DB_PASSWORD=$(grep '^VIETNET_DB_PASSWORD=' /opt/vietnet/.env | cut -d= -f2-)
+  fi
+  if [ -z "${DB_PASSWORD:-}" ]; then
+    echo "[ERROR] MYSQL_BACKUP_PASSWORD env var not set and cannot read from .env"
+    exit 1
+  fi
+else
+  DB_PASSWORD="${MYSQL_BACKUP_PASSWORD}"
+fi
 DATE=$(date +%Y-%m-%d_%H-%M)
 BACKUP_FILE="${BACKUP_DIR}/${DB_NAME}_${DATE}.sql.gz"
 LOG_FILE="/var/log/vietnet/backup.log"
@@ -49,6 +62,12 @@ fi
 if [ ! -s "${BACKUP_FILE}" ]; then
     log "ERROR: Backup file is empty!"
     rm -f "${BACKUP_FILE}"
+    exit 1
+fi
+
+# Verify backup integrity
+if ! gunzip -t "${BACKUP_FILE}" 2>/dev/null; then
+    log "ERROR: Backup file is corrupt (gunzip -t failed)!"
     exit 1
 fi
 

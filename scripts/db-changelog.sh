@@ -32,14 +32,14 @@ if [ ! -d "$CHANGELOG_DIR" ]; then
   exit 1
 fi
 
-# VietNet dung chung photo-mysql nhung DB rieng (vietnet)
+# VietNet dung chung shared-mysql nhung DB rieng (vietnet)
 VIETNET_DB_PWD=$(ssh "${VPS_HOST}" "grep '^VIETNET_DB_PASSWORD=' ${APP_DIR}/.env | cut -d= -f2-")
 if [ -z "$VIETNET_DB_PWD" ]; then
   echo -e "${RED}[ERR]${NC} Khong doc duoc VIETNET_DB_PASSWORD tu .env tren VPS"
   exit 1
 fi
 
-MYSQL_CMD="docker exec -i photo-mysql mysql -u vietnet -p${VIETNET_DB_PWD} vietnet"
+MYSQL_CMD="docker exec -i shared-mysql mysql -u vietnet -p${VIETNET_DB_PWD} vietnet"
 
 echo ""
 echo "=== DB Changelog Runner (VietNet) ==="

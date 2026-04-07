@@ -1,7 +1,7 @@
 # ============================================
 # VietNet Interior — PRODUCTION
 # Chạy cùng VPS với WebPhoto (bhquan.site)
-# Dùng chung MySQL (photo-mysql), Redis (photo-redis), Nginx (photo-nginx)
+# Dùng chung MySQL (shared-mysql), Redis (shared-redis), Nginx (shared-nginx)
 # Domain: bhquan.store
 # ============================================
 
@@ -19,12 +19,12 @@ services:
     environment:
       NODE_ENV: production
       PORT: 4000
-      DB_HOST: photo-mysql
+      DB_HOST: shared-mysql
       DB_PORT: 3306
       DB_USERNAME: vietnet
       DB_PASSWORD: ${VIETNET_DB_PASSWORD}
       DB_NAME: vietnet
-      REDIS_HOST: photo-redis
+      REDIS_HOST: shared-redis
       REDIS_PORT: 6379
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRATION: 3600
@@ -82,7 +82,7 @@ networks:
   webphoto_backend:
     name: webphoto_backend
     external: true
-  # Network riêng — photo-nginx cũng join network này
+  # Network riêng — shared-nginx cũng join network này
   vietnet_frontend:
     name: vietnet_frontend
     external: true
