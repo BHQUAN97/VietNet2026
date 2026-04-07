@@ -779,26 +779,65 @@ jobs:
         run: |
           VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
           PORT="${{ env.VPS_PORT }}"
+          SSH_OPTS="-o ConnectTimeout=10 -o ServerAliveInterval=5 -o ServerAliveCountMax=3"
+
+          # Ensure Redis noeviction policy
+          sshpass -e ssh -p $PORT $SSH_OPTS $VPS "
+            POLICY=\$(docker exec shared-redis redis-cli CONFIG GET maxmemory-policy 2>/dev/null | tail -1)
+            if [ \"\$POLICY\" != 'noeviction' ]; then
+              echo 'Fixing Redis eviction policy...'
+              docker exec shared-redis redis-cli CONFIG SET maxmemory-policy noeviction
+              docker exec shared-redis redis-cli CONFIG REWRITE 2>/dev/null || true
+              echo 'Redis policy set to noeviction'
+            fi
+          " 2>&1 || true
+
+          # Ensure shared-nginx connected + running
+          sshpass -e ssh -p $PORT $SSH_OPTS $VPS "
+            docker network connect vietnet_frontend shared-nginx 2>/dev/null || true
+            docker exec shared-nginx nginx -s reload 2>/dev/null || true
+          " 2>&1 || true
+
+          set +e
 
           echo "--- Backend ---"
           for i in $(seq 1 15); do
-            RESULT=$(sshpass -e ssh -p $PORT $VPS "curl -sf http://localhost:4100/api/health" 2>&1)
-            if [ $? -eq 0 ] && [ -n "$RESULT" ]; then
-              echo "  Backend healthy (${i}s): $RESULT"
+            RESULT=$(sshpass -e ssh -p $PORT $SSH_OPTS $VPS "curl -sf http://localhost:4100/api/health" 2>&1)
+            SSH_EXIT=$?
+            if [ $SSH_EXIT -eq 0 ] && [ -n "$RESULT" ]; then
+              echo "  Backend healthy (attempt $i): $RESULT"
               break
             fi
+            echo "  attempt $i: ssh_exit=$SSH_EXIT result='$RESULT'"
             if [ $i -eq 15 ]; then
               echo "ERROR: Backend health check failed after 30s"
-              echo "Last response: $RESULT"
               echo ""
-              echo "=== Container status ==="
-              sshpass -e ssh -p $PORT $VPS "docker ps -a --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' | grep -E 'vietnet|shared'" 2>&1
-              echo ""
-              echo "=== Backend logs (last 30) ==="
-              sshpass -e ssh -p $PORT $VPS "docker logs vietnet-api --tail 30 --no-log-prefix 2>&1"
-              echo ""
-              echo "=== Redis check ==="
-              sshpass -e ssh -p $PORT $VPS "docker exec shared-redis redis-cli CONFIG GET maxmemory-policy" 2>&1
+              echo "=== DIAGNOSTICS ==="
+              sshpass -e ssh -p $PORT $SSH_OPTS $VPS "
+                echo '--- Container status ---'
+                docker ps -a --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' | grep -E 'vietnet|shared' || echo '(none)'
+
+                echo ''
+                echo '--- Backend logs (last 30) ---'
+                docker logs vietnet-api --tail 30 --no-log-prefix 2>&1 || echo '(failed)'
+
+                echo ''
+                echo '--- Frontend logs (last 15) ---'
+                docker logs vietnet-frontend --tail 15 --no-log-prefix 2>&1 || echo '(failed)'
+
+                echo ''
+                echo '--- Redis check ---'
+                docker exec shared-redis redis-cli CONFIG GET maxmemory-policy 2>&1 || echo '(failed)'
+
+                echo ''
+                echo '--- Docker networks ---'
+                docker network ls | grep -E 'webphoto|vietnet' || echo '(none)'
+
+                echo ''
+                echo '--- Disk/Memory ---'
+                df -h / | tail -1
+                free -h | head -2
+              " 2>&1 || echo "WARNING: Diagnostic SSH call failed"
               exit 1
             fi
             sleep 2
@@ -806,15 +845,15 @@ jobs:
 
           echo "--- Frontend ---"
           for i in $(seq 1 10); do
-            sshpass -e ssh -p $PORT $VPS "curl -sf http://localhost:3100 > /dev/null" 2>&1
+            sshpass -e ssh -p $PORT $SSH_OPTS $VPS "curl -sf http://localhost:3100 > /dev/null" 2>&1
             if [ $? -eq 0 ]; then
-              echo "  Frontend healthy (${i}s)"
+              echo "  Frontend healthy (attempt $i)"
               break
             fi
+            echo "  attempt $i: not ready"
             if [ $i -eq 10 ]; then
               echo "  WARNING: Frontend not responding after 20s"
-              echo "=== Frontend logs (last 15) ==="
-              sshpass -e ssh -p $PORT $VPS "docker logs vietnet-frontend --tail 15 --no-log-prefix 2>&1"
+              sshpass -e ssh -p $PORT $SSH_OPTS $VPS "docker logs vietnet-frontend --tail 15 --no-log-prefix 2>&1" || true
             fi
             sleep 2
           done
