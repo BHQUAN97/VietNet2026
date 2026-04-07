@@ -344,29 +344,34 @@ jobs:
             exit 0
           fi
 
+          # Helper: xoa placeholder cert truoc khi certbot certonly
+          CLEAN_AND_CERTONLY='
+            clean_placeholder() {
+              local D=$1; shift
+              cd /opt/webphoto
+              docker compose -f docker-compose.prod.yml run --rm --entrypoint "" certbot sh -c "
+                rm -rf /etc/letsencrypt/live/$D /etc/letsencrypt/archive/$D /etc/letsencrypt/renewal/$D.conf
+              "
+              timeout 120 docker compose -f docker-compose.prod.yml run --rm --entrypoint "" certbot \
+                certbot certonly --webroot -w /var/www/certbot \
+                --email admin@bhquan.site --agree-tos --no-eff-email \
+                "$@"
+            }
+          '
+
           # bhquan.store (timeout 120s)
           echo "--- Certbot: bhquan.store ---"
           sshpass -e ssh -p $PORT $VPS "
-            cd ${WEBPHOTO_DIR}
-            timeout 120 docker compose -f docker-compose.prod.yml run --rm --entrypoint "" certbot certbot certonly \
-              --webroot -w /var/www/certbot \
-              --email admin@bhquan.site --agree-tos --no-eff-email \
-              --force-renewal \
-              -d bhquan.store -d www.bhquan.store \
-              2>&1 | tail -10
-          " && echo "[OK] bhquan.store cert" || echo "WARNING: bhquan.store cert failed — using placeholder"
+            ${CLEAN_AND_CERTONLY}
+            clean_placeholder bhquan.store -d bhquan.store -d www.bhquan.store
+          " && echo "[OK] bhquan.store cert" || echo "WARNING: bhquan.store cert failed"
 
-          # bhquan.site (nếu chưa có)
+          # bhquan.site
           echo "--- Certbot: bhquan.site ---"
           sshpass -e ssh -p $PORT $VPS "
-            cd ${WEBPHOTO_DIR}
-            timeout 120 docker compose -f docker-compose.prod.yml run --rm --entrypoint "" certbot certbot certonly \
-              --webroot -w /var/www/certbot \
-              --email admin@bhquan.site --agree-tos --no-eff-email \
-              --force-renewal \
-              -d bhquan.site -d api.bhquan.site -d ws.bhquan.site \
-              2>&1 | tail -10
-          " && echo "[OK] bhquan.site cert" || echo "WARNING: bhquan.site cert failed — using placeholder"
+            ${CLEAN_AND_CERTONLY}
+            clean_placeholder bhquan.site -d bhquan.site -d api.bhquan.site -d ws.bhquan.site
+          " && echo "[OK] bhquan.site cert" || echo "WARNING: bhquan.site cert failed"
 
           # Reload nginx
           sshpass -e ssh -p $PORT $VPS "
@@ -937,27 +942,32 @@ jobs:
           else
             echo "Requesting real SSL certs via Certbot (timeout 120s)..."
 
+            # Helper: xoa placeholder cert truoc khi certbot certonly
+            CLEAN_AND_CERTONLY='
+              clean_placeholder() {
+                local D=$1; shift
+                cd /opt/webphoto
+                docker compose -f docker-compose.prod.yml run --rm --entrypoint "" certbot sh -c "
+                  rm -rf /etc/letsencrypt/live/$D /etc/letsencrypt/archive/$D /etc/letsencrypt/renewal/$D.conf
+                "
+                timeout 120 docker compose -f docker-compose.prod.yml run --rm --entrypoint "" certbot \
+                  certbot certonly --webroot -w /var/www/certbot \
+                  --email admin@bhquan.site --agree-tos --no-eff-email \
+                  "$@"
+              }
+            '
+
             # bhquan.store
             sshpass -e ssh -p $PORT $SSH_OPTS $VPS "
-              cd ${WEBPHOTO_DIR}
-              timeout 120 docker compose -f docker-compose.prod.yml run --rm --entrypoint "" certbot certbot certonly \
-                --webroot -w /var/www/certbot \
-                --email admin@bhquan.site --agree-tos --no-eff-email \
-                --force-renewal \
-                -d bhquan.store -d www.bhquan.store \
-                2>&1 | tail -10
-            " 2>&1 && echo "[OK] bhquan.store cert" || echo "WARNING: bhquan.store cert failed — using placeholder"
+              ${CLEAN_AND_CERTONLY}
+              clean_placeholder bhquan.store -d bhquan.store -d www.bhquan.store
+            " 2>&1 && echo "[OK] bhquan.store cert" || echo "WARNING: bhquan.store cert failed"
 
-            # bhquan.site (nếu cũng cần)
+            # bhquan.site
             sshpass -e ssh -p $PORT $SSH_OPTS $VPS "
-              cd ${WEBPHOTO_DIR}
-              timeout 120 docker compose -f docker-compose.prod.yml run --rm --entrypoint "" certbot certbot certonly \
-                --webroot -w /var/www/certbot \
-                --email admin@bhquan.site --agree-tos --no-eff-email \
-                --force-renewal \
-                -d bhquan.site -d api.bhquan.site -d ws.bhquan.site \
-                2>&1 | tail -10
-            " 2>&1 && echo "[OK] bhquan.site cert" || echo "WARNING: bhquan.site cert failed — using placeholder"
+              ${CLEAN_AND_CERTONLY}
+              clean_placeholder bhquan.site -d bhquan.site -d api.bhquan.site -d ws.bhquan.site
+            " 2>&1 && echo "[OK] bhquan.site cert" || echo "WARNING: bhquan.site cert failed"
           fi
 
           # Reload nginx
