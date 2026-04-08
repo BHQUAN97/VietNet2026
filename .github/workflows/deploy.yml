@@ -792,33 +792,40 @@ jobs:
           VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
           PORT="${{ env.VPS_PORT }}"
 
+          SEED_FAIL=0
+
           echo "--- Running seed-admin ---"
           OUTPUT=$(sshpass -e ssh -p $PORT $VPS "
             cd ${APP_DIR}
             docker compose -f docker-compose.prod.yml exec -T backend node dist/scripts/seed-admin.js 2>&1
-          " 2>&1)
+          " 2>&1) || true
+          EC=$?
           echo "$OUTPUT"
+          [ $EC -ne 0 ] && echo "WARNING: seed-admin exit=$EC" && SEED_FAIL=1
           echo ""
 
           echo "--- Running seed-data ---"
           OUTPUT=$(sshpass -e ssh -p $PORT $VPS "
             cd ${APP_DIR}
             docker compose -f docker-compose.prod.yml exec -T backend node dist/scripts/seed-data.js 2>&1
-          " 2>&1)
+          " 2>&1) || true
+          EC=$?
           echo "$OUTPUT"
+          [ $EC -ne 0 ] && echo "WARNING: seed-data exit=$EC" && SEED_FAIL=1
           echo ""
 
           echo "--- Running seed-demo-data ---"
           OUTPUT=$(sshpass -e ssh -p $PORT $VPS "
             cd ${APP_DIR}
             docker compose -f docker-compose.prod.yml exec -T backend node dist/scripts/seed-demo-data.js 2>&1
-          " 2>&1)
-          EXIT_CODE=$?
+          " 2>&1) || true
+          EC=$?
           echo "$OUTPUT"
+          [ $EC -ne 0 ] && echo "WARNING: seed-demo-data exit=$EC" && SEED_FAIL=1
 
-          if [ $EXIT_CODE -ne 0 ]; then
+          if [ $SEED_FAIL -ne 0 ]; then
             echo ""
-            echo "WARNING: Seed exit=$EXIT_CODE"
+            echo "WARNING: Some seed scripts failed"
             echo "(Seed failure is non-blocking — data may already exist)"
           else
             echo "[OK] Seed complete"

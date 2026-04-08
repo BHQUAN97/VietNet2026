@@ -365,6 +365,11 @@ async function seed() {
 }
 
 seed().catch((err) => {
-  console.error('Seed failed:', err.message)
+  console.error('=== SEED-DATA FAILED ===')
+  console.error('Error:', err.message)
+  if (err.query) console.error('Query:', err.query)
+  if (err.code) console.error('DB code:', err.code)
+  if (err.sqlMessage) console.error('SQL:', err.sqlMessage)
+  console.error('Stack:', err.stack)
   process.exit(1)
 })
