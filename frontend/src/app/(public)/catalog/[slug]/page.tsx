@@ -115,7 +115,9 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
                 {product.material_type && (
                   <div className="flex justify-between">
                     <span className="text-body-md text-on-surface-variant">Vật liệu</span>
-                    <span className="text-body-md text-on-surface">{product.material_type}</span>
+                    <span className="text-body-md text-on-surface">
+                      {product.material_type.split('-').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                    </span>
                   </div>
                 )}
                 {product.finish && (
