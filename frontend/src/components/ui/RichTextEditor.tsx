@@ -291,6 +291,8 @@ export function RichTextEditor({
   className?: string
 }) {
   const [expanded, setExpanded] = useState(false)
+  // Ref ngan vong lap sync: setContent -> onUpdate -> onChange -> setFormData -> re-render -> useEffect -> setContent
+  const isInternalUpdate = useRef(false)
 
   const editor = useEditor({
     extensions: [
@@ -313,6 +315,7 @@ export function RichTextEditor({
     ],
     content,
     onUpdate: ({ editor: e }) => {
+      isInternalUpdate.current = true
       onChange(e.getHTML())
     },
     editorProps: {
@@ -321,6 +324,17 @@ export function RichTextEditor({
       },
     },
   })
+
+  // Dong bo content prop khi mo modal voi product khac (khong dong bo khi editor tu thay doi)
+  useEffect(() => {
+    if (isInternalUpdate.current) {
+      isInternalUpdate.current = false
+      return
+    }
+    if (editor && content !== editor.getHTML()) {
+      editor.commands.setContent(content || '')
+    }
+  }, [content, editor])
 
   if (!editor) return null
 

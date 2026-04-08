@@ -379,7 +379,8 @@ export default function ArticleEditor({ articleId }: { articleId?: string }) {
 
   const scheduleAutoSave = useCallback(() => {
     if (autoSaveTimerRef.current) clearTimeout(autoSaveTimerRef.current)
-    setSaveStatus('idle')
+    // Chi reset status khi can — tranh re-render lam dong native select dropdown
+    setSaveStatus(prev => prev === 'saving' ? prev : 'idle')
 
     const snapshot = JSON.stringify({ formData, contentJson, coverImageId })
     if (snapshot === lastSavedRef.current) return
