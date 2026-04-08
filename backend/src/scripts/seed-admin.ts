@@ -53,6 +53,7 @@ async function seed() {
   console.log(`Role:     super_admin`);
 
   await ds.destroy();
+  process.exit(0);
 }
 
 seed().catch((err) => {

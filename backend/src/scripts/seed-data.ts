@@ -361,6 +361,7 @@ async function seed() {
 
   console.log('\nSeed completed successfully!')
   await ds.destroy()
+  process.exit(0)
 }
 
 seed().catch((err) => {
