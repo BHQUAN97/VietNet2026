@@ -710,41 +710,7 @@ jobs:
             sleep 1
           done
 
-      - name: Seed database
-        run: |
-          VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
-          PORT="${{ env.VPS_PORT }}"
-
-          echo "--- Running seed-admin ---"
-          OUTPUT=$(sshpass -e ssh -p $PORT $VPS "
-            cd ${APP_DIR}
-            docker compose -f docker-compose.prod.yml exec -T backend node dist/scripts/seed-admin.js 2>&1
-          " 2>&1)
-          echo "$OUTPUT"
-          echo ""
-
-          echo "--- Running seed-data ---"
-          OUTPUT=$(sshpass -e ssh -p $PORT $VPS "
-            cd ${APP_DIR}
-            docker compose -f docker-compose.prod.yml exec -T backend node dist/scripts/seed-data.js 2>&1
-          " 2>&1)
-          EXIT_CODE=$?
-          echo "$OUTPUT"
-
-          if [ $EXIT_CODE -ne 0 ]; then
-            echo ""
-            echo "WARNING: Seed exit=$EXIT_CODE"
-            echo "=== Backend container status ==="
-            sshpass -e ssh -p $PORT $VPS "docker inspect -f '{{.State.Status}} ({{.State.ExitCode}})' vietnet-api" 2>&1
-            echo "=== Backend logs (last 10) ==="
-            sshpass -e ssh -p $PORT $VPS "docker logs vietnet-api --tail 10 2>&1"
-            echo "(Seed failure is non-blocking — data may already exist)"
-          else
-            echo "[OK] Seed complete"
-          fi
-
       - name: Run DB Changelog
-        if: steps.changes.outputs.db == 'true'
         run: |
           set +e
           VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
@@ -820,6 +786,43 @@ jobs:
           echo ""
           echo "Changelog: $PASS applied, $SKIP skipped, $FAIL failed"
           if [ $FAIL -gt 0 ]; then exit 1; fi
+
+      - name: Seed database
+        run: |
+          VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
+          PORT="${{ env.VPS_PORT }}"
+
+          echo "--- Running seed-admin ---"
+          OUTPUT=$(sshpass -e ssh -p $PORT $VPS "
+            cd ${APP_DIR}
+            docker compose -f docker-compose.prod.yml exec -T backend node dist/scripts/seed-admin.js 2>&1
+          " 2>&1)
+          echo "$OUTPUT"
+          echo ""
+
+          echo "--- Running seed-data ---"
+          OUTPUT=$(sshpass -e ssh -p $PORT $VPS "
+            cd ${APP_DIR}
+            docker compose -f docker-compose.prod.yml exec -T backend node dist/scripts/seed-data.js 2>&1
+          " 2>&1)
+          echo "$OUTPUT"
+          echo ""
+
+          echo "--- Running seed-demo-data ---"
+          OUTPUT=$(sshpass -e ssh -p $PORT $VPS "
+            cd ${APP_DIR}
+            docker compose -f docker-compose.prod.yml exec -T backend node dist/scripts/seed-demo-data.js 2>&1
+          " 2>&1)
+          EXIT_CODE=$?
+          echo "$OUTPUT"
+
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo ""
+            echo "WARNING: Seed exit=$EXIT_CODE"
+            echo "(Seed failure is non-blocking — data may already exist)"
+          else
+            echo "[OK] Seed complete"
+          fi
 
       - name: Health Check
         run: |

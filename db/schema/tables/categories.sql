@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS `categories` (
   `name` VARCHAR(100) NOT NULL,
   `slug` VARCHAR(100) NOT NULL,
   `description` TEXT NULL DEFAULT NULL,
-  `type` ENUM('project','product') NOT NULL,
+  `type` ENUM('project','product','article','material') NOT NULL,
   `parent_id` CHAR(26) NULL DEFAULT NULL,
   `display_order` INT NOT NULL DEFAULT 0,
   `is_active` TINYINT(1) NOT NULL DEFAULT 1,
