@@ -690,7 +690,11 @@ function ContextMenu({ editor }: { editor: Editor }) {
       fn: () => {
         try {
           const { $from } = editor.state.selection
-          editor.chain().focus().deleteRange({ from: $from.before(), to: $from.after() }).run()
+          // Resolve block position at depth 1 (top-level block)
+          const depth = Math.max(1, $from.depth)
+          const blockStart = $from.before(depth)
+          const blockEnd = $from.after(depth)
+          editor.chain().focus().deleteRange({ from: blockStart, to: blockEnd }).run()
         } catch { /* ignore */ }
       },
     },
