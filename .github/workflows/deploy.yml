@@ -152,22 +152,29 @@ jobs:
           sshpass -e scp -P $PORT .env.example $VPS:${APP_DIR}/
 
           # Backend: tar pipe thay scp -r (nhanh hon nhieu voi nhieu file nho)
+          echo "  Uploading backend..."
           tar czf - backend/src backend/dist backend/package.json backend/package-lock.json \
             backend/Dockerfile backend/tsconfig.json \
             backend/tsconfig.build.json backend/nest-cli.json 2>/dev/null | \
             sshpass -e ssh -p $PORT $VPS "tar xzf - -C ${APP_DIR}/"
+          if [ $? -ne 0 ]; then echo "ERROR: Backend upload failed"; exit 1; fi
 
           # Frontend: tar pipe (113+ files trong src/, scp -r rat cham)
+          echo "  Uploading frontend..."
           tar czf - frontend/src frontend/public frontend/package.json frontend/package-lock.json \
             frontend/Dockerfile frontend/next.config.js frontend/tailwind.config.ts \
             frontend/tsconfig.json frontend/postcss.config.js 2>/dev/null | \
             sshpass -e ssh -p $PORT $VPS "tar xzf - -C ${APP_DIR}/"
+          if [ $? -ne 0 ]; then echo "ERROR: Frontend upload failed"; exit 1; fi
 
           # Nginx config (full SSL — placeholder cert se duoc tao truoc khi start)
+          echo "  Uploading nginx config..."
           sshpass -e ssh -p $PORT $VPS "mkdir -p ${WEBPHOTO_DIR}/nginx/conf.d"
           sshpass -e scp -P $PORT nginx/conf.d/bhquan.store.conf $VPS:${WEBPHOTO_DIR}/nginx/conf.d/bhquan.store.conf
+          if [ $? -ne 0 ]; then echo "ERROR: Nginx config upload failed"; exit 1; fi
 
           # DB schema + changelog
+          echo "  Uploading DB files..."
           sshpass -e scp -P $PORT -r db/changelog $VPS:${APP_DIR}/db/ 2>/dev/null || true
           sshpass -e scp -P $PORT -r db/schema $VPS:${APP_DIR}/db/ 2>/dev/null || true
 
@@ -208,7 +215,19 @@ jobs:
             docker rm -f photo-mysql photo-redis 2>/dev/null || true
 
             cd ${INFRA_DIR}
-            docker compose up -d
+            UP_OUT=\$(docker compose up -d 2>&1)
+            UP_EXIT=\$?
+            echo \"\$UP_OUT\"
+            if [ \$UP_EXIT -ne 0 ]; then
+              echo 'ERROR: docker compose up failed'
+              echo '=== Container status ==='
+              docker ps -a --format 'table {{.Names}}\t{{.Status}}' | grep -E 'mysql|redis' || echo '(none)'
+              echo '=== MySQL logs ==='
+              docker logs shared-mysql --tail 20 2>&1 || true
+              echo '=== Redis logs ==='
+              docker logs shared-redis --tail 10 2>&1 || true
+              exit 1
+            fi
 
             echo 'Waiting for MySQL...'
             for i in \$(seq 1 60); do
@@ -243,7 +262,16 @@ jobs:
             FLUSH PRIVILEGES;
             SELECT '[OK]' AS result;
           EOSQL" 2>&1)
+          EXIT_CODE=$?
           echo "$OUTPUT"
+          if [ $EXIT_CODE -ne 0 ]; then
+            echo "ERROR: Failed to create DB/user (exit=$EXIT_CODE)"
+            echo "=== MySQL container status ==="
+            sshpass -e ssh -p $PORT $VPS "docker ps -a --format 'table {{.Names}}\t{{.Status}}' | grep mysql" 2>&1
+            echo "=== MySQL logs ==="
+            sshpass -e ssh -p $PORT $VPS "docker logs shared-mysql --tail 15 2>&1"
+            exit 1
+          fi
           echo "[OK] DB vietnet + user created"
 
       - name: '[INIT] Generate placeholder SSL certs'
@@ -398,7 +426,11 @@ jobs:
             frontend/Dockerfile frontend/next.config.js frontend/tailwind.config.ts \
             frontend/tsconfig.json frontend/postcss.config.js 2>/dev/null | \
             sshpass -e ssh -p $PORT $VPS "tar xzf - -C ${APP_DIR}/"
-
+          if [ $? -ne 0 ]; then
+            echo "ERROR: Frontend upload failed"
+            echo "Check: VPS disk space, SSH connection, tar integrity"
+            exit 1
+          fi
           echo "[OK] Frontend uploaded"
 
       - name: '[UPDATE] Upload backend'
@@ -414,7 +446,11 @@ jobs:
           tar czf - backend/src backend/dist backend/package.json backend/package-lock.json \
             backend/Dockerfile 2>/dev/null | \
             sshpass -e ssh -p $PORT $VPS "tar xzf - -C ${APP_DIR}/"
-
+          if [ $? -ne 0 ]; then
+            echo "ERROR: Backend upload failed"
+            echo "Check: VPS disk space, SSH connection, tar integrity"
+            exit 1
+          fi
           echo "[OK] Backend uploaded"
 
       - name: '[UPDATE] Sync deploy config'
@@ -479,7 +515,23 @@ jobs:
             docker network create webphoto_backend 2>/dev/null || true
             docker network create vietnet_frontend 2>/dev/null || true
             docker rm -f photo-mysql photo-redis 2>/dev/null || true
-            cd ${INFRA_DIR} && docker compose up -d --force-recreate
+
+            cd ${INFRA_DIR}
+            UP_OUT=\$(docker compose up -d --force-recreate 2>&1)
+            UP_EXIT=\$?
+            echo \"\$UP_OUT\"
+            if [ \$UP_EXIT -ne 0 ]; then
+              echo 'ERROR: docker compose up --force-recreate failed'
+              echo '=== Container status ==='
+              docker ps -a --format 'table {{.Names}}\t{{.Status}}' | grep -E 'mysql|redis' || echo '(none)'
+              echo '=== MySQL logs ==='
+              docker logs shared-mysql --tail 20 2>&1 || true
+              echo '=== Redis logs ==='
+              docker logs shared-redis --tail 10 2>&1 || true
+              echo '=== Disk space ==='
+              df -h / | tail -1
+              exit 1
+            fi
 
             echo 'Waiting for MySQL...'
             for i in \$(seq 1 60); do
@@ -487,7 +539,11 @@ jobs:
                 echo 'MySQL ready!'
                 break
               fi
-              [ \$i -eq 60 ] && echo 'WARNING: MySQL slow to start' && exit 1
+              if [ \$i -eq 60 ]; then
+                echo 'ERROR: MySQL not ready after 60s'
+                docker logs shared-mysql --tail 20 2>&1 || true
+                exit 1
+              fi
               sleep 1
             done
           "
