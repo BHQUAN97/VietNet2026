@@ -2,17 +2,18 @@
 
 import { Suspense, useState } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { PageContainer } from '@/components/layout/PageContainer'
 import { DataStates } from '@/components/shared/DataStates'
 import { Pagination } from '@/components/shared/Pagination'
 import { usePaginatedList } from '@/hooks/usePaginatedList'
 import { CardGridSkeleton } from '@/components/ui/Skeleton'
+import { CardCarousel } from '@/components/ui/CardCarousel'
+import { resolveMediaUrl } from '@/lib/api-url'
 
 import {
   ArrowUpRight,
-  Sparkles,
+  Star,
   TreePine,
   Leaf,
   PanelTop,
@@ -40,6 +41,22 @@ const MATERIAL_SAMPLES = [
   { name: 'Walnut', image: '/images/materials/walnut.jpg', color: '#5C3D2E' },
   { name: 'Cherry', image: '/images/materials/cherry.jpg', color: '#8B4513' },
 ]
+
+/** Gom cover_image + images thanh mang cho CardCarousel */
+function buildProductImages(product: Product): { src: string; alt: string }[] {
+  const result: { src: string; alt: string }[] = []
+  if (product.cover_image?.preview_url) {
+    result.push({ src: resolveMediaUrl(product.cover_image.preview_url), alt: product.cover_image.alt_text || product.name })
+  }
+  if (product.images) {
+    for (const img of product.images) {
+      if (img.media?.preview_url) {
+        result.push({ src: resolveMediaUrl(img.media.preview_url), alt: img.caption || img.media.alt_text || product.name })
+      }
+    }
+  }
+  return result
+}
 
 export default function CatalogPage() {
   return (
@@ -91,11 +108,11 @@ function CatalogContent() {
         {/* Page Header — compact with total count */}
         <div className="mb-6">
           <p className="font-label text-label-sm uppercase tracking-[0.08em] text-primary/70">
-            Bộ sưu tập
+            Sản phẩm
           </p>
           <div className="mt-1 flex items-end justify-between gap-4">
             <h1 className="font-headline text-headline-sm text-gradient-primary md:text-headline-md">
-              Bộ Sưu Tập Tủ Bếp
+              Sản Phẩm Nội Thất
             </h1>
             {meta && !loading && (
               <span className="shrink-0 font-label text-label-md text-on-surface-variant">
@@ -236,34 +253,19 @@ function CatalogContent() {
                     href={`/catalog/${product.slug}`}
                     className="card-premium group overflow-hidden rounded-2xl bg-surface-container-lowest"
                   >
-                    {/* Image */}
+                    {/* Image — Instagram-style carousel khi co nhieu anh */}
                     <div className="relative aspect-[4/3] overflow-hidden bg-surface-container">
-                      {product.cover_image?.preview_url ? (
-                        <Image
-                          src={product.cover_image.preview_url}
-                          alt={product.cover_image.alt_text || product.name}
-                          fill
-                          className="object-cover transition-transform duration-700 ease-out group-hover:scale-110"
-                          sizes="(max-width: 640px) 50vw, (max-width: 1280px) 33vw, 25vw"
-                        />
-                      ) : (
-                        <div className="flex h-full items-center justify-center bg-surface-container">
-                          <div className="h-12 w-12 rounded-lg bg-surface-container-high" />
-                        </div>
-                      )}
+                      <CardCarousel
+                        images={buildProductImages(product)}
+                        sizes="(max-width: 640px) 50vw, (max-width: 1280px) 33vw, 25vw"
+                      />
                       {/* New badge */}
-                      {product.is_new && (
-                        <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-surface/90 px-2.5 py-1 font-label text-label-sm uppercase text-on-surface shadow-ambient-sm backdrop-blur-sm">
-                          <Sparkles className="h-3 w-3" />
+                      {!!product.is_new && (
+                        <span className="absolute left-3 top-3 z-20 inline-flex items-center gap-1.5 rounded-full bg-surface/90 px-3 py-1 font-label text-label-sm uppercase text-on-surface shadow-ambient-sm backdrop-blur-sm">
+                          <Star className="h-3.5 w-3.5 fill-current" />
                           Mới
                         </span>
                       )}
-                      {/* Hover overlay voi "Xem chi tiet" */}
-                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-on-surface/30 opacity-0 transition-opacity duration-500 group-hover:opacity-100">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-surface/90 text-primary shadow-ambient-sm">
-                          <ArrowUpRight className="h-4 w-4" />
-                        </div>
-                      </div>
                     </div>
 
                     {/* Content */}
