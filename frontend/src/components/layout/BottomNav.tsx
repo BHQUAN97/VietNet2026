@@ -7,6 +7,7 @@ import {
   Home,
   Briefcase,
   LayoutGrid,
+  Package,
   MessageCircle,
   Menu,
   X,
@@ -21,6 +22,7 @@ const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
   Home,
   Briefcase,
   LayoutGrid,
+  Package,
   MessageCircle,
   Menu,
 }
