@@ -13,6 +13,7 @@ import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { ActionErrorBanner } from '@/components/shared/ActionErrorBanner'
 import { FormModal } from '@/components/shared/FormModal'
 import api from '@/lib/api'
+import { tiptapJsonToHtml } from '@/lib/tiptap-html'
 import { GalleryEditor, apiGalleryToImages, imagesToMediaIds, type GalleryImage } from '@/components/admin/GalleryEditor'
 import { validateMinLength, validateMaxLength, validateFields } from '@/lib/form-validation'
 import type { Product, Category, ApiResponse } from '@/types'
@@ -76,7 +77,7 @@ export default function AdminProductsPage() {
   function openEdit(product: Product) {
     setEditingProduct(product)
     setFormData({
-      name: product.name, description: product.description || '',
+      name: product.name, description: tiptapJsonToHtml(product.description) || '',
       category_id: product.category_id || '', material_type: product.material_type || '',
       finish: product.finish || '', price_range: product.price_range || '',
       seo_title: product.seo_title || '', seo_description: product.seo_description || '',
@@ -309,8 +310,8 @@ function productColumns(
           <span className={`inline-flex rounded-full px-2.5 py-0.5 font-label text-label-sm uppercase ${p.status === 'published' ? 'bg-success-bg text-success-text' : 'bg-warning-bg text-warning-text'}`}>
             {p.status === 'published' ? 'Xuất bản' : 'Nháp'}
           </span>
-          {p.is_featured && <span className="ml-1 inline-flex rounded-full bg-primary-fixed px-2 py-0.5 font-label text-label-sm text-on-primary-fixed">Featured</span>}
-          {p.is_new && <span className="ml-1 inline-flex rounded-full bg-tertiary/10 px-2 py-0.5 font-label text-label-sm text-tertiary">New</span>}
+          {!!p.is_featured && <span className="ml-1 inline-flex rounded-full bg-primary-fixed px-2 py-0.5 font-label text-label-sm text-on-primary-fixed">Featured</span>}
+          {!!p.is_new && <span className="ml-1 inline-flex rounded-full bg-tertiary/10 px-2 py-0.5 font-label text-label-sm text-tertiary">New</span>}
         </div>
       ),
     },

@@ -2,7 +2,6 @@
 
 import { Suspense, useState, useEffect, useCallback } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { PageContainer } from '@/components/layout/PageContainer'
 import { CardGridSkeleton } from '@/components/ui/Skeleton'
@@ -11,8 +10,26 @@ import { DataStates } from '@/components/shared/DataStates'
 import { Pagination } from '@/components/shared/Pagination'
 import { usePaginatedList } from '@/hooks/usePaginatedList'
 import { ArrowUpRight, MapPin } from 'lucide-react'
+import { CardCarousel } from '@/components/ui/CardCarousel'
+import { resolveMediaUrl } from '@/lib/api-url'
 import api from '@/lib/api'
 import type { Project, Category } from '@/types'
+
+/** Gom cover_image + gallery thanh mang cho CardCarousel */
+function buildProjectImages(project: Project): { src: string; alt: string }[] {
+  const result: { src: string; alt: string }[] = []
+  if (project.cover_image?.preview_url) {
+    result.push({ src: resolveMediaUrl(project.cover_image.preview_url), alt: project.cover_image.alt_text || project.title })
+  }
+  if (project.gallery) {
+    for (const item of project.gallery) {
+      if (item.media?.preview_url) {
+        result.push({ src: resolveMediaUrl(item.media.preview_url), alt: item.caption || item.media.alt_text || project.title })
+      }
+    }
+  }
+  return result
+}
 
 export default function ProjectsPage() {
   return (
@@ -139,25 +156,11 @@ function ProjectsContent() {
                 className="card-premium group overflow-hidden rounded-2xl bg-surface-container-lowest"
               >
                 <div className="relative aspect-[4/3] overflow-hidden bg-surface-container">
-                  {project.cover_image?.preview_url ? (
-                    <Image
-                      src={project.cover_image.preview_url}
-                      alt={project.cover_image.alt_text || project.title}
-                      fill
-                      className="object-cover transition-transform duration-700 ease-out group-hover:scale-[1.06]"
-                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                    />
-                  ) : (
-                    <div className="flex h-full items-center justify-center bg-surface-container">
-                      <div className="h-12 w-12 rounded-lg bg-surface-container-high" />
-                    </div>
-                  )}
-                  {/* Hover overlay */}
-                  <div className="absolute inset-0 flex items-end justify-end bg-gradient-to-t from-on-surface/20 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100">
-                    <div className="m-4 flex h-10 w-10 items-center justify-center rounded-full bg-surface/90 text-primary shadow-ambient-sm transition-transform duration-300 group-hover:scale-110">
-                      <ArrowUpRight className="h-4 w-4" />
-                    </div>
-                  </div>
+                  <CardCarousel
+                    images={buildProjectImages(project)}
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                    hoverScale={false}
+                  />
                 </div>
                 <div className="p-5">
                   {project.category && (

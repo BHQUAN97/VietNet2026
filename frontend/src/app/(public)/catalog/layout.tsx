@@ -1,11 +1,11 @@
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Danh mục vật liệu nội thất',
+  title: 'Sản phẩm nội thất',
   description:
     'Tìm kiếm sản phẩm và vật liệu nội thất phù hợp với không gian của bạn tại VietNet Interior.',
   openGraph: {
-    title: 'Danh mục vật liệu nội thất | VietNet Interior',
+    title: 'Sản phẩm nội thất | VietNet Interior',
     description:
       'Tìm kiếm sản phẩm và vật liệu nội thất phù hợp với không gian của bạn tại VietNet Interior.',
   },

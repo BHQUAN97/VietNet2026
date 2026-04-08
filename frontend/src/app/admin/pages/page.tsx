@@ -116,7 +116,13 @@ export default function AdminPagesPage() {
       const config = res.data as PageConfig
       setPageConfig(config)
       const draft = config.config_draft as PageConfigData | null
-      setSections(draft?.sections || DEFAULT_HOMEPAGE_CONFIG.sections)
+      // Dam bao moi section co id duy nhat — tranh React key collision gay mat data
+      const rawSections = draft?.sections || DEFAULT_HOMEPAGE_CONFIG.sections
+      const ensuredSections = rawSections.map((s) => ({
+        ...s,
+        id: s.id || generateId(),
+      }))
+      setSections(ensuredSections)
     } catch (err: any) {
       if (err?.response?.status === 404) {
         // Page config doesn't exist yet, use defaults

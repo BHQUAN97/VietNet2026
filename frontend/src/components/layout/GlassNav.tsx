@@ -103,7 +103,7 @@ export function GlassNav() {
           <Link
             href="/catalog"
             className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-xl p-2.5 text-on-surface-variant transition-colors active:bg-surface-container-high"
-            aria-label="Danh mục"
+            aria-label="Sản phẩm"
           >
             <ShoppingBag className="h-5 w-5" />
           </Link>

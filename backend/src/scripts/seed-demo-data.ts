@@ -120,30 +120,40 @@ function tiptapDoc(paragraphs: string[], imageUrls: string[]): string {
 // ============================================================
 
 // --- CATEGORIES ---
+// Dong bo voi categories.service.ts seed() — chi dung parent categories cho demo data
 const CATEGORIES = [
-  // Project categories (7)
-  { name: 'Residential', slug: 'residential', type: 'project', order: 1 },
-  { name: 'Commercial', slug: 'commercial', type: 'project', order: 2 },
-  { name: 'Hospitality', slug: 'hospitality', type: 'project', order: 3 },
-  { name: 'Căn Hộ Chung Cư', slug: 'can-ho-chung-cu', type: 'project', order: 4 },
-  { name: 'Biệt Thự', slug: 'biet-thu', type: 'project', order: 5 },
-  { name: 'Văn Phòng', slug: 'van-phong', type: 'project', order: 6 },
-  { name: 'Showroom', slug: 'showroom', type: 'project', order: 7 },
-  // Product categories (7)
-  { name: 'Tủ bếp gỗ', slug: 'tu-bep-go', type: 'product', order: 1 },
-  { name: 'Tủ bếp Acrylic', slug: 'tu-bep-acrylic', type: 'product', order: 2 },
-  { name: 'Tủ bếp Melamine', slug: 'tu-bep-melamine', type: 'product', order: 3 },
-  { name: 'Tủ Quần Áo', slug: 'tu-quan-ao', type: 'product', order: 4 },
-  { name: 'Kệ TV & Trang Trí', slug: 'ke-tv-trang-tri', type: 'product', order: 5 },
-  { name: 'Bàn Làm Việc', slug: 'ban-lam-viec', type: 'product', order: 6 },
-  { name: 'Giường Ngủ', slug: 'giuong-ngu', type: 'product', order: 7 },
-  // Article categories (6)
+  // Project categories (13)
+  { name: 'Phòng Khách', slug: 'phong-khach', type: 'project', order: 1 },
+  { name: 'Phòng Ngủ', slug: 'phong-ngu', type: 'project', order: 2 },
+  { name: 'Phòng Bếp', slug: 'phong-bep', type: 'project', order: 3 },
+  { name: 'Phòng Tắm', slug: 'phong-tam', type: 'project', order: 4 },
+  { name: 'Phòng Ăn', slug: 'phong-an', type: 'project', order: 5 },
+  { name: 'Phòng Làm Việc', slug: 'phong-lam-viec', type: 'project', order: 6 },
+  { name: 'Căn Hộ Chung Cư', slug: 'can-ho-chung-cu', type: 'project', order: 7 },
+  { name: 'Nhà Phố', slug: 'nha-pho', type: 'project', order: 8 },
+  { name: 'Biệt Thự', slug: 'biet-thu', type: 'project', order: 9 },
+  { name: 'Văn Phòng', slug: 'van-phong', type: 'project', order: 10 },
+  { name: 'Showroom', slug: 'showroom', type: 'project', order: 11 },
+  { name: 'Khách Sạn & Resort', slug: 'khach-san-resort', type: 'project', order: 12 },
+  { name: 'Nhà Hàng & Café', slug: 'nha-hang-cafe', type: 'project', order: 13 },
+  // Product categories (8)
+  { name: 'Sofa & Ghế Sofa', slug: 'sofa-ghe-sofa', type: 'product', order: 1 },
+  { name: 'Bàn', slug: 'ban', type: 'product', order: 2 },
+  { name: 'Ghế', slug: 'ghe', type: 'product', order: 3 },
+  { name: 'Giường Ngủ', slug: 'giuong-ngu', type: 'product', order: 4 },
+  { name: 'Tủ & Kệ', slug: 'tu-ke', type: 'product', order: 5 },
+  { name: 'Đèn Trang Trí', slug: 'den-trang-tri', type: 'product', order: 6 },
+  { name: 'Rèm Cửa & Thảm', slug: 'rem-cua-tham', type: 'product', order: 7 },
+  { name: 'Phụ Kiện Trang Trí', slug: 'phu-kien-trang-tri', type: 'product', order: 8 },
+  // Article categories (8)
   { name: 'Xu Hướng Thiết Kế', slug: 'xu-huong-thiet-ke', type: 'article', order: 1 },
   { name: 'Kiến Thức Nội Thất', slug: 'kien-thuc-noi-that', type: 'article', order: 2 },
   { name: 'Phong Thủy Nhà Ở', slug: 'phong-thuy-nha-o', type: 'article', order: 3 },
   { name: 'Mẹo Trang Trí', slug: 'meo-trang-tri', type: 'article', order: 4 },
   { name: 'Vật Liệu & Chất Liệu', slug: 'vat-lieu-chat-lieu', type: 'article', order: 5 },
   { name: 'Câu Chuyện Dự Án', slug: 'cau-chuyen-du-an', type: 'article', order: 6 },
+  { name: 'Tư Vấn Mua Sắm', slug: 'tu-van-mua-sam', type: 'article', order: 7 },
+  { name: 'Tin Tức & Sự Kiện', slug: 'tin-tuc-su-kien', type: 'article', order: 8 },
 ]
 
 // --- PROJECTS (20) ---
@@ -164,7 +174,7 @@ const PROJECTS = [
     title: 'Emerald Lake Kitchen',
     slug: 'emerald-lake-kitchen',
     desc: 'Nhà bếp resort cao cấp bên hồ với tầm nhìn panorama tuyệt đẹp ra Hồ Xuân Hương. Sử dụng đá tự nhiên và hệ tủ bếp gỗ walnut nhập từ Bắc Mỹ. Thiết bị nhà bếp thương hiệu Miele và Sub-Zero được tích hợp ẩn mình sau các tấm panel gỗ. Quầy bar mini với hệ thống rượu vang điều khiển nhiệt độ tự động, phục vụ tối ưu nhu cầu nghỉ dưỡng của du khách.',
-    category: 'hospitality', style: 'Resort Contemporary', area: '120m²', location: 'Đà Lạt, Lâm Đồng', year: 2025, featured: true, photoStart: 20,
+    category: 'khach-san-resort', style: 'Resort Contemporary', area: '120m²', location: 'Đà Lạt, Lâm Đồng', year: 2025, featured: true, photoStart: 20,
   },
   {
     title: 'Vintage Loft Master',
@@ -194,13 +204,13 @@ const PROJECTS = [
     title: 'Japanese Tea House',
     slug: 'japanese-tea-house',
     desc: 'Trà thất phong cách Nhật Bản giữa lòng Thủ Đức, thiết kế theo triết lý Wabi-sabi. Vật liệu thô mộc: gỗ thông tự nhiên chưa qua xử lý, đá suối, giấy shoji truyền thống. Không gian tatami với bàn trà thấp, hốc tường tokonoma trưng bày cắm hoa ikebana. Vườn đá Zen bao quanh với rêu và sỏi trắng xếp hình sóng. Ánh sáng gián tiếp qua rèm tre tạo không gian thiền định.',
-    category: 'hospitality', style: 'Japanese Wabi-sabi', area: '60m²', location: 'Thủ Đức, TP.HCM', year: 2025, featured: true, photoStart: 10,
+    category: 'khach-san-resort', style: 'Japanese Wabi-sabi', area: '60m²', location: 'Thủ Đức, TP.HCM', year: 2025, featured: true, photoStart: 10,
   },
   {
     title: 'Luxury Spa Resort',
     slug: 'luxury-spa-resort',
     desc: 'Khu spa nghỉ dưỡng 5 sao với 12 phòng trị liệu riêng biệt. Mỗi phòng được thiết kế theo một chủ đề thiên nhiên khác nhau: rừng nhiệt đới, đại dương, sa mạc, hoa anh đào. Vật liệu đá bazan núi lửa và gỗ tràm Phú Quốc. Hệ thống âm thanh surround tích hợp nhạc thiên nhiên. Bể ngâm onsen ngoài trời nhìn ra rừng dừa, kết hợp liệu pháp aromatherapy với tinh dầu thiên nhiên Việt Nam.',
-    category: 'hospitality', style: 'Tropical Wellness', area: '800m²', location: 'Phú Quốc, Kiên Giang', year: 2024, featured: true, photoStart: 20,
+    category: 'khach-san-resort', style: 'Tropical Wellness', area: '800m²', location: 'Phú Quốc, Kiên Giang', year: 2024, featured: true, photoStart: 20,
   },
   {
     title: 'Startup Creative Hub',
@@ -212,7 +222,7 @@ const PROJECTS = [
     title: 'Heritage Boutique Hotel',
     slug: 'heritage-boutique-hotel',
     desc: 'Khách sạn boutique 15 phòng trong biệt thự Pháp cổ thế kỷ 19 được trùng tu. Giữ nguyên kiến trúc gốc: trần stucco hoa văn, cửa sổ vòm, sàn gạch bông Sài Gòn xưa. Nội thất kết hợp cổ điển và đương đại: đèn chùm crystal Murano bên cạnh ghế thiết kế Scandinavian. Mỗi phòng mang tên một nhân vật lịch sử Việt Nam, trang trí tranh sơn mài và đồ gốm Bát Tràng.',
-    category: 'hospitality', style: 'Heritage Contemporary', area: '600m²', location: 'Quận 3, TP.HCM', year: 2024, featured: false, photoStart: 40,
+    category: 'khach-san-resort', style: 'Heritage Contemporary', area: '600m²', location: 'Quận 3, TP.HCM', year: 2024, featured: false, photoStart: 40,
   },
   {
     title: 'Eco Garden Villa',
@@ -236,7 +246,7 @@ const PROJECTS = [
     title: 'Mountain Lodge',
     slug: 'mountain-lodge',
     desc: 'Nhà nghỉ trên đồi Sa Pa với kiến trúc hòa mình vào sườn núi. Khung kết cấu thép kết hợp tường đá granite địa phương và gỗ thông rừng già. Mái dốc phủ cỏ xanh tự nhiên, tạo hiệu ứng ngụy trang giữa núi rừng. Lò sưởi đá giữa phòng khách, sàn gỗ ấm với hệ thống sưởi underfloor heating. Cửa kính panorama khung sắt đen nhìn ra ruộng bậc thang Mường Hoa.',
-    category: 'residential', style: 'Alpine Rustic', area: '200m²', location: 'Sa Pa, Lào Cai', year: 2025, featured: true, photoStart: 20,
+    category: 'nha-pho', style: 'Alpine Rustic', area: '200m²', location: 'Sa Pa, Lào Cai', year: 2025, featured: true, photoStart: 20,
   },
   {
     title: 'Fashion Concept Store',
@@ -248,25 +258,25 @@ const PROJECTS = [
     title: 'Smart Family Home',
     slug: 'smart-family-home',
     desc: 'Nhà phố 3 tầng cho gia đình trẻ với hệ thống smart home toàn diện. Điều khiển giọng nói qua Google Home, camera AI nhận diện thành viên gia đình. Phòng trẻ em an toàn với góc bo tròn, sơn tường kháng khuẩn và hệ thống lọc không khí HEPA. Khu vực học tập chung parent-child với bàn đôi có ngăn chia. Sân thượng BBQ với vườn rau hữu cơ mini và hệ thống tưới tự động IoT.',
-    category: 'residential', style: 'Smart Contemporary', area: '180m²', location: 'Quận 9, TP.HCM', year: 2025, featured: false, photoStart: 40,
+    category: 'nha-pho', style: 'Smart Contemporary', area: '180m²', location: 'Quận 9, TP.HCM', year: 2025, featured: false, photoStart: 40,
   },
   {
     title: 'Dental Clinic Premium',
     slug: 'dental-clinic-premium',
     desc: 'Phòng khám nha khoa cao cấp thiết kế giảm stress cho bệnh nhân. Không gian tiếp đón như hotel lobby với tông ấm wood và green. Phòng điều trị riêng biệt, cách âm, với trần LED mô phỏng bầu trời xanh. Hệ thống giải trí cá nhân: TV trần cho bệnh nhân xem trong lúc điều trị. Khu vực khử trùng theo chuẩn quốc tế với vật liệu antibacterial surface. Phòng VIP có sofa massage chờ đợi.',
-    category: 'commercial', style: 'Medical Wellness', area: '300m²', location: 'Quận 7, TP.HCM', year: 2024, featured: false, photoStart: 50,
+    category: 'showroom', style: 'Medical Wellness', area: '300m²', location: 'Quận 7, TP.HCM', year: 2024, featured: false, photoStart: 50,
   },
   {
     title: 'Rooftop Sky Bar',
     slug: 'rooftop-sky-bar',
     desc: 'Sky bar tầng thượng với thiết kế mở 360 độ, view toàn cảnh thành phố về đêm. Quầy bar trung tâm hình bán nguyệt bằng đá onyx backlit, phát sáng lung linh. Ghế ngồi ngoài trời chống thời tiết thương hiệu Kettal. Hệ thống mái che retractable tự động đóng mở theo thời tiết. Bể phản chiếu shallow pool tạo hiệu ứng gương phản chiếu skyline. Khu VIP cabana riêng tư với rèm vải outdoor.',
-    category: 'hospitality', style: 'Urban Luxe', area: '450m²', location: 'Quận 1, TP.HCM', year: 2025, featured: true, photoStart: 0,
+    category: 'nha-hang-cafe', style: 'Urban Luxe', area: '450m²', location: 'Quận 1, TP.HCM', year: 2025, featured: true, photoStart: 0,
   },
   {
     title: 'Scandinavian Townhouse',
     slug: 'scandinavian-townhouse',
     desc: 'Nhà phố phong cách Bắc Âu với palette tông trắng-gỗ-pastel. Sàn gỗ sồi trắng rộng bản, tường sơn trắng sữa, chi tiết gỗ birch nhạt. Đồ nội thất thiết kế Đan Mạch: ghế Wishbone, đèn PH5 Louis Poulsen, kệ String System. Bếp mở với đảo bếp lớn kiêm bàn ăn sáng cho cả gia đình. Góc đọc sách ấm cúng cạnh cửa sổ lớn với ghế bành sheepskin và chăn len chunky knit.',
-    category: 'residential', style: 'Scandinavian Hygge', area: '160m²', location: 'Quận 2, TP.HCM', year: 2024, featured: false, photoStart: 10,
+    category: 'nha-pho', style: 'Scandinavian Hygge', area: '160m²', location: 'Quận 2, TP.HCM', year: 2024, featured: false, photoStart: 10,
   },
 ]
 

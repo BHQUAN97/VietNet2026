@@ -132,7 +132,7 @@ export function GalleryWithLightbox({ items, defaultMode = 'carousel' }: Gallery
       {/* ═══ CAROUSEL MODE ═══ */}
       {mode === 'carousel' && (
         <>
-          <div className="relative mx-auto max-w-2xl overflow-hidden rounded-lg">
+          <div className="group/carousel relative mx-auto max-w-2xl overflow-hidden rounded-lg">
             {/* Carousel container */}
             <div
               ref={scrollRef}
@@ -162,25 +162,27 @@ export function GalleryWithLightbox({ items, defaultMode = 'carousel' }: Gallery
               ))}
             </div>
 
-            {/* Navigation arrows — desktop only */}
+            {/* Navigation arrows — Instagram style: an mac dinh, hien khi hover */}
             {validItems.length > 1 && (
               <>
-                <button
-                  onClick={goPrev}
-                  disabled={currentIndex === 0}
-                  className="absolute left-2 top-1/2 z-10 hidden h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-on-surface shadow-md transition-opacity hover:bg-white disabled:opacity-0 md:flex"
-                  aria-label="Ảnh trước"
-                >
-                  <ChevronLeft className="h-5 w-5" />
-                </button>
-                <button
-                  onClick={goNext}
-                  disabled={currentIndex === validItems.length - 1}
-                  className="absolute right-2 top-1/2 z-10 hidden h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 text-on-surface shadow-md transition-opacity hover:bg-white disabled:opacity-0 md:flex"
-                  aria-label="Ảnh sau"
-                >
-                  <ChevronRight className="h-5 w-5" />
-                </button>
+                {currentIndex > 0 && (
+                  <button
+                    onClick={goPrev}
+                    className="absolute left-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-on-surface shadow-lg opacity-0 transition-opacity duration-200 hover:bg-white group-hover/carousel:opacity-100"
+                    aria-label="Ảnh trước"
+                  >
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                )}
+                {currentIndex < validItems.length - 1 && (
+                  <button
+                    onClick={goNext}
+                    className="absolute right-3 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-on-surface shadow-lg opacity-0 transition-opacity duration-200 hover:bg-white group-hover/carousel:opacity-100"
+                    aria-label="Ảnh sau"
+                  >
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
+                )}
               </>
             )}
 
