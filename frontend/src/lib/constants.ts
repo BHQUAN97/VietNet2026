@@ -4,7 +4,7 @@ export const SITE_DESCRIPTION = 'Nội thất cao cấp cho không gian sống t
 export const NAV_LINKS = [
   { label: 'Trang chủ', href: '/' },
   { label: 'Dự án', href: '/projects' },
-  { label: 'Danh mục', href: '/catalog' },
+  { label: 'Sản phẩm', href: '/catalog' },
   { label: 'Bài viết', href: '/articles' },
   { label: 'Tư vấn', href: '/contact' },
 ] as const
@@ -12,7 +12,7 @@ export const NAV_LINKS = [
 export const BOTTOM_NAV_ITEMS = [
   { label: 'Trang chủ', href: '/', icon: 'Home' },
   { label: 'Dự án', href: '/projects', icon: 'Briefcase' },
-  { label: 'Danh mục', href: '/catalog', icon: 'LayoutGrid' },
+  { label: 'Sản phẩm', href: '/catalog', icon: 'Package' },
   { label: 'Tư vấn', href: '/contact', icon: 'MessageCircle' },
   { label: 'Menu', href: '#menu', icon: 'Menu' },
 ] as const
@@ -23,6 +23,7 @@ export const ADMIN_NAV_ITEMS = [
   { label: 'Dự án', href: '/admin/projects', icon: 'Briefcase' },
   { label: 'Bài viết', href: '/admin/articles', icon: 'Newspaper' },
   { label: 'Sản phẩm', href: '/admin/products', icon: 'Package' },
+  { label: 'Danh mục', href: '/admin/categories', icon: 'Tags' },
   { label: 'Tư vấn', href: '/admin/consultations', icon: 'MessageCircle' },
   { label: 'Phân tích', href: '/admin/analytics', icon: 'BarChart3' },
   { label: 'System Log', href: '/admin/logs', icon: 'ScrollText' },

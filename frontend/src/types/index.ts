@@ -39,7 +39,7 @@ export interface Category {
   name: string
   slug: string
   description?: string | null
-  type: 'project' | 'product'
+  type: 'project' | 'product' | 'article' | 'material'
   parent_id?: string | null
   display_order: number
   is_active: boolean
