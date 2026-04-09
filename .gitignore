@@ -39,5 +39,14 @@ npm-debug.log*
 # SDD specs (local only)
 .sdd/
 
+# Debug screenshots
+debug-*.png
+test-mobile-*.png
+deploy-*.png
+final-*.png
+
+# Playwright MCP
+.playwright-mcp/
+
 # Misc
 *.zip
