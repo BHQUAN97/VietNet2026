@@ -14,7 +14,7 @@ jobs:
       - name: Run traffic sync cron
         run: |
           source config/env
-          curl -f -s --max-time 30 -H "x-cron-secret: ${CRON_SECRET}" \
+          curl -f -s --max-time 30 -X POST -H "x-cron-secret: ${CRON_SECRET}" \
             "${API_URL}/api/cron/traffic-sync"
 
   cleanup-sessions:
@@ -25,5 +25,5 @@ jobs:
       - name: Run cleanup expired sessions
         run: |
           source config/env
-          curl -f -s --max-time 30 -H "x-cron-secret: ${CRON_SECRET}" \
+          curl -f -s --max-time 30 -X POST -H "x-cron-secret: ${CRON_SECRET}" \
             "${API_URL}/api/cron/cleanup-sessions"
