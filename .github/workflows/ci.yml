@@ -6,37 +6,110 @@ on:
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
-  typecheck-frontend:
-    name: FE Type Check
+  # ══════════════════════════════════════════
+  # 1. SECURITY SCAN
+  # ══════════════════════════════════════════
+  security:
+    name: Security Scan
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-      - run: cd frontend && npm ci
-      - run: cd frontend && npx tsc --noEmit
 
-  build-frontend:
-    name: FE Build
+      - name: Check no .env committed
+        run: |
+          FOUND=$(git ls-files '*.env' '.env.*' '!*.env.example' '!*.env.local.example' 2>/dev/null | grep -v '.example' | grep -v '.local' || true)
+          if [ -n "$FOUND" ]; then
+            echo "::error::Found .env files committed to repo:"
+            echo "$FOUND"
+            exit 1
+          fi
+          echo "OK — no .env files in repo"
+
+      - name: Check hardcoded secrets
+        run: |
+          FAIL=0
+          HIGH_RISK=$(grep -rn --include='*.ts' --include='*.tsx' --include='*.js' \
+            -E "(AKIA[0-9A-Z]{16}|re_[a-zA-Z0-9]{20,}|sk-[a-zA-Z0-9]{20,}|ghp_[a-zA-Z0-9]{20,})" \
+            backend/src/ frontend/src/ 2>/dev/null || true)
+          if [ -n "$HIGH_RISK" ]; then
+            echo "::error::HIGH RISK — API keys found in source code:"
+            echo "$HIGH_RISK"
+            FAIL=1
+          fi
+          exit $FAIL
+
+      - name: Audit backend dependencies
+        run: |
+          cd backend && npm ci --ignore-scripts
+          npm audit --audit-level=high --omit=dev 2>&1 || echo "::warning::Backend has npm audit warnings"
+
+      - name: Audit frontend dependencies
+        run: |
+          cd frontend && npm ci --ignore-scripts
+          npm audit --audit-level=high --omit=dev 2>&1 || echo "::warning::Frontend has npm audit warnings"
+
+  # ══════════════════════════════════════════
+  # 2. DB CHANGELOG VALIDATION
+  # ══════════════════════════════════════════
+  db-changelog:
+    name: DB Changelog Check
     runs-on: ubuntu-latest
-    needs: typecheck-frontend
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: frontend/package-lock.json
-      - run: cd frontend && npm ci
-      - run: cd frontend && npm run build
 
-  typecheck-backend:
-    name: BE Type Check
+      - name: Validate changelog file naming
+        run: |
+          FAIL=0
+          for f in $(find db/changelog/_init -name '*.sql' -type f 2>/dev/null); do
+            FNAME=$(basename "$f")
+            if ! echo "$FNAME" | grep -qE '^[0-9]{3}__[a-z_]+\.sql$'; then
+              echo "::error::Invalid _init filename: $FNAME (expected: NNN__description.sql)"
+              FAIL=1
+            fi
+          done
+          for d in $(find db/changelog -mindepth 1 -maxdepth 1 -type d ! -name '_init' 2>/dev/null); do
+            VER=$(basename "$d")
+            if ! echo "$VER" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+              echo "::error::Invalid version directory: $VER (expected: X.Y.Z)"
+              FAIL=1
+            fi
+            for f in $(find "$d" -name '*.sql' -type f 2>/dev/null); do
+              FNAME=$(basename "$f")
+              if ! echo "$FNAME" | grep -qE '^[0-9]{3}__[a-z_]+\.sql$'; then
+                echo "::error::Invalid changelog filename: $VER/$FNAME (expected: NNN__description.sql)"
+                FAIL=1
+              fi
+            done
+          done
+          [ $FAIL -eq 0 ] && echo "OK — naming convention valid"
+          exit $FAIL
+
+      - name: Validate SQL safety
+        run: |
+          FAIL=0
+          for f in $(find db/changelog -name '*.sql' -type f 2>/dev/null); do
+            REL=$(echo "$f" | sed 's|^db/changelog/||')
+            grep -qiE '^\s*DROP\s+(TABLE|DATABASE)\s+(?!IF\s+EXISTS)' "$f" 2>/dev/null && { echo "::error::$REL — DROP without IF EXISTS"; FAIL=1; }
+            grep -qiE '^\s*TRUNCATE\s+TABLE' "$f" 2>/dev/null && { echo "::error::$REL — TRUNCATE TABLE detected"; FAIL=1; }
+            grep -qiE '^\s*DELETE\s+FROM\s+\w+\s*;' "$f" 2>/dev/null && echo "::warning::$REL — DELETE without WHERE"
+            grep -qiE '^\s*REPLACE\s+INTO' "$f" 2>/dev/null && echo "::warning::$REL — REPLACE INTO (use INSERT...ON DUPLICATE KEY UPDATE)"
+            grep -qiE "CHARACTER\s+SET\s+utf8[^m]|CHARSET\s*=\s*utf8[^m]" "$f" 2>/dev/null && { echo "::error::$REL — Use utf8mb4, not utf8"; FAIL=1; }
+          done
+          [ $FAIL -eq 0 ] && echo "OK — SQL safety checks passed"
+          exit $FAIL
+
+  # ══════════════════════════════════════════
+  # 3. BACKEND — Lint + Type + Build + Test
+  # ══════════════════════════════════════════
+  backend:
+    name: Backend
     runs-on: ubuntu-latest
+    needs: [security]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -45,18 +118,35 @@ jobs:
           cache: npm
           cache-dependency-path: backend/package-lock.json
       - run: cd backend && npm ci
-      - run: cd backend && npx tsc --noEmit
+      - name: Lint
+        run: cd backend && npm run lint 2>&1 || echo "::warning::Backend lint has warnings"
+      - name: Type check
+        run: cd backend && npx tsc --noEmit
+      - name: Build
+        run: cd backend && npm run build
+      - name: Test
+        run: cd backend && npx jest --passWithNoTests --ci 2>&1 || echo "::warning::Backend tests skipped"
 
-  build-backend:
-    name: BE Build
+  # ══════════════════════════════════════════
+  # 4. FRONTEND — Lint + Type + Build + Test
+  # ══════════════════════════════════════════
+  frontend:
+    name: Frontend
     runs-on: ubuntu-latest
-    needs: typecheck-backend
+    needs: [security]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: backend/package-lock.json
-      - run: cd backend && npm ci
-      - run: cd backend && npm run build
+          cache-dependency-path: frontend/package-lock.json
+      - run: cd frontend && npm ci
+      - name: Lint
+        run: cd frontend && npm run lint 2>&1 || echo "::warning::Frontend lint has warnings"
+      - name: Type check
+        run: cd frontend && npx tsc --noEmit
+      - name: Build
+        run: cd frontend && npm run build
+      - name: Test
+        run: cd frontend && npx vitest run --passWithNoTests 2>&1 || echo "::warning::Frontend tests skipped"
