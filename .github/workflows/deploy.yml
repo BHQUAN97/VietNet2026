@@ -66,7 +66,7 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Load config/env + SSH
+      - name: Load config/env
         run: |
           while IFS= read -r line; do
             [[ -z "$line" || "$line" == \#* ]] && continue
@@ -74,6 +74,9 @@ jobs:
           done < config/env
           PASS=$(sed -n 's/^VPS_PASSWORD=//p' config/env)
           echo "SSHPASS=${PASS}" >> $GITHUB_ENV
+
+      - name: Setup SSH
+        run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq sshpass > /dev/null
           mkdir -p ~/.ssh
           ssh-keyscan -p ${{ env.VPS_PORT }} -H ${{ env.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
@@ -146,7 +149,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Load config/env + SSH
+      - name: Load config/env
         run: |
           while IFS= read -r line; do
             [[ -z "$line" || "$line" == \#* ]] && continue
@@ -154,6 +157,9 @@ jobs:
           done < config/env
           PASS=$(sed -n 's/^VPS_PASSWORD=//p' config/env)
           echo "SSHPASS=${PASS}" >> $GITHUB_ENV
+
+      - name: Setup SSH
+        run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq sshpass > /dev/null
           mkdir -p ~/.ssh
           ssh-keyscan -p ${{ env.VPS_PORT }} -H ${{ env.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
@@ -524,7 +530,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Setup SSH
+      - name: Load config/env
         run: |
           while IFS= read -r line; do
             [[ -z "$line" || "$line" == \#* ]] && continue
@@ -532,6 +538,9 @@ jobs:
           done < config/env
           PASS=$(sed -n 's/^VPS_PASSWORD=//p' config/env)
           echo "SSHPASS=${PASS}" >> $GITHUB_ENV
+
+      - name: Setup SSH
+        run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq sshpass > /dev/null
           mkdir -p ~/.ssh
           ssh-keyscan -p ${{ env.VPS_PORT }} -H ${{ env.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
