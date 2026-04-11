@@ -45,8 +45,11 @@ test-mobile-*.png
 deploy-*.png
 final-*.png
 
-# Playwright MCP
+# Playwright
 .playwright-mcp/
+frontend/test-results/
+frontend/playwright-report/
+frontend/blob-report/
 
 # Misc
 *.zip

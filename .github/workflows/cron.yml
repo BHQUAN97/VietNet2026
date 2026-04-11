@@ -7,7 +7,7 @@ on:
 
 jobs:
   traffic-sync:
-    if: github.event.schedule == '0 18 * * *'
+    if: false  # TEMP: disabled — fix CRON_SECRET on server first
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
