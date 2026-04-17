@@ -37,6 +37,10 @@ npm-debug.log*
 # Claude Code local
 .claude/
 
+# Roo Code (VS Code extension) — user-local config
+.roo/
+.roomodes
+
 # SDD specs (local only)
 .sdd/
 
@@ -54,3 +58,22 @@ frontend/blob-report/
 
 # Misc
 *.zip
+
+# Scripts — backup tooling
+scripts/node_modules/
+scripts/package-lock.json
+scripts/.gdrive-credentials.json
+scripts/.env
+logs/
+
+# Secrets - managed by secrets-infra
+.env
+.env.local
+.env.*.local
+.env.prod
+.env.staging
+.env.production
+secrets/*.decrypted
+# Chi commit ban encrypted (.enc) va template (.example)
+!.env.example
+!.env.*.enc
