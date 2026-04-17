@@ -11,15 +11,21 @@ interface ApiItem {
 }
 
 async function fetchSlugs(endpoint: string): Promise<ApiItem[]> {
+  // Timeout 10s de tranh sitemap bi stall khi BE cham
+  const controller = new AbortController()
+  const timeout = setTimeout(() => controller.abort(), 10000)
   try {
     const res = await fetch(`${API_URL}${endpoint}?limit=1000`, {
       next: { revalidate: 3600 },
+      signal: controller.signal,
     })
     if (!res.ok) return []
     const json = await res.json()
     return json.data || []
   } catch {
     return []
+  } finally {
+    clearTimeout(timeout)
   }
 }
 

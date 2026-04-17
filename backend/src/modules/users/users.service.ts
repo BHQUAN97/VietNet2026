@@ -124,6 +124,13 @@ export class UsersService extends BaseService<User> {
   }
 
   /**
+   * Update the bcrypt password hash for a user. Caller is responsible for hashing.
+   */
+  async updatePasswordHash(userId: string, passwordHash: string): Promise<void> {
+    await this.usersRepository.update(userId, { password_hash: passwordHash });
+  }
+
+  /**
    * Update user status (active, inactive, banned).
    */
   async updateStatus(id: string, status: UserStatus): Promise<User> {

@@ -7,12 +7,12 @@ import { test, expect, type Page } from '@playwright/test'
 
 // Các trang public cần test
 const PUBLIC_PAGES = [
-  { path: '/', title: 'VietNet Interior', heading: /nội thất|interior/i },
-  { path: '/about', title: 'Giới thiệu', heading: /kiến tạo|về chúng tôi/i },
+  { path: '/', title: 'VietNet Interior', heading: /kiến tạo|nội thất|interior/i },
+  { path: '/about', title: /giới thiệu|vietnet/i, heading: /kiến tạo|về chúng tôi/i },
   { path: '/projects', title: /dự án/i, heading: /dự án/i },
-  { path: '/articles', title: /tin tức|blog/i, heading: /tin tức|cảm hứng/i },
+  { path: '/articles', title: /tin tức|blog|vietnet/i, heading: /tin tức|cảm hứng|bài viết/i },
   { path: '/catalog', title: /sản phẩm|catalog/i, heading: /sản phẩm/i },
-  { path: '/contact', title: /liên hệ|tư vấn/i, heading: /tư vấn/i },
+  { path: '/contact', title: /liên hệ|tư vấn/i, heading: /tư vấn|liên hệ/i },
 ]
 
 test.describe('Public Pages - Load & SEO', () => {

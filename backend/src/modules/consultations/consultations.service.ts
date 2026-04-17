@@ -1,6 +1,8 @@
 import { Injectable, NotFoundException, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, IsNull } from 'typeorm';
+import * as crypto from 'crypto';
+import Redis from 'ioredis';
 import {
   Consultation,
   ConsultationStatus,
@@ -12,6 +14,10 @@ import { PaginationDto } from '../../common/dto/pagination.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 import { MailQueueService } from '../../common/services/mail-queue.service';
 import { buildSortAllowlist } from '../../common/helpers/sort-validator';
+import { InjectRedis } from '../../common/decorators/cacheable.decorator';
+
+// Dedup window — 60s: tranh double-click submit + bot spam
+const DEDUP_TTL_SEC = 60;
 
 interface ConsultationFilters {
   status?: ConsultationStatus;
@@ -36,8 +42,28 @@ export class ConsultationsService extends BaseService<Consultation> {
     @Inject(forwardRef(() => NotificationsService))
     private readonly notificationsService: NotificationsService,
     private readonly mailQueueService: MailQueueService,
+    @InjectRedis() private readonly redis: Redis,
   ) {
     super(consultationsRepository, 'Consultation');
+  }
+
+  /**
+   * Tao dedup key tu IP + hash (email|phone|message).
+   * Neu user submit 2 lan giong het trong 60s -> coi la duplicate.
+   */
+  private buildDedupKey(dto: CreateConsultationDto, ip?: string): string {
+    const fingerprint = crypto
+      .createHash('sha256')
+      .update(
+        [
+          (dto.email || '').trim().toLowerCase(),
+          (dto.phone || '').trim(),
+          (dto.message || '').trim(),
+        ].join('|'),
+      )
+      .digest('hex')
+      .slice(0, 16);
+    return `consultation:dedup:${ip || 'noip'}:${fingerprint}`;
   }
 
   /**
@@ -55,6 +81,18 @@ export class ConsultationsService extends BaseService<Consultation> {
       return { id: 'spam-detected' } as Consultation;
     }
 
+    // Dedup check: neu cung fingerprint submit trong 60s, tra ve ban cu (silent accept)
+    const dedupKey = this.buildDedupKey(dto, ip);
+    try {
+      const prevId = await this.redis.get(dedupKey);
+      if (prevId) {
+        this.actionLogger.log(`Dedup hit: consultation from ${ip} returning cached id=${prevId}`);
+        return { id: prevId } as Consultation;
+      }
+    } catch {
+      // Redis loi -> bo qua dedup, van cho submit (fail-open)
+    }
+
     const consultation = this.consultationsRepository.create({
       name: dto.name,
       email: dto.email,
@@ -70,6 +108,9 @@ export class ConsultationsService extends BaseService<Consultation> {
 
     const saved = await this.consultationsRepository.save(consultation);
     this.actionLogger.log(`New consultation ${saved.id} from ${dto.phone || dto.email}`);
+
+    // Mark dedup key sau khi save thanh cong — khong block response neu Redis loi
+    this.redis.setex(dedupKey, DEDUP_TTL_SEC, saved.id).catch(() => {});
 
     // Queue confirmation email to user (chi gui khi co email)
     if (dto.email) {

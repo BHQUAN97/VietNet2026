@@ -1,0 +1,37 @@
+# VietNet Interior 2026 — System crontab
+# Cai dat tren VPS:
+#   sudo cp scripts/crontab.vietnet /etc/cron.d/vietnet
+#   sudo chmod 644 /etc/cron.d/vietnet
+#
+# Hoac dung user crontab:
+#   crontab -e
+#   (copy noi dung ben duoi, bo dong SHELL/PATH/USER)
+#
+# Dieu kien: backend chay tai http://127.0.0.1:4000 (docker-compose.yml port 5102 → 4000 internal,
+# hoac 4100 trong dev). Doi cho phu hop.
+#
+# CRON_SECRET phai match bien moi truong trong backend/.env (header x-cron-secret).
+
+SHELL=/bin/bash
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+
+# Load secret tu env file. Thay duong dan cho phu hop.
+# Co the source vao user crontab bang: * * * * * source /opt/vietnet/.cron-env && ...
+CRON_URL=http://127.0.0.1:4000/api/cron
+# CRON_SECRET_FILE chua dong: export CRON_SECRET=<...>
+CRON_SECRET_FILE=/opt/vietnet/.cron-env
+
+# ── Every 5 min: auto-publish scheduled articles/projects/products ──────────
+*/5 * * * * root source $CRON_SECRET_FILE && curl -sf -X POST -H "x-cron-secret: $CRON_SECRET" $CRON_URL/publish-scheduled > /var/log/vietnet-cron.log 2>&1
+
+# ── Every hour: aggregate page_views → page_view_daily ──────────────────────
+5 * * * * root source $CRON_SECRET_FILE && curl -sf -X POST -H "x-cron-secret: $CRON_SECRET" $CRON_URL/traffic-sync >> /var/log/vietnet-cron.log 2>&1
+
+# ── Daily 03:00: cleanup expired sessions + old page_views ─────────────────
+0 3 * * * root source $CRON_SECRET_FILE && curl -sf -X POST -H "x-cron-secret: $CRON_SECRET" $CRON_URL/cleanup-sessions >> /var/log/vietnet-cron.log 2>&1
+
+# ── Weekly (Sunday 04:00): hard-delete media soft-deleted > 30 days ────────
+0 4 * * 0 root source $CRON_SECRET_FILE && curl -sf -X POST -H "x-cron-secret: $CRON_SECRET" $CRON_URL/cleanup-orphan-media >> /var/log/vietnet-cron.log 2>&1
+
+# ── Daily 02:00: backup MySQL (neu dung scripts/backup-mysql.sh) ───────────
+0 2 * * * root /opt/vietnet/scripts/backup-mysql.sh >> /var/log/vietnet-backup.log 2>&1

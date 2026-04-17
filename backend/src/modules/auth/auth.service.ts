@@ -2,6 +2,7 @@ import {
   Injectable,
   UnauthorizedException,
   ConflictException,
+  BadRequestException,
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
@@ -10,13 +11,21 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan, IsNull } from 'typeorm';
 import * as bcrypt from 'bcrypt';
+import * as crypto from 'crypto';
 import { UsersService } from '../users/users.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { RefreshToken } from './entities/refresh-token.entity';
 import { LoginAttempt } from './entities/login-attempt.entity';
+import { PasswordResetToken } from './entities/password-reset-token.entity';
+import { MailQueueService } from '../../common/services/mail-queue.service';
 import { generateUlid } from '../../common/helpers/ulid.helper';
 import { UserRole, UserStatus } from '../users/entities/user.entity';
+
+// Password reset token expiry: 1 hour
+const PASSWORD_RESET_TTL_MS = 60 * 60 * 1000;
+// Raw token length (bytes) — crypto.randomBytes(32) → 64 hex chars
+const PASSWORD_RESET_TOKEN_BYTES = 32;
 
 @Injectable()
 export class AuthService {
@@ -28,6 +37,9 @@ export class AuthService {
     private readonly refreshTokenRepository: Repository<RefreshToken>,
     @InjectRepository(LoginAttempt)
     private readonly loginAttemptRepository: Repository<LoginAttempt>,
+    @InjectRepository(PasswordResetToken)
+    private readonly passwordResetTokenRepository: Repository<PasswordResetToken>,
+    private readonly mailQueueService: MailQueueService,
   ) {}
 
   // ─── Rate Limiting ─────────────────────────────────────────────
@@ -238,6 +250,109 @@ export class AuthService {
     await this.revokeAllUserTokens(userId);
   }
 
+  // ─── Password Reset ────────────────────────────────────────────
+
+  /**
+   * Request a password reset link. Tao token ngau nhien, hash bang bcrypt,
+   * luu vao DB voi TTL 1h va queue email thong qua BullMQ.
+   *
+   * Luon tra ve thanh cong du email co ton tai hay khong — chong email enumeration.
+   */
+  async requestPasswordReset(email: string): Promise<void> {
+    const user = await this.usersService.findByEmail(email);
+    // Email not found → silently succeed (prevent enumeration)
+    if (!user) {
+      return;
+    }
+
+    // Only active accounts can reset; skip silently for inactive/banned
+    if (user.status !== UserStatus.ACTIVE) {
+      return;
+    }
+
+    // Generate cryptographically secure random token (hex-encoded)
+    const rawToken = crypto
+      .randomBytes(PASSWORD_RESET_TOKEN_BYTES)
+      .toString('hex');
+    const tokenHash = await bcrypt.hash(rawToken, 12);
+    const expiresAt = new Date(Date.now() + PASSWORD_RESET_TTL_MS);
+
+    const entity = this.passwordResetTokenRepository.create({
+      id: generateUlid(),
+      user_id: user.id,
+      token_hash: tokenHash,
+      expires_at: expiresAt,
+      used_at: null,
+    });
+    await this.passwordResetTokenRepository.save(entity);
+
+    // Build reset URL — FRONTEND_URL from env, fallback to localhost dev
+    const frontendUrl =
+      this.configService.get<string>('FRONTEND_URL') ||
+      process.env.FRONTEND_URL ||
+      'http://localhost:3000';
+    const resetUrl = `${frontendUrl.replace(/\/+$/, '')}/admin/reset-password?token=${rawToken}`;
+
+    await this.mailQueueService.queuePasswordReset(
+      user.email,
+      user.full_name,
+      resetUrl,
+    );
+  }
+
+  /**
+   * Reset password using a valid (unused, non-expired) reset token.
+   * Since token_hash is bcrypt (non-deterministic), we iterate candidate tokens
+   * and bcrypt.compare each. With 1h TTL and low volume this is bounded.
+   */
+  async resetPassword(rawToken: string, newPassword: string): Promise<void> {
+    const now = new Date();
+
+    // Load all candidate tokens: unused + not expired
+    const candidates = await this.passwordResetTokenRepository.find({
+      where: {
+        used_at: IsNull(),
+        expires_at: MoreThan(now),
+      },
+      order: { created_at: 'DESC' },
+      take: 100, // safety bound — concurrent reset requests should stay well below
+    });
+
+    let matched: PasswordResetToken | null = null;
+    for (const candidate of candidates) {
+      // eslint-disable-next-line no-await-in-loop
+      const isMatch = await bcrypt.compare(rawToken, candidate.token_hash);
+      if (isMatch) {
+        matched = candidate;
+        break;
+      }
+    }
+
+    if (!matched) {
+      throw new BadRequestException('Invalid or expired token');
+    }
+
+    // Load user to ensure still active
+    const user = await this.usersService.findByIdSafe(matched.user_id);
+    if (!user || user.status !== UserStatus.ACTIVE) {
+      throw new BadRequestException('Invalid or expired token');
+    }
+
+    // Hash new password and update user
+    const newHash = await bcrypt.hash(newPassword, 12);
+    await this.usersService.updatePasswordHash(user.id, newHash);
+
+    // Mark token used
+    matched.used_at = new Date();
+    await this.passwordResetTokenRepository.save(matched);
+
+    // Revoke all refresh tokens so existing sessions are invalidated
+    await this.revokeAllUserTokens(user.id);
+  }
+
+  // TODO: email verification flow — requires EmailVerificationToken entity
+  // (not present in current schema). Skip POST /auth/verify-email for now.
+
   // ─── Private Helpers ───────────────────────────────────────────
 
   /**
@@ -249,7 +364,7 @@ export class AuthService {
     ip?: string,
     userAgent?: string,
   ): Promise<void> {
-    const tokenHash = await bcrypt.hash(rawToken, 10);
+    const tokenHash = await bcrypt.hash(rawToken, 12);
     const refreshExpiresInSec = this.configService.get<number>(
       'jwt.refreshExpiresIn',
       604800,

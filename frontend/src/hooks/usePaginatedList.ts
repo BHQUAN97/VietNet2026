@@ -1,13 +1,20 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation'
 import api from '@/lib/api'
 import { getErrorMessage } from '@/lib/error'
 import { getPageParam, updateSearchParam } from '@/lib/query'
 import type { PaginationMeta } from '@/types'
 
-interface UsePaginatedListOptions {
+/** Initial SSR data duoc pass tu server page (first-page hydration) */
+export interface PaginatedInitialData<T> {
+  data: T[]
+  total: number
+  page: number
+}
+
+interface UsePaginatedListOptions<T = unknown> {
   /** API endpoint, vd: '/articles', '/products/admin/list' */
   endpoint: string
   /** So item moi trang (default 20) */
@@ -16,6 +23,11 @@ interface UsePaginatedListOptions {
   params?: Record<string, string | number | boolean | undefined>
   /** Tu dong fetch khi mount (default true) */
   autoFetch?: boolean
+  /**
+   * Initial data tu SSR. Khi cung cap va URL page === initialData.page,
+   * hook se skip fetch lan dau va hydrate thang tu data nay.
+   */
+  initialData?: PaginatedInitialData<T>
 }
 
 interface UsePaginatedListReturn<T> {
@@ -41,27 +53,57 @@ interface UsePaginatedListReturn<T> {
  * Generic paginated list hook.
  * Thay the 7+ pages copy-paste fetch + pagination + loading/error logic.
  *
- * Usage:
- * const { items, meta, loading, error, goToPage, isEmpty } = usePaginatedList<Article>({
- *   endpoint: '/articles',
- *   limit: 9,
- *   params: { status: statusFilter },
- * })
+ * SSR hydration:
+ *   Truyen `initialData` tu server page de skip lan fetch dau neu URL page
+ *   trung voi initialData.page. Khi user chuyen trang (hoac doi filter qua URL),
+ *   hook tu dong re-fetch nhu binh thuong.
+ *
+ * Usage (CSR only):
+ *   const { items, meta, loading, error, goToPage, isEmpty } = usePaginatedList<Article>({
+ *     endpoint: '/articles',
+ *     limit: 9,
+ *   })
+ *
+ * Usage (SSR hydrate):
+ *   const { items, ... } = usePaginatedList<Article>({
+ *     endpoint: '/articles',
+ *     limit: 9,
+ *     initialData, // { data, total, page }
+ *   })
  */
 export function usePaginatedList<T>(
-  options: UsePaginatedListOptions,
+  options: UsePaginatedListOptions<T>,
 ): UsePaginatedListReturn<T> {
-  const { endpoint, limit = 20, params = {}, autoFetch = true } = options
+  const { endpoint, limit = 20, params = {}, autoFetch = true, initialData } = options
   const searchParams = useSearchParams()
   const router = useRouter()
   const pathname = usePathname()
 
   const currentPage = getPageParam(searchParams)
 
-  const [items, setItems] = useState<T[]>([])
-  const [meta, setMeta] = useState<PaginationMeta | null>(null)
-  const [loading, setLoading] = useState(true)
+  // Neu initialData khop voi URL page hien tai, hydrate thang tu do.
+  const canHydrate = !!initialData && initialData.page === currentPage
+
+  const [items, setItems] = useState<T[]>(() =>
+    canHydrate ? (initialData as PaginatedInitialData<T>).data : [],
+  )
+  const [meta, setMeta] = useState<PaginationMeta | null>(() => {
+    if (!canHydrate) return null
+    const total = (initialData as PaginatedInitialData<T>).total
+    const totalPages = limit > 0 ? Math.max(1, Math.ceil(total / limit)) : 1
+    return {
+      page: (initialData as PaginatedInitialData<T>).page,
+      limit,
+      total,
+      totalPages,
+    }
+  })
+  const [loading, setLoading] = useState(!canHydrate)
   const [error, setError] = useState<string | null>(null)
+
+  // Skip lan fetch dau ngay sau mount khi da hydrate tu SSR.
+  // Cac lan params/page thay doi sau do van trigger fetch nhu thuong le.
+  const skipNextFetchRef = useRef(canHydrate)
 
   const fetchData = useCallback(async () => {
     setLoading(true)
@@ -92,9 +134,13 @@ export function usePaginatedList<T>(
   }, [endpoint, currentPage, limit, JSON.stringify(params)])
 
   useEffect(() => {
-    if (autoFetch) {
-      fetchData()
+    if (!autoFetch) return
+    if (skipNextFetchRef.current) {
+      // Da hydrate tu SSR, bo qua effect dau tien nhung cho phep fetch o lan sau.
+      skipNextFetchRef.current = false
+      return
     }
+    fetchData()
   }, [fetchData, autoFetch])
 
   const goToPage = useCallback(

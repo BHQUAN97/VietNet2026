@@ -7,6 +7,7 @@ import {
   ManyToOne,
   JoinColumn,
   BeforeInsert,
+  Index,
 } from 'typeorm';
 import { generateUlid } from '../../../common/helpers/ulid.helper';
 import { Product } from '../../products/entities/product.entity';
@@ -28,6 +29,9 @@ export enum ConsultationStatus {
   CANCELLED = 'cancelled',
 }
 
+// Indexes for admin list (filter by status + sort by created_at)
+@Index('IDX_consultations_created_at', ['created_at'])
+@Index('IDX_consultations_status_created_at', ['status', 'created_at'])
 @Entity('consultations')
 export class Consultation {
   @PrimaryColumn({ type: 'char', length: 26 })

@@ -8,6 +8,7 @@ import {
   Query,
   Req,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { ProjectsService } from './projects.service';
 import { CreateProjectDto } from './dto/create-project.dto';
@@ -22,6 +23,7 @@ import { CrudController } from '../../common/base/base-crud.controller';
 @Controller('projects')
 export class ProjectsController extends CrudController<any> {
   protected readonly entityName = 'Project';
+  private readonly logger = new Logger(ProjectsController.name);
 
   constructor(protected readonly service: ProjectsService) {
     super();
@@ -92,7 +94,10 @@ export class ProjectsController extends CrudController<any> {
   @Get(':slug')
   async findBySlug(@Param('slug') slug: string) {
     const project = await this.service.findPublishedBySlug(slug);
-    this.service.incrementViewCount(project.id).catch(() => {});
+    // Fire-and-forget de khong block response; log error thay vi swallow im lang
+    this.service.incrementViewCount(project.id).catch((err) => {
+      this.logger.warn(`incrementViewCount failed for project ${project.id}: ${err?.message ?? err}`);
+    });
     return ok(project);
   }
 

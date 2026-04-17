@@ -6,9 +6,11 @@ import {
   IsInt,
   IsArray,
   IsObject,
+  IsDateString,
   MinLength,
   MaxLength,
   Min,
+  ValidateIf,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ProductStatus } from '../entities/product.entity';
@@ -55,6 +57,12 @@ export class CreateProductDto {
   @IsOptional()
   @IsEnum(ProductStatus, { message: 'Trạng thái sản phẩm không hợp lệ' })
   status?: ProductStatus;
+
+  // Lịch đăng — null để huỷ lịch. Chấp nhận ISO 8601 hoặc null.
+  @IsOptional()
+  @ValidateIf((_o, v) => v !== null)
+  @IsDateString({}, { message: 'Thời điểm đăng theo lịch không hợp lệ' })
+  scheduled_publish_at?: string | null;
 
   @IsOptional()
   @IsBoolean({ message: 'Giá trị sản phẩm mới phải là true hoặc false' })

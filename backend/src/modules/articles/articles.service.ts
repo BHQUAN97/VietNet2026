@@ -1,9 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, DeepPartial } from 'typeorm';
+import Redis from 'ioredis';
 import { Article, ArticleStatus } from './entities/article.entity';
 import { PublishableService } from '../../common/base/base-publishable.service';
 import { PaginationDto } from '../../common/dto/pagination.dto';
+import { sanitizeRichText } from '../../common/utils/sanitize-html.util';
+import { Cacheable, CacheEvict, InjectRedis } from '../../common/decorators/cacheable.decorator';
 
 @Injectable()
 export class ArticlesService extends PublishableService<Article> {
@@ -22,14 +25,28 @@ export class ArticlesService extends PublishableService<Article> {
     ['display_order', 'ASC'],
     ['created_at', 'DESC'],
   ];
-  // Content la TipTap JSON, sanitize HTML o frontend khi render
+  // Base-level sanitizer chay khi true; ta tat de dung sanitizeRichText rieng ben duoi
   protected readonly sanitizeContent = false;
 
   constructor(
     @InjectRepository(Article)
     private readonly articleRepo: Repository<Article>,
+    @InjectRedis() protected readonly redisClient: Redis,
   ) {
     super(articleRepo, 'Article');
+  }
+
+  // ─── Sanitize TipTap HTML content truoc khi luu DB ──────────
+  protected async beforeSave(
+    data: DeepPartial<Article>,
+  ): Promise<DeepPartial<Article>> {
+    const enriched = await super.beforeSave(data);
+    if ((enriched as any).content !== undefined && (enriched as any).content !== null) {
+      (enriched as any).content = sanitizeRichText(
+        (enriched as any).content as string,
+      );
+    }
+    return enriched;
   }
 
   // ─── Admin list voi LIKE search ──────────────────────────────
@@ -86,6 +103,31 @@ export class ArticlesService extends PublishableService<Article> {
     }
 
     return this.executeWithDefaultSort(qb, pagination);
+  }
+
+  // ─── Cache wrappers ──────────────────────────────────────────
+
+  @Cacheable({
+    key: (...args: unknown[]) => `article:slug:${args[0] as string}`,
+    ttl: 300,
+  })
+  async findPublishedBySlug(slug: string): Promise<Article> {
+    return super.findPublishedBySlug(slug);
+  }
+
+  @CacheEvict({ pattern: 'article:*' })
+  async update(id: string, data: DeepPartial<Article>): Promise<Article> {
+    return super.update(id, data);
+  }
+
+  @CacheEvict({ pattern: 'article:*' })
+  async softDelete(id: string): Promise<void> {
+    return super.softDelete(id);
+  }
+
+  @CacheEvict({ pattern: 'article:*' })
+  async publish(id: string): Promise<Article> {
+    return super.publish(id);
   }
 
   // ─── Related articles ────────────────────────────────────────

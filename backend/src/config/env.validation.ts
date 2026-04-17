@@ -1,7 +1,20 @@
 /**
  * Validate required environment variables at startup.
- * Fails fast with a clear error if any critical env var is missing.
+ * Fails fast with a clear error if any critical env var is missing or insecure.
  */
+
+// Cac gia tri placeholder trong .env.example KHONG duoc phep dung lam JWT_SECRET that
+const INSECURE_JWT_SECRETS = new Set<string>([
+  'your-secret-key-change-in-production',
+  'generate-with-openssl-rand-base64-32',
+  'change-me-in-local-env',
+  'secret',
+  'jwt_secret',
+  'changeme',
+]);
+
+const MIN_JWT_SECRET_LENGTH = 32;
+
 export function validateEnv(): void {
   const required: string[] = [
     'DB_HOST',
@@ -25,13 +38,36 @@ export function validateEnv(): void {
     process.exit(1);
   }
 
-  // Warn about default/insecure values in production
+  const jwtSecret = process.env.JWT_SECRET as string;
+
+  // Strict check: KHONG duoc dung placeholder tu .env.example
+  if (INSECURE_JWT_SECRETS.has(jwtSecret)) {
+    console.error(
+      '[ENV] CRITICAL: JWT_SECRET is set to a placeholder value from .env.example.',
+    );
+    console.error(
+      '[ENV] Generate a secure secret with: openssl rand -base64 32',
+    );
+    process.exit(1);
+  }
+
+  // Strict check: min length 32 chars
+  if (jwtSecret.length < MIN_JWT_SECRET_LENGTH) {
+    console.error(
+      `[ENV] CRITICAL: JWT_SECRET must be at least ${MIN_JWT_SECRET_LENGTH} characters long ` +
+        `(current: ${jwtSecret.length}).`,
+    );
+    console.error(
+      '[ENV] Generate a secure secret with: openssl rand -base64 32',
+    );
+    process.exit(1);
+  }
+
+  // Production-only: stricter warnings (redundant with above but explicit)
   if (process.env.NODE_ENV === 'production') {
-    if (
-      process.env.JWT_SECRET === 'your-secret-key-change-in-production'
-    ) {
+    if (INSECURE_JWT_SECRETS.has(jwtSecret)) {
       console.error(
-        '[ENV] CRITICAL: JWT_SECRET is set to the default value in production!',
+        '[ENV] CRITICAL: JWT_SECRET is set to a default/placeholder value in production!',
       );
       process.exit(1);
     }

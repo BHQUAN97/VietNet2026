@@ -41,8 +41,10 @@ services:
 
   mysql:
     ports:
-      - "3307:3306"
+      # DEV ONLY — chi mo cho localhost, tranh lo port ra internet
+      - "127.0.0.1:3307:3306"
 
   redis:
     ports:
-      - "6380:6379"
+      # DEV ONLY — chi mo cho localhost, tranh lo port ra internet
+      - "127.0.0.1:6380:6379"

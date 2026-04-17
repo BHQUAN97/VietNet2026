@@ -21,4 +21,16 @@ export class CronController {
     const result = await this.cronService.cleanupSessions();
     return ok(result, 'Cleanup sessions complete');
   }
+
+  @Post('cleanup-orphan-media')
+  async cleanupOrphanMedia() {
+    const result = await this.cronService.cleanupOrphanMedia();
+    return ok(result, 'Orphan media cleanup complete');
+  }
+
+  @Post('publish-scheduled')
+  async publishScheduled() {
+    const result = await this.cronService.publishScheduled();
+    return ok(result, 'Publish scheduled entities complete');
+  }
 }

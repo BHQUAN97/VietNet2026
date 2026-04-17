@@ -14,6 +14,8 @@ import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { RequestPasswordResetDto } from './dto/request-password-reset.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { Public } from '../../common/decorators/public.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { ok } from '../../common/helpers/response.helper';
@@ -72,6 +74,7 @@ export class AuthController {
   }
 
   @Public()
+  @Throttle({ default: { ttl: 60000, limit: 20 } }) // 20 req/min per IP — chong spam refresh
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   async refresh(
@@ -111,4 +114,28 @@ export class AuthController {
   async me(@CurrentUser() user: Record<string, unknown>) {
     return ok(user);
   }
+
+  // ─── Password Reset ────────────────────────────────────────────
+
+  @Public()
+  @Throttle({ default: { ttl: 10 * 60 * 1000, limit: 3 } }) // 3 req / 10 min per IP
+  @Post('request-password-reset')
+  @HttpCode(HttpStatus.OK)
+  async requestPasswordReset(@Body() dto: RequestPasswordResetDto) {
+    await this.authService.requestPasswordReset(dto.email);
+    // Always return success message (prevent email enumeration)
+    return ok(null, 'If email exists, reset link has been sent');
+  }
+
+  @Public()
+  @Throttle({ default: { ttl: 60 * 1000, limit: 5 } }) // 5 req / min per IP
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  async resetPassword(@Body() dto: ResetPasswordDto) {
+    await this.authService.resetPassword(dto.token, dto.newPassword);
+    return ok(null, 'Password has been reset');
+  }
+
+  // POST /auth/verify-email — not implemented: project does not have an
+  // EmailVerificationToken entity yet. Add when email verification is required.
 }

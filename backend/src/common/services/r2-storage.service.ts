@@ -103,11 +103,18 @@ export class R2StorageService implements OnModuleInit {
       return `/uploads/${key}`;
     }
 
+    // Clamp expiry: toi thieu 60s, toi da 3600s (1h) de giam rui ro leak URL
+    const MAX_EXPIRES_IN = 3600; // 1 hour
+    const safeExpiresIn = Math.min(
+      Math.max(expiresIn ?? 3600, 60),
+      MAX_EXPIRES_IN,
+    );
+
     const command = new GetObjectCommand({
       Bucket: this.bucketPrivate,
       Key: key,
     });
-    return getSignedUrl(this.s3Client, command, { expiresIn });
+    return getSignedUrl(this.s3Client, command, { expiresIn: safeExpiresIn });
   }
 
   async download(bucket: 'private' | 'public', key: string): Promise<Buffer> {

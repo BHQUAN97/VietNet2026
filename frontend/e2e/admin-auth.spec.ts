@@ -128,6 +128,8 @@ test.describe('Admin Routes Protection', () => {
     '/admin/analytics',
     '/admin/users',
     '/admin/settings',
+    '/admin/pages',
+    '/admin/logs',
   ]
 
   for (const route of PROTECTED_ROUTES) {

@@ -4,9 +4,11 @@ import {
   IsEnum,
   IsBoolean,
   IsInt,
+  IsDateString,
   MinLength,
   MaxLength,
   Min,
+  ValidateIf,
 } from 'class-validator';
 import { Type, Transform } from 'class-transformer';
 import { ArticleStatus } from '../entities/article.entity';
@@ -39,6 +41,12 @@ export class CreateArticleDto {
   @IsOptional()
   @IsEnum(ArticleStatus, { message: 'Trạng thái bài viết không hợp lệ' })
   status?: ArticleStatus;
+
+  // Lịch đăng — null để huỷ lịch. Chấp nhận ISO 8601 hoặc null.
+  @IsOptional()
+  @ValidateIf((_o, v) => v !== null)
+  @IsDateString({}, { message: 'Thời điểm đăng theo lịch không hợp lệ' })
+  scheduled_publish_at?: string | null;
 
   @IsOptional()
   @Transform(({ value }) => value === true || value === 1 || value === '1' || value === 'true')

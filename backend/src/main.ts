@@ -37,20 +37,17 @@ async function bootstrap() {
   // Serve local uploads khi R2 chưa config
   app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
+  // Backend chi serve JSON API — khong render HTML, khong load script/style/image
+  // tu browser. CSP minimal: chan tat ca resource. frame-ancestors 'none' chong clickjacking.
+  // CSP cho HTML duoc Next.js middleware set voi nonce per-request (frontend/src/middleware.ts).
   app.use(helmet({
     crossOriginResourcePolicy: { policy: 'cross-origin' },
     crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
     contentSecurityPolicy: {
+      useDefaults: false,
       directives: {
-        defaultSrc: ["'self'"],
-        scriptSrc: ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
-        styleSrc: ["'self'", "'unsafe-inline'", 'fonts.googleapis.com'],
-        styleSrcElem: ["'self'", "'unsafe-inline'", 'fonts.googleapis.com'],
-        imgSrc: ["'self'", 'data:', 'blob:', '*.r2.cloudflarestorage.com', '*.r2.dev', 'bhquan.site', 'bhquan.store'],
-        mediaSrc: ["'self'", 'data:', 'blob:', '*.r2.dev', '*.r2.cloudflarestorage.com'],
-        connectSrc: ["'self'", 'wss:', 'ws:', '*.r2.dev'],
-        fontSrc: ["'self'", 'fonts.gstatic.com', 'fonts.googleapis.com', 'data:'],
-        frameSrc: ["'none'"],
+        defaultSrc: ["'none'"],
+        frameAncestors: ["'none'"],
       },
     },
   }));

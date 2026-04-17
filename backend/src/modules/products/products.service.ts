@@ -1,11 +1,13 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, DeepPartial } from 'typeorm';
+import { InjectRepository, InjectDataSource } from '@nestjs/typeorm';
+import { DataSource, Repository, DeepPartial } from 'typeorm';
+import Redis from 'ioredis';
 import { Product } from './entities/product.entity';
 import { ProductImage } from './entities/product-image.entity';
 import { PublishableService } from '../../common/base/base-publishable.service';
 import { PaginationDto } from '../../common/dto/pagination.dto';
 import { MediaAssociation } from '../../common/services/base-media-association.service';
+import { Cacheable, CacheEvict, InjectRedis } from '../../common/decorators/cacheable.decorator';
 
 @Injectable()
 export class ProductsService extends PublishableService<Product> {
@@ -31,8 +33,34 @@ export class ProductsService extends PublishableService<Product> {
     private readonly productsRepository: Repository<Product>,
     @InjectRepository(ProductImage)
     private readonly productImagesRepository: Repository<ProductImage>,
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
+    @InjectRedis() protected readonly redisClient: Redis,
   ) {
     super(productsRepository, 'Product');
+  }
+
+  @Cacheable({
+    key: (...args: unknown[]) => `product:slug:${args[0] as string}`,
+    ttl: 300,
+  })
+  async findPublishedBySlug(slug: string): Promise<Product> {
+    return super.findPublishedBySlug(slug);
+  }
+
+  @CacheEvict({ pattern: 'product:*' })
+  async update(id: string, data: DeepPartial<Product>): Promise<Product> {
+    return super.update(id, data);
+  }
+
+  @CacheEvict({ pattern: 'product:*' })
+  async softDelete(id: string): Promise<void> {
+    return super.softDelete(id);
+  }
+
+  @CacheEvict({ pattern: 'product:*' })
+  async publish(id: string): Promise<Product> {
+    return super.publish(id);
   }
 
   // ─── Admin list voi LIKE search ──────────────────────────────
@@ -64,13 +92,15 @@ export class ProductsService extends PublishableService<Product> {
 
   async createWithImages(data: DeepPartial<Product> & { image_ids?: string[] }): Promise<Product> {
     const { image_ids, ...productData } = data as any;
-    const product = await this.create(productData);
 
-    if (image_ids && image_ids.length > 0) {
-      await this.updateImages(product.id, image_ids);
-    }
-
-    return product;
+    // Wrap trong transaction: neu sync images fail thi rollback product
+    return this.dataSource.transaction(async () => {
+      const product = await this.create(productData);
+      if (image_ids && image_ids.length > 0) {
+        await this.updateImages(product.id, image_ids);
+      }
+      return product;
+    });
   }
 
   // ─── Image management (dung MediaAssociation helper) ──────────

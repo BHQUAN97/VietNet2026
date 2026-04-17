@@ -7,6 +7,7 @@ import {
   ManyToOne,
   JoinColumn,
   BeforeInsert,
+  Index,
 } from 'typeorm';
 import { generateUlid } from '../../../common/helpers/ulid.helper';
 import { Category } from '../../projects/entities/category.entity';
@@ -17,6 +18,10 @@ export enum ProductStatus {
   PUBLISHED = 'published',
 }
 
+// Indexes for list queries + filter by status/published_at (slug already unique via @Column)
+@Index('IDX_products_published_at', ['published_at'])
+@Index('IDX_products_status_published_at', ['status', 'published_at'])
+@Index('IDX_products_scheduled_publish_at', ['scheduled_publish_at'])
 @Entity('products')
 export class Product {
   @PrimaryColumn({ type: 'char', length: 26 })
@@ -66,6 +71,10 @@ export class Product {
 
   @Column({ type: 'timestamp', nullable: true })
   published_at!: Date | null;
+
+  // Lich dang: khi scheduled_publish_at <= NOW() va status='draft', cron se tu dong publish
+  @Column({ type: 'timestamp', nullable: true })
+  scheduled_publish_at!: Date | null;
 
   @Column({ type: 'tinyint', width: 1, default: false })
   is_new!: boolean;

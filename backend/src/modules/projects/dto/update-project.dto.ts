@@ -5,9 +5,11 @@ import {
   IsBoolean,
   IsInt,
   IsArray,
+  IsDateString,
   MinLength,
   MaxLength,
   Min,
+  ValidateIf,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ProjectStatus } from '../entities/project.entity';
@@ -71,6 +73,12 @@ export class UpdateProjectDto {
   @IsOptional()
   @IsEnum(ProjectStatus, { message: 'Trạng thái dự án không hợp lệ' })
   status?: ProjectStatus;
+
+  // Lịch đăng — null để huỷ lịch. Chấp nhận ISO 8601 hoặc null.
+  @IsOptional()
+  @ValidateIf((_o, v) => v !== null)
+  @IsDateString({}, { message: 'Thời điểm đăng theo lịch không hợp lệ' })
+  scheduled_publish_at?: string | null;
 
   @IsOptional()
   @IsBoolean({ message: 'Giá trị nổi bật phải là true hoặc false' })

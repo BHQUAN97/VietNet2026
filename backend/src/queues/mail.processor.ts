@@ -1,13 +1,21 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Job } from 'bullmq';
 import { Logger } from '@nestjs/common';
+import Redis from 'ioredis';
 import { MailService, ConsultationData } from '../common/services/mail.service';
+import { InjectRedis } from '../common/decorators/cacheable.decorator';
 
-@Processor('mail')
+// Idempotency TTL: giu key trong 24h de tranh send lai khi BullMQ retry
+const IDEMPOTENCY_TTL_SEC = 24 * 60 * 60;
+
+@Processor('mail', { concurrency: 5 })
 export class MailProcessor extends WorkerHost {
   private readonly logger = new Logger(MailProcessor.name);
 
-  constructor(private readonly mailService: MailService) {
+  constructor(
+    private readonly mailService: MailService,
+    @InjectRedis() private readonly redis: Redis,
+  ) {
     super();
   }
 
@@ -15,6 +23,18 @@ export class MailProcessor extends WorkerHost {
     this.logger.log(
       `Processing mail job id=${job.id} name=${job.name} attempt=${job.attemptsMade + 1}`,
     );
+
+    // Idempotency key — tranh gui email trung khi BullMQ retry sau khi da gui thanh cong
+    const idempotencyKey = `mail:sent:${job.id}`;
+    try {
+      const alreadySent = await this.redis.get(idempotencyKey);
+      if (alreadySent) {
+        this.logger.log(`Mail job ${job.id} already sent, skipping duplicate`);
+        return;
+      }
+    } catch {
+      // Redis loi -> van gui (fail-open de khong lam mat email)
+    }
 
     try {
       switch (job.name) {
@@ -55,6 +75,13 @@ export class MailProcessor extends WorkerHost {
         default:
           this.logger.warn(`Unknown mail job name: ${job.name}`);
           return;
+      }
+
+      // Mark idempotency key sau khi gui xong (fire-and-forget, Redis loi khong block)
+      try {
+        await this.redis.setex(idempotencyKey, IDEMPOTENCY_TTL_SEC, '1');
+      } catch {
+        // ignore
       }
 
       this.logger.log(

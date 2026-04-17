@@ -5,12 +5,16 @@ import {
   IsNull,
   SelectQueryBuilder,
   ObjectLiteral,
+  QueryFailedError,
 } from 'typeorm';
 import {
   NotFoundException,
   BadRequestException,
   ConflictException,
 } from '@nestjs/common';
+
+// MySQL duplicate entry error code — catch khi DB unique constraint throw
+const MYSQL_DUP_ENTRY = 'ER_DUP_ENTRY';
 import { PaginationDto } from '../dto/pagination.dto';
 import { validateUlid } from '../helpers/ulid.helper';
 import { toSlug } from '../helpers/slug.helper';
@@ -59,7 +63,27 @@ export abstract class BaseService<T extends ObjectLiteral & { id: string }> {
   /** Hook: persist data to DB. Override for custom save logic. */
   protected async saveData(data: DeepPartial<T>): Promise<T> {
     const entity = this.repository.create(data);
-    return this.repository.save(entity);
+    try {
+      return await this.repository.save(entity);
+    } catch (err) {
+      // Catch DB-level unique constraint violation (chong TOCTOU race)
+      this.handleDbUniqueError(err, data);
+      throw err;
+    }
+  }
+
+  /** Dich MySQL duplicate entry error thanh ConflictException voi message ro rang */
+  protected handleDbUniqueError(err: unknown, data?: DeepPartial<T>): void {
+    if (err instanceof QueryFailedError) {
+      const driverErr = (err as any).driverError;
+      if (driverErr?.code === MYSQL_DUP_ENTRY) {
+        const slug = (data as any)?.slug;
+        const msg = slug
+          ? `${this.entityName} voi slug "${slug}" da ton tai`
+          : `${this.entityName} da ton tai (duplicate constraint)`;
+        throw new ConflictException(msg);
+      }
+    }
   }
 
   /** Hook: runs after successful save. Override for side effects. */
@@ -120,7 +144,12 @@ export abstract class BaseService<T extends ObjectLiteral & { id: string }> {
     await this.validate(enriched);
     // Xoa id khoi enriched truoc khi update (tranh ghi de PK)
     const { id: _excludedId, ...updateData } = enriched as any;
-    await this.repository.update(id, updateData);
+    try {
+      await this.repository.update(id, updateData);
+    } catch (err) {
+      this.handleDbUniqueError(err, enriched);
+      throw err;
+    }
     const updated = await this.findById(id);
     await this.afterSave(updated);
     return updated;

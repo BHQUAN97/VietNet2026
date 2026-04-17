@@ -15,7 +15,7 @@ interface ImageJobData {
   r2Key: string;
 }
 
-@Processor('image-processing')
+@Processor('image-processing', { concurrency: 3 })
 export class ImageProcessor extends WorkerHost {
   private readonly logger = new Logger(ImageProcessor.name);
 
@@ -37,6 +37,12 @@ export class ImageProcessor extends WorkerHost {
     const media = await this.mediaRepo.findOneBy({ id: mediaId });
     if (!media) {
       this.logger.warn(`Media ${mediaId} not found, skipping job`);
+      return;
+    }
+
+    // Idempotency: neu da xu ly xong thi bo qua, tranh duplicate upload khi job retry
+    if (media.processing_status === MediaProcessingStatus.COMPLETED) {
+      this.logger.log(`Media ${mediaId} already processed, skipping duplicate job`);
       return;
     }
 

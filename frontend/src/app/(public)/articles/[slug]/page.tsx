@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -12,8 +13,31 @@ import { buildDetailMetadata } from '@/lib/seo-helpers'
 import { resolveMediaUrl } from '@/lib/api-url'
 import { ArrowLeft } from 'lucide-react'
 import { formatDate } from '@/lib/date'
+import { getServerApiUrl } from '@/lib/api-url'
 
 const SEO_CONFIG = { entityName: 'Bài viết', basePath: '/articles' }
+
+// ISR fallback cho slug chua sinh — non-generated slugs van render on-demand
+export const dynamicParams = true
+
+// Build-time: pre-generate top 50 articles (by view_count desc) de toi uu TTFB + SEO
+export async function generateStaticParams() {
+  try {
+    const res = await fetch(
+      `${getServerApiUrl()}/articles?status=published&limit=50&sort=view_count:desc`,
+      { next: { revalidate: 3600 } },
+    )
+    if (!res.ok) return []
+    const json = await res.json()
+    const items = json?.data?.items ?? json?.items ?? json?.data ?? []
+    if (!Array.isArray(items)) return []
+    return items
+      .filter((a: { slug?: string }) => typeof a?.slug === 'string' && a.slug.length > 0)
+      .map((a: { slug: string }) => ({ slug: a.slug }))
+  } catch {
+    return []
+  }
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
@@ -27,10 +51,11 @@ export default async function ArticleDetailPage({ params }: { params: Promise<{ 
   if (!article) notFound()
 
   const related = await serverFetchList<any>(`/articles/${article.id}/related`, { tags: ['articles'] })
+  const nonce = (await headers()).get('x-nonce') ?? undefined
 
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{
+      <script type="application/ld+json" nonce={nonce} dangerouslySetInnerHTML={{
         __html: JSON.stringify(articleJsonLd(article)).replace(/</g, '\\u003c'),
       }} />
 

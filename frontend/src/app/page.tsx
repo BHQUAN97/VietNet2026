@@ -1,5 +1,5 @@
 import { Metadata } from 'next'
-import { draftMode } from 'next/headers'
+import { draftMode, headers } from 'next/headers'
 import { organizationJsonLd } from '@/lib/jsonld'
 import { DEFAULT_HOMEPAGE_CONFIG } from '@/lib/default-homepage'
 import { SectionRenderer } from '@/components/sections/SectionRenderer'
@@ -51,11 +51,13 @@ async function getHomepageConfig(isDraft: boolean): Promise<PageConfigData> {
 export default async function HomePage() {
   const { isEnabled: isDraft } = await draftMode()
   const config = await getHomepageConfig(isDraft)
+  const nonce = (await headers()).get('x-nonce') ?? undefined
 
   return (
     <>
       <script
         type="application/ld+json"
+        nonce={nonce}
         dangerouslySetInnerHTML={{
           __html: JSON.stringify(organizationJsonLd()).replace(/</g, '\\u003c'),
         }}

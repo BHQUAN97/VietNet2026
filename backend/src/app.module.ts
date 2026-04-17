@@ -54,9 +54,11 @@ import { ServicesModule } from './common/services/services.module';
     }),
 
     ThrottlerModule.forRoot([
+      // Global fallback: 60 req/phut/IP. Scale 300 users/ngay du,
+      // endpoints nhay cam (auth, upload) override bang @Throttle rieng.
       {
         ttl: 60000,
-        limit: 100,
+        limit: 60,
       },
     ]),
 

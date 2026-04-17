@@ -1,4 +1,5 @@
 import { Metadata } from 'next'
+import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -9,12 +10,34 @@ import { Button } from '@/components/ui/Button'
 import { productJsonLd } from '@/lib/jsonld'
 import { sanitizeHtml } from '@/lib/sanitize'
 import { tiptapJsonToHtml } from '@/lib/tiptap-html'
-import { resolveMediaUrl } from '@/lib/api-url'
+import { resolveMediaUrl, getServerApiUrl } from '@/lib/api-url'
 import { serverFetch, serverFetchList } from '@/lib/server-fetch'
 import { buildDetailMetadata } from '@/lib/seo-helpers'
 import { ArrowLeft, ArrowRight } from 'lucide-react'
 
 const SEO_CONFIG = { entityName: 'Sản phẩm', basePath: '/catalog', ogType: 'website' as const }
+
+// ISR fallback cho slug chua sinh — non-generated slugs van render on-demand
+export const dynamicParams = true
+
+// Build-time: pre-generate top 50 products (by view_count desc) de toi uu TTFB + SEO
+export async function generateStaticParams() {
+  try {
+    const res = await fetch(
+      `${getServerApiUrl()}/products?status=published&limit=50&sort=view_count:desc`,
+      { next: { revalidate: 3600 } },
+    )
+    if (!res.ok) return []
+    const json = await res.json()
+    const items = json?.data?.items ?? json?.items ?? json?.data ?? []
+    if (!Array.isArray(items)) return []
+    return items
+      .filter((p: { slug?: string }) => typeof p?.slug === 'string' && p.slug.length > 0)
+      .map((p: { slug: string }) => ({ slug: p.slug }))
+  } catch {
+    return []
+  }
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await params
@@ -65,9 +88,11 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     }
   }
 
+  const nonce = (await headers()).get('x-nonce') ?? undefined
+
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{
+      <script type="application/ld+json" nonce={nonce} dangerouslySetInnerHTML={{
         __html: JSON.stringify(productJsonLd(product)).replace(/</g, '\\u003c'),
       }} />
 

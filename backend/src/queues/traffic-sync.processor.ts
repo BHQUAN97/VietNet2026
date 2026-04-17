@@ -145,22 +145,28 @@ export class TrafficSyncProcessor extends WorkerHost {
         }
       }
 
-      // Upsert into page_view_daily table
+      // Batched upsert into page_view_daily — single INSERT ... ON DUPLICATE KEY UPDATE
+      // per chunk to avoid N round-trips and respect max_allowed_packet.
+      const rows = Array.from(aggregated.values()).map((entry) => ({
+        page_path: entry.path,
+        view_date: entry.date,
+        total_views: entry.views,
+        unique_visitors: entry.unique,
+        mobile_views: entry.mobile,
+        desktop_views: entry.desktop,
+        tablet_views: entry.tablet,
+      }));
+
+      const CHUNK_SIZE = 500;
       let synced = 0;
-      for (const entry of aggregated.values()) {
+      for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
+        const chunk = rows.slice(i, i + CHUNK_SIZE);
+        if (chunk.length === 0) continue;
         await this.dailyRepo
           .createQueryBuilder()
           .insert()
           .into(PageViewDaily)
-          .values({
-            page_path: entry.path,
-            view_date: entry.date,
-            total_views: entry.views,
-            unique_visitors: entry.unique,
-            mobile_views: entry.mobile,
-            desktop_views: entry.desktop,
-            tablet_views: entry.tablet,
-          })
+          .values(chunk)
           .orUpdate(
             [
               'total_views',
@@ -172,7 +178,7 @@ export class TrafficSyncProcessor extends WorkerHost {
             ['page_path', 'view_date'],
           )
           .execute();
-        synced++;
+        synced += chunk.length;
       }
 
       // Clear synced Redis keys (only keys older than today to avoid losing in-progress data)

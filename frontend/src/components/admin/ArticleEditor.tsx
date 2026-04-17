@@ -204,7 +204,7 @@ function PreviewModal({
             {coverUrl && (
               <div className="relative mb-8 aspect-[21/9] overflow-hidden rounded-xl">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={coverUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                <img src={coverUrl} alt={title ? `${title} — ảnh bìa` : 'Ảnh bìa bài viết'} className="absolute inset-0 h-full w-full object-cover" />
               </div>
             )}
             <h1 className="font-headline text-headline-lg text-on-surface md:text-display-sm">

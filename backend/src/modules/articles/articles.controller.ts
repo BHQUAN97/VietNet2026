@@ -7,6 +7,7 @@ import {
   Param,
   Body,
   Query,
+  Logger,
 } from '@nestjs/common';
 import { ArticlesService } from './articles.service';
 import { CreateArticleDto } from './dto/create-article.dto';
@@ -21,6 +22,7 @@ import { CrudController } from '../../common/base/base-crud.controller';
 @Controller('articles')
 export class ArticlesController extends CrudController<any> {
   protected readonly entityName = 'Article';
+  private readonly logger = new Logger(ArticlesController.name);
 
   constructor(protected readonly service: ArticlesService) {
     super();
@@ -63,7 +65,10 @@ export class ArticlesController extends CrudController<any> {
   @Get(':slug')
   async findBySlug(@Param('slug') slug: string) {
     const article = await this.service.findPublishedBySlug(slug);
-    this.service.incrementViewCount(article.id).catch(() => {});
+    // Fire-and-forget de khong block response; log error thay vi swallow im lang
+    this.service.incrementViewCount(article.id).catch((err) => {
+      this.logger.warn(`incrementViewCount failed for article ${article.id}: ${err?.message ?? err}`);
+    });
     return ok(article);
   }
 

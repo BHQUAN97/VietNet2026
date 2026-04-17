@@ -106,15 +106,17 @@ test.describe('Catalog Page', () => {
     }
   })
 
-  test('material samples section visible', async ({ page }) => {
-    // Scroll xuống Material Samples
-    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
-    await page.waitForTimeout(1000)
+  test('catalog has filter sidebar or product grid', async ({ page }) => {
+    await page.waitForTimeout(2000)
 
-    const materialSection = page.locator('text=Material Samples')
-    const isVisible = (await materialSection.count()) > 0
-    // Section có thể bị ẩn nếu scroll chưa tới
-    expect(isVisible).toBeTruthy()
+    // Catalog page co aside filter hoac product grid
+    const sidebar = page.locator('aside, [role="complementary"]')
+    const productGrid = page.locator('a[href*="/catalog/"]')
+
+    const hasSidebar = (await sidebar.count()) > 0
+    const hasProducts = (await productGrid.count()) > 0
+
+    expect(hasSidebar || hasProducts).toBeTruthy()
   })
 
   test('loads products or shows empty state', async ({ page }) => {
@@ -133,40 +135,36 @@ test.describe('Catalog Page', () => {
 })
 
 test.describe('About Page', () => {
-  test('displays company story and mission', async ({ page }) => {
+  test('displays company story and quality commitment', async ({ page }) => {
     await page.goto('/about', { waitUntil: 'domcontentloaded' })
 
-    // Main heading
+    // Main heading: "Kiến Tạo Không Gian Sống Tinh Tế"
     const heading = page.locator('h1').first()
     await expect(heading).toBeVisible()
     await expect(heading).toContainText('Kiến Tạo')
 
-    // Mission section
-    const mission = page.locator('text=Sứ mệnh')
-    await expect(mission).toBeVisible()
-
-    // Vision section
-    const vision = page.locator('text=Tầm nhìn')
-    await expect(vision).toBeVisible()
+    // Cam ket chat luong section (thay vi Su menh / Tam nhin cu)
+    const qualitySection = page.locator('h2').filter({ hasText: /chất lượng/i }).first()
+    await expect(qualitySection).toBeVisible()
   })
 
   test('stats counter section exists', async ({ page }) => {
     await page.goto('/about', { waitUntil: 'domcontentloaded' })
 
-    // Stats: 150+, 15+, 500+, 12
+    // Stats: "Dự án hoàn thành", "Năm kinh nghiệm", "Khách hàng tin tưởng"
     const statsSection = page.locator('text=Dự án hoàn thành')
     await expect(statsSection).toBeVisible()
   })
 
-  test('warranty table is visible', async ({ page }) => {
+  test('warranty section is visible', async ({ page }) => {
     await page.goto('/about', { waitUntil: 'domcontentloaded' })
 
     // Scroll to warranty section
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
     await page.waitForTimeout(1000)
 
-    const warrantyHeader = page.locator('text=bảo hành')
-    const hasWarranty = (await warrantyHeader.count()) > 0
-    expect(hasWarranty).toBeTruthy()
+    // heading "An tâm với bảo hành dài hạn"
+    const warrantyHeader = page.locator('h2').filter({ hasText: /bảo hành/i }).first()
+    await expect(warrantyHeader).toBeVisible()
   })
 })

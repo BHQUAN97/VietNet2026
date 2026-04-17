@@ -10,6 +10,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { UsersModule } from '../users/users.module';
+import { QueuesModule } from '../../queues/queues.module';
 import { RefreshToken } from './entities/refresh-token.entity';
 import { LoginAttempt } from './entities/login-attempt.entity';
 import { PasswordResetToken } from './entities/password-reset-token.entity';
@@ -17,6 +18,7 @@ import { PasswordResetToken } from './entities/password-reset-token.entity';
 @Module({
   imports: [
     UsersModule,
+    QueuesModule,
     TypeOrmModule.forFeature([RefreshToken, LoginAttempt, PasswordResetToken]),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({
