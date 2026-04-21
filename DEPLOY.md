@@ -1,85 +1,116 @@
 # VIETNET INTERIOR — DEPLOYMENT GUIDE
 
-> Domain: bhquan.store | VPS: 188.166.190.81 (shared with WebPhoto bhquan.site)
+> Domain: bhquan.store | VPS: 134.122.21.251 | Stack: NestJS + Next.js + MySQL + Redis
 
 ---
 
 ## Kiến trúc Production
 
 ```
-  VPS Ubuntu (188.166.190.81)
+  VPS Ubuntu (134.122.21.251)
   ┌──────────────────────────────────────────────┐
   │  shared-nginx (Docker) :80/:443               │
-  │  ├─ bhquan.site  → photo-api:4000 (WebPhoto) │
-  │  │                 + static /usr/share/nginx  │
-  │  └─ bhquan.store → vietnet-api:4000 (API)    │
-  │                    + vietnet-frontend:3000    │
+  │  ├─ bhquan.site  → WebPhoto                  │
+  │  └─ bhquan.store → vietnet-api + frontend    │
   │                                               │
-  │  Shared (WebPhoto owns)                       │
+  │  Shared infra (/opt/infra)                    │
   │  ├─ shared-mysql  :3306                        │
-  │  │   ├─ DB: photo_storage                     │
+  │  │   ├─ DB: photo_storage (WebPhoto)          │
   │  │   └─ DB: vietnet                           │
-  │  ├─ shared-redis  :6379                        │
-  │  └─ shared-nginx  (serves both domains)        │
+  │  └─ shared-redis  :6379                        │
   │                                               │
-  │  VietNet Containers                           │
+  │  VietNet (/opt/vietnet)                       │
   │  ├─ vietnet-api      :4100→4000 (NestJS)     │
   │  └─ vietnet-frontend :3100→3000 (Next.js)    │
   │                                               │
   │  Docker Networks                              │
-  │  ├─ webphoto_backend   (mysql, redis, api)    │
-  │  ├─ webphoto_frontend  (shared-nginx, api)     │
-  │  └─ vietnet_frontend   (shared-nginx, vietnet) │
+  │  ├─ webphoto_backend  (mysql, redis, api)     │
+  │  ├─ webphoto_frontend (nginx, photo-api)      │
+  │  └─ vietnet_frontend  (nginx, vietnet)        │
   └──────────────────────────────────────────────┘
 ```
 
-### Nginx routing (Docker, không phải host)
+---
 
-Config tại: `/opt/webphoto/nginx/conf.d/bhquan.store.conf`
-Proxy dùng **container name** (không phải localhost):
-- `/api/*` → `http://vietnet-api:4000`
-- `/socket.io/*` → `http://vietnet-api:4000`
-- `/_next/static/*` → `http://vietnet-frontend:3000` (cache immutable)
-- `/*` → `http://vietnet-frontend:3000` (SSR)
+## GitHub Actions Secrets
+
+Secrets được lưu trong **repo settings** — không commit lên git.
+
+| Secret | Mô tả |
+|--------|-------|
+| `VPS_HOST` | IP VPS: `134.122.21.251` |
+| `VPS_PORT` | SSH port: `22` |
+| `VPS_USER` | SSH user: `root` |
+| `VPS_PASSWORD` | Mật khẩu SSH VPS |
+| `MYSQL_ROOT_PASSWORD` | Root password của shared-mysql |
+| `VIETNET_DB_PASSWORD` | Password user `vietnet` trong MySQL |
+| `JWT_SECRET` | JWT signing secret |
+| `RESEND_API_KEY` | Resend email API key |
+| `REVALIDATE_SECRET` | Next.js revalidate secret |
+| `CRON_SECRET` | Secret header cho cron endpoints |
+
+### Thêm/cập nhật secret nhanh qua CLI
+
+```bash
+# Không cần vào GitHub UI — dùng gh CLI
+gh secret set VPS_PASSWORD --body "mat_khau_moi" --repo BHQUAN97/VietNet2026
+
+# Thêm từ biến môi trường
+gh secret set JWT_SECRET --body "$MY_JWT_SECRET" --repo BHQUAN97/VietNet2026
+
+# Xem danh sách secrets (chỉ thấy tên, không thấy giá trị)
+gh secret list --repo BHQUAN97/VietNet2026
+```
 
 ---
 
 ## Deploy
 
-### Lần đầu
+### Tự động (Khuyên dùng)
+
+Push lên nhánh `main` → GitHub Actions tự động chạy:
+1. Typecheck FE + BE (song song)
+2. Detect changes (init vs update)
+3. Upload + build + start trên VPS
+4. Health check
+
+### Thủ công từ máy local
+
 ```bash
-bash scripts/quick-deploy.sh 188.166.190.81 bhquan.store
+# Cài sshpass nếu chưa có
+sudo apt install sshpass   # Ubuntu
+brew install sshpass        # Mac
+
+# Kết nối VPS
+export SSHPASS="mat_khau_vps"
+sshpass -e ssh root@134.122.21.251
+
+# Trên VPS: xem trạng thái
+cd /opt/vietnet
+docker compose -f docker-compose.prod.yml ps
+docker compose -f docker-compose.prod.yml logs -f backend
 ```
-
-### Cập nhật code
-```bash
-bash scripts/update-deploy.sh 188.166.190.81
-```
-
-### Auto Deploy
-Push to `main` → GitHub Actions → deploy
-
-Secrets: `SSH_PRIVATE_KEY`, `VPS_HOST`, `VPS_USER`
 
 ---
 
-## Quản lý
+## Quản lý trên VPS
 
 ```bash
-ssh root@188.166.190.81
+ssh root@134.122.21.251
 cd /opt/vietnet
 
-docker compose ps
-docker compose logs -f backend
-docker compose logs -f frontend
-docker compose restart backend frontend
+# Xem logs
+docker logs vietnet-api --tail 50 -f
+docker logs vietnet-frontend --tail 50 -f
 
-# Nginx config (trong WebPhoto dir)
-vim /opt/webphoto/nginx/conf.d/bhquan.store.conf
+# Restart
+docker compose -f docker-compose.prod.yml restart backend frontend
+
+# Nginx reload
 docker exec shared-nginx nginx -t && docker exec shared-nginx nginx -s reload
 
 # DB backup
-docker exec shared-mysql mysqldump -u root -p"<PASS>" vietnet \
+docker exec shared-mysql mysqldump -u root -p"<ROOT_PASS>" vietnet \
   --single-transaction | gzip > backup_vietnet_$(date +%Y%m%d).sql.gz
 ```
 
@@ -88,17 +119,16 @@ docker exec shared-mysql mysqldump -u root -p"<PASS>" vietnet \
 ## Troubleshooting
 
 ```bash
-# API logs
-docker compose logs backend --tail 50
-
-# Nginx 502 — check network
+# 502 Bad Gateway — kiểm tra network
 docker inspect shared-nginx --format '{{range $k,$v := .NetworkSettings.Networks}}{{$k}} {{end}}'
-# Phải có: webphoto_frontend, vietnet_frontend
-# Nếu thiếu: docker network connect vietnet_frontend shared-nginx
-
-# SSL cert renew
-certbot renew
-CERT_VOL=$(docker volume inspect webphoto_certbot_data --format '{{.Mountpoint}}')
-cp -rL /etc/letsencrypt/live/bhquan.store/* $CERT_VOL/live/bhquan.store/
+# Phải có: vietnet_frontend
+# Nếu thiếu:
+docker network connect vietnet_frontend shared-nginx
 docker exec shared-nginx nginx -s reload
+
+# Backend không start — xem logs
+docker logs vietnet-api --tail 30
+
+# Redis noeviction policy
+docker exec shared-redis redis-cli CONFIG SET maxmemory-policy noeviction
 ```
