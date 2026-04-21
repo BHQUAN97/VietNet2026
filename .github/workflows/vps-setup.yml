@@ -19,23 +19,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Load config/env
-        run: |
-          grep -v '^#' config/env | grep -v '^$' | grep '=' >> $GITHUB_ENV
-          PASS=$(grep '^VPS_PASSWORD=' config/env | cut -d= -f2-)
-          echo "SSHPASS=${PASS}" >> $GITHUB_ENV
-
       - name: Setup SSH
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq sshpass > /dev/null
           mkdir -p ~/.ssh
-          ssh-keyscan -p ${{ env.VPS_PORT }} -H ${{ env.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+          ssh-keyscan -p ${{ secrets.VPS_PORT }} -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+          echo "SSHPASS=${{ secrets.VPS_PASSWORD }}" >> $GITHUB_ENV
 
       - name: Check VPS status
         if: inputs.action == 'check'
         run: |
-          VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
-          PORT="${{ env.VPS_PORT }}"
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
           sshpass -e ssh -p $PORT $VPS "
             echo '=== OS ==='
             cat /etc/os-release | head -3
@@ -53,8 +48,8 @@ jobs:
       - name: Install Docker
         if: inputs.action == 'docker'
         run: |
-          VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
-          PORT="${{ env.VPS_PORT }}"
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
           sshpass -e ssh -p $PORT $VPS "
             set -e
             echo '=== Installing Docker ==='
