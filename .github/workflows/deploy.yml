@@ -134,6 +134,21 @@ jobs:
           ssh-keyscan -p ${{ secrets.VPS_PORT }} -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
           echo "SSHPASS=${{ secrets.VPS_PASSWORD }}" >> $GITHUB_ENV
 
+      - name: Check docker on VPS
+        run: |
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
+          sshpass -e ssh -p $PORT $VPS "
+            DOCKER=\$(command -v docker 2>/dev/null \
+              || ls /usr/bin/docker /usr/local/bin/docker /snap/bin/docker 2>/dev/null | head -1)
+            if [ -z \"\$DOCKER\" ]; then
+              echo '::error::Docker chua cai tren VPS. Chay vps-setup.yml voi action=docker truoc.'
+              exit 1
+            fi
+            [ ! -f /usr/local/bin/docker ] && ln -sf \"\$DOCKER\" /usr/local/bin/docker 2>/dev/null || true
+            echo \"Docker OK: \$(\$DOCKER --version)\"
+          "
+
       # ── INIT: Full upload ────────────────────────
       - name: "[INIT] Upload full project"
         if: needs.build.outputs.mode == 'init'
@@ -170,16 +185,24 @@ jobs:
           sshpass -e ssh -p $PORT $VPS "mkdir -p ${INFRA_DIR}"
           sshpass -e scp -P $PORT infra/docker-compose.yml $VPS:${INFRA_DIR}/
           sshpass -e ssh -p $PORT $VPS "
-            echo 'MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}' > ${INFRA_DIR}/.env && chmod 600 ${INFRA_DIR}/.env
+            export PATH=\$PATH:/usr/local/bin
             docker network create webphoto_backend 2>/dev/null || true
             docker network create vietnet_frontend 2>/dev/null || true
-            docker rm -f photo-mysql photo-redis 2>/dev/null || true
-            cd ${INFRA_DIR} && docker compose up -d 2>&1
-            for i in \$(seq 1 60); do
-              docker exec shared-mysql mysqladmin ping -h localhost --silent 2>/dev/null && { echo 'MySQL ready!'; break; }
-              [ \$i -eq 60 ] && { echo 'ERROR: MySQL not ready'; docker logs shared-mysql --tail 20; exit 1; }
-              sleep 1
-            done
+
+            # Neu shared-mysql da chay (WebPhoto quan ly) thi khong can start lai
+            if docker ps --filter name=shared-mysql --filter status=running --format '{{.Names}}' | grep -q shared-mysql; then
+              echo 'shared-mysql already running — skip infra start'
+            else
+              echo 'Starting shared infra...'
+              echo 'MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}' > ${INFRA_DIR}/.env
+              chmod 600 ${INFRA_DIR}/.env
+              cd ${INFRA_DIR} && docker compose up -d 2>&1
+              for i in \$(seq 1 60); do
+                docker exec shared-mysql mysqladmin ping -h localhost --silent 2>/dev/null && { echo 'MySQL ready!'; break; }
+                [ \$i -eq 60 ] && { echo 'ERROR: MySQL not ready'; docker logs shared-mysql --tail 20; exit 1; }
+                sleep 1
+              done
+            fi
           "
 
       - name: "[INIT] Create DB + user"
@@ -354,6 +377,7 @@ jobs:
           sshpass -e ssh -p $PORT $VPS "mkdir -p ${INFRA_DIR}"
           sshpass -e scp -P $PORT infra/docker-compose.yml $VPS:${INFRA_DIR}/
           sshpass -e ssh -p $PORT $VPS "
+            export PATH=\$PATH:/usr/local/bin
             echo 'MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}' > ${INFRA_DIR}/.env && chmod 600 ${INFRA_DIR}/.env
             docker network create webphoto_backend 2>/dev/null || true
             docker network create vietnet_frontend 2>/dev/null || true
@@ -508,6 +532,7 @@ jobs:
           VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
           PORT="${{ secrets.VPS_PORT }}"
           sshpass -e ssh -p $PORT $VPS "
+            export PATH=\$PATH:/usr/local/bin
             POLICY=\$(docker exec shared-redis redis-cli CONFIG GET maxmemory-policy 2>/dev/null | tail -1)
             if [ \"\$POLICY\" != 'noeviction' ]; then
               docker exec shared-redis redis-cli CONFIG SET maxmemory-policy noeviction
