@@ -11,6 +11,7 @@ on:
         options:
           - docker
           - check
+          - reset-mysql-volume
 
 jobs:
   setup:
@@ -79,4 +80,21 @@ jobs:
             systemctl enable docker
             systemctl start docker
             echo '=== Docker ready ==='
+          "
+
+      - name: Reset MySQL volume
+        if: inputs.action == 'reset-mysql-volume'
+        run: |
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
+          sshpass -e ssh -p $PORT $VPS "
+            export PATH=\$PATH:/usr/local/bin
+            echo '=== Stopping shared infra containers ==='
+            docker stop shared-mysql shared-redis 2>/dev/null || true
+            docker rm shared-mysql shared-redis 2>/dev/null || true
+
+            echo '=== Removing stale MySQL data volume ==='
+            docker volume rm shared_mysql_data 2>/dev/null && echo 'Volume removed' || echo 'Volume not found (ok)'
+
+            echo '=== Done — next deploy will re-initialize MySQL with current MYSQL_ROOT_PASSWORD ==='
           "
