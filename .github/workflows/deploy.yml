@@ -66,26 +66,18 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Load config/env
-        run: |
-          while IFS= read -r line; do
-            [[ -z "$line" || "$line" == \#* ]] && continue
-            [[ "$line" == *=* ]] && echo "$line" >> $GITHUB_ENV
-          done < config/env
-          PASS=$(sed -n 's/^VPS_PASSWORD=//p' config/env)
-          echo "SSHPASS=${PASS}" >> $GITHUB_ENV
-
       - name: Setup SSH
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq sshpass > /dev/null
           mkdir -p ~/.ssh
-          ssh-keyscan -p ${{ env.VPS_PORT }} -H ${{ env.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+          ssh-keyscan -p ${{ secrets.VPS_PORT }} -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+          echo "SSHPASS=${{ secrets.VPS_PASSWORD }}" >> $GITHUB_ENV
 
       - name: Detect deploy mode
         id: detect
         run: |
-          VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
-          PORT="${{ env.VPS_PORT }}"
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
           if sshpass -e ssh -p $PORT $VPS "test -f ${APP_DIR}/docker-compose.prod.yml"; then
             echo "mode=update" >> $GITHUB_OUTPUT
             echo "Deploy mode: UPDATE"
@@ -135,27 +127,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Load config/env
-        run: |
-          while IFS= read -r line; do
-            [[ -z "$line" || "$line" == \#* ]] && continue
-            [[ "$line" == *=* ]] && echo "$line" >> $GITHUB_ENV
-          done < config/env
-          PASS=$(sed -n 's/^VPS_PASSWORD=//p' config/env)
-          echo "SSHPASS=${PASS}" >> $GITHUB_ENV
-
       - name: Setup SSH
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq sshpass > /dev/null
           mkdir -p ~/.ssh
-          ssh-keyscan -p ${{ env.VPS_PORT }} -H ${{ env.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+          ssh-keyscan -p ${{ secrets.VPS_PORT }} -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+          echo "SSHPASS=${{ secrets.VPS_PASSWORD }}" >> $GITHUB_ENV
 
       # ── INIT: Full upload ────────────────────────
       - name: "[INIT] Upload full project"
         if: needs.build.outputs.mode == 'init'
         run: |
-          VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
-          PORT="${{ env.VPS_PORT }}"
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
           sshpass -e ssh -p $PORT $VPS "mkdir -p ${APP_DIR}/{backend,frontend,nginx/conf.d,scripts,db,config}"
           sshpass -e scp -P $PORT docker-compose.prod.yml $VPS:${APP_DIR}/
           sshpass -e scp -P $PORT .env.example $VPS:${APP_DIR}/
@@ -180,14 +164,13 @@ jobs:
       - name: "[INIT] Start shared infra"
         if: needs.build.outputs.mode == 'init'
         run: |
-          VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
-          PORT="${{ env.VPS_PORT }}"
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
           INFRA_DIR=/opt/infra
           sshpass -e ssh -p $PORT $VPS "mkdir -p ${INFRA_DIR}"
           sshpass -e scp -P $PORT infra/docker-compose.yml $VPS:${INFRA_DIR}/
-          MYSQL_ROOT_PWD=$(grep '^MYSQL_ROOT_PASSWORD=' config/env | cut -d= -f2-)
           sshpass -e ssh -p $PORT $VPS "
-            echo 'MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PWD}' > ${INFRA_DIR}/.env && chmod 600 ${INFRA_DIR}/.env
+            echo 'MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}' > ${INFRA_DIR}/.env && chmod 600 ${INFRA_DIR}/.env
             docker network create webphoto_backend 2>/dev/null || true
             docker network create vietnet_frontend 2>/dev/null || true
             docker rm -f photo-mysql photo-redis 2>/dev/null || true
@@ -202,13 +185,11 @@ jobs:
       - name: "[INIT] Create DB + user"
         if: needs.build.outputs.mode == 'init'
         run: |
-          VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
-          PORT="${{ env.VPS_PORT }}"
-          MYSQL_ROOT_PWD=$(grep '^MYSQL_ROOT_PASSWORD=' config/env | cut -d= -f2-)
-          VIETNET_DB_PWD=$(grep '^VIETNET_DB_PASSWORD=' config/env | cut -d= -f2-)
-          sshpass -e ssh -p $PORT $VPS "docker exec -i shared-mysql mysql -u root -p'${MYSQL_ROOT_PWD}' <<EOSQL
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
+          sshpass -e ssh -p $PORT $VPS "docker exec -i shared-mysql mysql -u root -p'${{ secrets.MYSQL_ROOT_PASSWORD }}' <<EOSQL
             CREATE DATABASE IF NOT EXISTS vietnet CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-            CREATE USER IF NOT EXISTS 'vietnet'@'%' IDENTIFIED BY '${VIETNET_DB_PWD}';
+            CREATE USER IF NOT EXISTS 'vietnet'@'%' IDENTIFIED BY '${{ secrets.VIETNET_DB_PASSWORD }}';
             GRANT ALL PRIVILEGES ON *.* TO 'vietnet'@'%';
             FLUSH PRIVILEGES;
           EOSQL"
@@ -216,8 +197,8 @@ jobs:
       - name: "[INIT] SSL certs"
         if: needs.build.outputs.mode == 'init'
         run: |
-          VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
-          PORT="${{ env.VPS_PORT }}"
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
           HAS_WP=$(sshpass -e ssh -p $PORT $VPS "test -f ${WEBPHOTO_DIR}/docker-compose.prod.yml && echo yes || echo no")
           [ "$HAS_WP" != "yes" ] && { echo "WebPhoto not deployed — skip SSL"; exit 0; }
           sshpass -e ssh -p $PORT $VPS "
@@ -240,8 +221,8 @@ jobs:
       - name: "[INIT] Build & Start services"
         if: needs.build.outputs.mode == 'init'
         run: |
-          VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
-          PORT="${{ env.VPS_PORT }}"
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
           BUILD_OUT=$(sshpass -e ssh -p $PORT $VPS "cd ${APP_DIR} && docker compose -f docker-compose.prod.yml build backend frontend 2>&1")
           if [ $? -ne 0 ]; then
             echo "::error::Docker build failed"; echo "$BUILD_OUT" | tail -30; exit 1
@@ -261,8 +242,8 @@ jobs:
       - name: "[INIT] Get real SSL cert"
         if: needs.build.outputs.mode == 'init'
         run: |
-          VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
-          PORT="${{ env.VPS_PORT }}"
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
           HAS_WP=$(sshpass -e ssh -p $PORT $VPS "test -f ${WEBPHOTO_DIR}/docker-compose.prod.yml && echo yes || echo no")
           [ "$HAS_WP" != "yes" ] && exit 0
           sshpass -e ssh -p $PORT $VPS "
@@ -290,8 +271,8 @@ jobs:
       - name: "[INIT] Seed database"
         if: needs.build.outputs.mode == 'init'
         run: |
-          VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
-          PORT="${{ env.VPS_PORT }}"
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
           echo "Waiting for backend..."
           for i in $(seq 1 30); do
             sshpass -e ssh -p $PORT $VPS "curl -sf http://localhost:4100/api/health" > /dev/null 2>&1 && break
@@ -309,8 +290,8 @@ jobs:
       - name: "[UPDATE] Upload frontend"
         if: needs.build.outputs.mode == 'update' && needs.build.outputs.fe == 'true'
         run: |
-          VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
-          PORT="${{ env.VPS_PORT }}"
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
           sshpass -e ssh -p $PORT $VPS "rm -rf ${APP_DIR}/frontend/src"
           tar czf - frontend/src frontend/public frontend/package.json frontend/package-lock.json \
             frontend/Dockerfile frontend/next.config.js frontend/tailwind.config.ts \
@@ -320,8 +301,8 @@ jobs:
       - name: "[UPDATE] Upload backend"
         if: needs.build.outputs.mode == 'update' && needs.build.outputs.be == 'true'
         run: |
-          VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
-          PORT="${{ env.VPS_PORT }}"
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
           sshpass -e ssh -p $PORT $VPS "rm -rf ${APP_DIR}/backend/src"
           tar czf - backend/src backend/package.json backend/package-lock.json \
             backend/Dockerfile backend/tsconfig.json backend/tsconfig.build.json backend/nest-cli.json 2>/dev/null | \
@@ -330,8 +311,8 @@ jobs:
       - name: "[UPDATE] Sync config"
         if: needs.build.outputs.mode == 'update'
         run: |
-          VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
-          PORT="${{ env.VPS_PORT }}"
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
           sshpass -e scp -P $PORT docker-compose.prod.yml $VPS:${APP_DIR}/
           sshpass -e ssh -p $PORT $VPS "mkdir -p ${APP_DIR}/db"
           sshpass -e scp -P $PORT -r db/changelog $VPS:${APP_DIR}/db/ 2>/dev/null || true
@@ -340,8 +321,8 @@ jobs:
       - name: "[UPDATE] Sync nginx"
         if: needs.build.outputs.mode == 'update'
         run: |
-          VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
-          PORT="${{ env.VPS_PORT }}"
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
           sshpass -e scp -P $PORT nginx/conf.d/bhquan.store.conf $VPS:${WEBPHOTO_DIR}/nginx/conf.d/ 2>/dev/null && {
             sshpass -e ssh -p $PORT $VPS "
               if [ -f ${WEBPHOTO_DIR}/docker-compose.prod.yml ]; then
@@ -367,14 +348,13 @@ jobs:
       - name: "[UPDATE] Sync infra"
         if: needs.build.outputs.mode == 'update' && needs.build.outputs.infra == 'true'
         run: |
-          VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
-          PORT="${{ env.VPS_PORT }}"
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
           INFRA_DIR=/opt/infra
           sshpass -e ssh -p $PORT $VPS "mkdir -p ${INFRA_DIR}"
           sshpass -e scp -P $PORT infra/docker-compose.yml $VPS:${INFRA_DIR}/
-          MYSQL_ROOT_PWD=$(grep '^MYSQL_ROOT_PASSWORD=' config/env | cut -d= -f2-)
           sshpass -e ssh -p $PORT $VPS "
-            echo 'MYSQL_ROOT_PASSWORD=${MYSQL_ROOT_PWD}' > ${INFRA_DIR}/.env && chmod 600 ${INFRA_DIR}/.env
+            echo 'MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}' > ${INFRA_DIR}/.env && chmod 600 ${INFRA_DIR}/.env
             docker network create webphoto_backend 2>/dev/null || true
             docker network create vietnet_frontend 2>/dev/null || true
             cd ${INFRA_DIR} && docker compose up -d --force-recreate 2>&1 | tail -5
@@ -388,8 +368,8 @@ jobs:
       - name: "[UPDATE] Rebuild backend"
         if: needs.build.outputs.mode == 'update' && (needs.build.outputs.be == 'true' || needs.build.outputs.infra == 'true')
         run: |
-          VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
-          PORT="${{ env.VPS_PORT }}"
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
           BUILD_OUT=$(sshpass -e ssh -p $PORT $VPS "cd ${APP_DIR} && docker compose -f docker-compose.prod.yml build backend 2>&1")
           if [ $? -ne 0 ]; then echo "::error::Backend build failed"; echo "$BUILD_OUT" | tail -30; exit 1; fi
           sshpass -e ssh -p $PORT $VPS "cd ${APP_DIR} && docker compose -f docker-compose.prod.yml up -d backend"
@@ -397,8 +377,8 @@ jobs:
       - name: "[UPDATE] Rebuild frontend"
         if: needs.build.outputs.mode == 'update' && (needs.build.outputs.fe == 'true' || needs.build.outputs.infra == 'true')
         run: |
-          VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
-          PORT="${{ env.VPS_PORT }}"
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
           BUILD_OUT=$(sshpass -e ssh -p $PORT $VPS "cd ${APP_DIR} && docker compose -f docker-compose.prod.yml build frontend 2>&1")
           if [ $? -ne 0 ]; then echo "::error::Frontend build failed"; echo "$BUILD_OUT" | tail -30; exit 1; fi
           sshpass -e ssh -p $PORT $VPS "cd ${APP_DIR} && docker compose -f docker-compose.prod.yml up -d frontend"
@@ -406,8 +386,8 @@ jobs:
       - name: "[UPDATE] Ensure nginx connected"
         if: needs.build.outputs.mode == 'update'
         run: |
-          VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
-          PORT="${{ env.VPS_PORT }}"
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
           sshpass -e ssh -p $PORT $VPS "
             docker network connect vietnet_frontend shared-nginx 2>/dev/null || true
             docker exec shared-nginx nginx -s reload 2>/dev/null || true
@@ -416,23 +396,30 @@ jobs:
       # ── SHARED: Config + DB ──────────────────────
       - name: Sync .env
         run: |
-          VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
-          PORT="${{ env.VPS_PORT }}"
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
+          # Build full .env: non-sensitive from config/env + secrets appended
+          grep -v '^\s*#' config/env | grep -v '^\s*$' > /tmp/prod.env
+          cat >> /tmp/prod.env << 'SECRETS_EOF'
+VIETNET_DB_PASSWORD=${{ secrets.VIETNET_DB_PASSWORD }}
+JWT_SECRET=${{ secrets.JWT_SECRET }}
+RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
+REVALIDATE_SECRET=${{ secrets.REVALIDATE_SECRET }}
+CRON_SECRET=${{ secrets.CRON_SECRET }}
+SECRETS_EOF
           sshpass -e ssh -p $PORT $VPS "mkdir -p ${APP_DIR}/config"
-          sshpass -e scp -P $PORT config/env $VPS:${APP_DIR}/config/env
-          sshpass -e ssh -p $PORT $VPS "cp ${APP_DIR}/config/env ${APP_DIR}/.env && chmod 600 ${APP_DIR}/.env"
+          sshpass -e scp -P $PORT /tmp/prod.env $VPS:${APP_DIR}/.env
+          sshpass -e ssh -p $PORT $VPS "chmod 600 ${APP_DIR}/.env && cp ${APP_DIR}/.env ${APP_DIR}/config/env"
 
       - name: Ensure DB + user
         run: |
-          VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
-          PORT="${{ env.VPS_PORT }}"
-          MYSQL_ROOT_PWD=$(grep '^MYSQL_ROOT_PASSWORD=' config/env | cut -d= -f2-)
-          VIETNET_DB_PWD=$(grep '^VIETNET_DB_PASSWORD=' config/env | cut -d= -f2-)
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
           MYSQL_STATUS=$(sshpass -e ssh -p $PORT $VPS "docker ps --filter name=shared-mysql --format '{{.Names}}'" 2>&1)
           [ -z "$MYSQL_STATUS" ] && { echo "::warning::shared-mysql not running — skip"; exit 0; }
-          sshpass -e ssh -p $PORT $VPS "docker exec -i shared-mysql mysql -u root -p'${MYSQL_ROOT_PWD}' <<EOSQL
+          sshpass -e ssh -p $PORT $VPS "docker exec -i shared-mysql mysql -u root -p'${{ secrets.MYSQL_ROOT_PASSWORD }}' <<EOSQL
             CREATE DATABASE IF NOT EXISTS vietnet CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-            CREATE USER IF NOT EXISTS 'vietnet'@'%' IDENTIFIED BY '${VIETNET_DB_PWD}';
+            CREATE USER IF NOT EXISTS 'vietnet'@'%' IDENTIFIED BY '${{ secrets.VIETNET_DB_PASSWORD }}';
             GRANT ALL PRIVILEGES ON *.* TO 'vietnet'@'%';
             FLUSH PRIVILEGES;
           EOSQL"
@@ -441,10 +428,9 @@ jobs:
         if: needs.build.outputs.db == 'true'
         run: |
           set +e
-          VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
-          PORT="${{ env.VPS_PORT }}"
-          VIETNET_DB_PWD=$(grep '^VIETNET_DB_PASSWORD=' config/env | cut -d= -f2-)
-          MYSQL_CMD="docker exec -i shared-mysql mysql -u vietnet -p${VIETNET_DB_PWD} vietnet"
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
+          MYSQL_CMD="docker exec -i shared-mysql mysql -u vietnet -p${{ secrets.VIETNET_DB_PASSWORD }} vietnet"
           TABLES_ORDER=(users login_attempts refresh_tokens password_reset_tokens categories media projects project_gallery articles products product_images consultations page_configs page_config_history settings notifications page_views page_view_daily email_logs app_logs)
           for tbl in "${TABLES_ORDER[@]}"; do
             FILE="db/schema/tables/${tbl}.sql"
@@ -455,11 +441,10 @@ jobs:
       - name: Run DB changelog
         run: |
           set +e
-          VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
-          PORT="${{ env.VPS_PORT }}"
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
           [ ! -d "db/changelog" ] && exit 0
-          VIETNET_DB_PWD=$(grep '^VIETNET_DB_PASSWORD=' config/env | cut -d= -f2-)
-          MYSQL_CMD="docker exec -i shared-mysql mysql -u vietnet -p${VIETNET_DB_PWD} vietnet"
+          MYSQL_CMD="docker exec -i shared-mysql mysql -u vietnet -p${{ secrets.VIETNET_DB_PASSWORD }} vietnet"
 
           for f in $(find db/changelog/_init -name '*.sql' -type f 2>/dev/null | sort); do
             sshpass -e ssh -p $PORT $VPS "$MYSQL_CMD" < "$f" 2>&1 || true
@@ -489,9 +474,19 @@ jobs:
       - name: Restart after DB changes
         if: needs.build.outputs.db == 'true'
         run: |
-          VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
-          PORT="${{ env.VPS_PORT }}"
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
           sshpass -e ssh -p $PORT $VPS "cd ${APP_DIR} && docker compose -f docker-compose.prod.yml restart backend frontend" 2>&1 || true
+          echo "Waiting for backend..."
+          for i in $(seq 1 30); do
+            sshpass -e ssh -p $PORT $VPS "curl -sf http://localhost:4100/api/health" > /dev/null 2>&1 && { echo "Backend ready!"; break; }
+            if [ $i -eq 30 ]; then
+              echo "::error::Backend not ready after 60s post-migration"
+              sshpass -e ssh -p $PORT $VPS "docker logs vietnet-api --tail 30" 2>&1
+              exit 1
+            fi
+            sleep 2
+          done
 
   # ─── STAGE 4: VERIFY ────────────────────────────
   verify:
@@ -501,25 +496,17 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Load config/env
-        run: |
-          while IFS= read -r line; do
-            [[ -z "$line" || "$line" == \#* ]] && continue
-            [[ "$line" == *=* ]] && echo "$line" >> $GITHUB_ENV
-          done < config/env
-          PASS=$(sed -n 's/^VPS_PASSWORD=//p' config/env)
-          echo "SSHPASS=${PASS}" >> $GITHUB_ENV
-
       - name: Setup SSH
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq sshpass > /dev/null
           mkdir -p ~/.ssh
-          ssh-keyscan -p ${{ env.VPS_PORT }} -H ${{ env.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+          ssh-keyscan -p ${{ secrets.VPS_PORT }} -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+          echo "SSHPASS=${{ secrets.VPS_PASSWORD }}" >> $GITHUB_ENV
 
       - name: Ensure Redis noeviction
         run: |
-          VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
-          PORT="${{ env.VPS_PORT }}"
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
           sshpass -e ssh -p $PORT $VPS "
             POLICY=\$(docker exec shared-redis redis-cli CONFIG GET maxmemory-policy 2>/dev/null | tail -1)
             if [ \"\$POLICY\" != 'noeviction' ]; then
@@ -533,8 +520,8 @@ jobs:
 
       - name: Wait + Backend health
         run: |
-          VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
-          PORT="${{ env.VPS_PORT }}"
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
           sleep 10
           for i in $(seq 1 15); do
             RESULT=$(sshpass -e ssh -p $PORT $VPS "curl -sf http://localhost:4100/api/health" 2>/dev/null)
@@ -558,18 +545,22 @@ jobs:
 
       - name: Frontend health
         run: |
-          VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
-          PORT="${{ env.VPS_PORT }}"
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
           for i in $(seq 1 10); do
             sshpass -e ssh -p $PORT $VPS "curl -sf -o /dev/null http://localhost:3100" 2>/dev/null && { echo "Frontend: OK"; exit 0; }
-            [ $i -eq 10 ] && { echo "::warning::Frontend not responding"; sshpass -e ssh -p $PORT $VPS "docker logs vietnet-frontend --tail 15" 2>&1; }
+            if [ $i -eq 10 ]; then
+              echo "::error::Frontend health check failed"
+              sshpass -e ssh -p $PORT $VPS "docker logs vietnet-frontend --tail 20" 2>&1
+              exit 1
+            fi
             sleep 2
           done
 
       - name: Ensure SSL cert
         run: |
-          VPS="${{ env.VPS_USER }}@${{ env.VPS_HOST }}"
-          PORT="${{ env.VPS_PORT }}"
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
           HAS_WP=$(sshpass -e ssh -p $PORT $VPS "test -f ${WEBPHOTO_DIR}/docker-compose.prod.yml && echo yes || echo no")
           [ "$HAS_WP" != "yes" ] && exit 0
           CERT_INFO=$(sshpass -e ssh -p $PORT $VPS "
