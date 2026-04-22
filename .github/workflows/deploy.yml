@@ -400,13 +400,13 @@ jobs:
           PORT="${{ secrets.VPS_PORT }}"
           # Build full .env: non-sensitive from config/env + secrets appended
           grep -v '^\s*#' config/env | grep -v '^\s*$' > /tmp/prod.env
-          cat >> /tmp/prod.env << 'SECRETS_EOF'
-VIETNET_DB_PASSWORD=${{ secrets.VIETNET_DB_PASSWORD }}
-JWT_SECRET=${{ secrets.JWT_SECRET }}
-RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
-REVALIDATE_SECRET=${{ secrets.REVALIDATE_SECRET }}
-CRON_SECRET=${{ secrets.CRON_SECRET }}
-SECRETS_EOF
+          {
+            echo "VIETNET_DB_PASSWORD=${{ secrets.VIETNET_DB_PASSWORD }}"
+            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}"
+            echo "RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}"
+            echo "REVALIDATE_SECRET=${{ secrets.REVALIDATE_SECRET }}"
+            echo "CRON_SECRET=${{ secrets.CRON_SECRET }}"
+          } >> /tmp/prod.env
           sshpass -e ssh -p $PORT $VPS "mkdir -p ${APP_DIR}/config"
           sshpass -e scp -P $PORT /tmp/prod.env $VPS:${APP_DIR}/.env
           sshpass -e ssh -p $PORT $VPS "chmod 600 ${APP_DIR}/.env && cp ${APP_DIR}/.env ${APP_DIR}/config/env"
