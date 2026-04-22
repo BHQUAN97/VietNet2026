@@ -298,8 +298,10 @@ jobs:
           PORT="${{ secrets.VPS_PORT }}"
           echo "Waiting for backend..."
           for i in $(seq 1 30); do
-            sshpass -e ssh -p $PORT $VPS "curl -sf http://localhost:4100/api/health" > /dev/null 2>&1 && break
-            [ $i -eq 30 ] && { echo "Backend not ready — skip seed"; exit 0; }
+            if sshpass -e ssh -p $PORT $VPS "curl -sf http://localhost:4100/api/health" > /dev/null 2>&1; then
+              break
+            fi
+            if [ $i -eq 30 ]; then echo "Backend not ready — skip seed"; exit 0; fi
             sleep 2
           done
           echo "Seeding (first-time only)..."
@@ -503,10 +505,13 @@ jobs:
           sshpass -e ssh -p $PORT $VPS "cd ${APP_DIR} && docker compose -f docker-compose.prod.yml restart backend frontend" 2>&1 || true
           echo "Waiting for backend..."
           for i in $(seq 1 30); do
-            sshpass -e ssh -p $PORT $VPS "curl -sf http://localhost:4100/api/health" > /dev/null 2>&1 && { echo "Backend ready!"; break; }
+            if sshpass -e ssh -p $PORT $VPS "curl -sf http://localhost:4100/api/health" > /dev/null 2>&1; then
+              echo "Backend ready!"
+              break
+            fi
             if [ $i -eq 30 ]; then
               echo "::error::Backend not ready after 60s post-migration"
-              sshpass -e ssh -p $PORT $VPS "docker logs vietnet-api --tail 30" 2>&1
+              sshpass -e ssh -p $PORT $VPS "docker logs vietnet-api --tail 30" 2>&1 || true
               exit 1
             fi
             sleep 2
@@ -549,22 +554,21 @@ jobs:
           PORT="${{ secrets.VPS_PORT }}"
           sleep 10
           for i in $(seq 1 15); do
-            RESULT=$(sshpass -e ssh -p $PORT $VPS "curl -sf http://localhost:4100/api/health" 2>/dev/null)
-            if [ $? -eq 0 ] && [ -n "$RESULT" ]; then
+            if RESULT=$(sshpass -e ssh -p $PORT $VPS "curl -sf http://localhost:4100/api/health" 2>/dev/null) && [ -n "$RESULT" ]; then
               echo "Backend: OK — $RESULT"
               exit 0
             fi
-            [ $i -eq 15 ] && {
-              echo "::error::Backend health check failed"
+            echo "  Attempt $i/15..."
+            if [ $i -eq 15 ]; then
+              echo "::error::Backend health check failed after 40s"
               sshpass -e ssh -p $PORT $VPS "
-                docker ps -a --format 'table {{.Names}}\t{{.Status}}' | grep -E 'vietnet|shared'
+                export PATH=\$PATH:/usr/local/bin
+                docker ps -a --format 'table {{.Names}}\t{{.Status}}' | grep -E 'vietnet|shared' || true
                 echo '---'
-                docker logs vietnet-api --tail 20 2>&1
-                echo '---'
-                docker exec shared-redis redis-cli CONFIG GET maxmemory-policy 2>&1
-              "
+                docker logs vietnet-api --tail 20 2>&1 || true
+              " 2>&1 || true
               exit 1
-            }
+            fi
             sleep 2
           done
 
@@ -573,10 +577,13 @@ jobs:
           VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
           PORT="${{ secrets.VPS_PORT }}"
           for i in $(seq 1 10); do
-            sshpass -e ssh -p $PORT $VPS "curl -sf -o /dev/null http://localhost:3100" 2>/dev/null && { echo "Frontend: OK"; exit 0; }
+            if sshpass -e ssh -p $PORT $VPS "curl -sf -o /dev/null http://localhost:3100" 2>/dev/null; then
+              echo "Frontend: OK"
+              exit 0
+            fi
             if [ $i -eq 10 ]; then
               echo "::error::Frontend health check failed"
-              sshpass -e ssh -p $PORT $VPS "docker logs vietnet-frontend --tail 20" 2>&1
+              sshpass -e ssh -p $PORT $VPS "docker logs vietnet-frontend --tail 20" 2>&1 || true
               exit 1
             fi
             sleep 2
