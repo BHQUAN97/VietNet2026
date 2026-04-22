@@ -219,22 +219,17 @@ jobs:
         run: |
           VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
           PORT="${{ secrets.VPS_PORT }}"
-          # Write passwords to files (env vars avoid inline ${{ }} expansion; printf avoids $ in SSH strings)
+          # Write passwords + SQL to temp files using env vars (safe, no $ expansion from inline substitution)
           printf '%s' "$MYSQL_ROOT_PASSWORD" > /tmp/mysql_root_pass.txt
-          printf '%s' "$VIETNET_DB_PASSWORD" > /tmp/vietnet_db_pass.txt
+          printf "CREATE DATABASE IF NOT EXISTS vietnet CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;\nCREATE USER IF NOT EXISTS 'vietnet'@'%%' IDENTIFIED BY '%s';\nGRANT ALL PRIVILEGES ON *.* TO 'vietnet'@'%%';\nFLUSH PRIVILEGES;\n" "$VIETNET_DB_PASSWORD" > /tmp/create_vietnet.sql
           sshpass -e scp -P $PORT /tmp/mysql_root_pass.txt $VPS:/tmp/mysql_root_pass.txt
-          sshpass -e scp -P $PORT /tmp/vietnet_db_pass.txt $VPS:/tmp/vietnet_db_pass.txt
-          rm -f /tmp/mysql_root_pass.txt /tmp/vietnet_db_pass.txt
+          sshpass -e scp -P $PORT /tmp/create_vietnet.sql $VPS:/tmp/create_vietnet.sql
+          rm -f /tmp/mysql_root_pass.txt /tmp/create_vietnet.sql
           sshpass -e ssh -p $PORT $VPS "
             export PATH=\$PATH:/usr/local/bin
             ROOT_PASS=\$(cat /tmp/mysql_root_pass.txt)
-            VN_PASS=\$(cat /tmp/vietnet_db_pass.txt)
-            docker exec -i -e MYSQL_PWD=\"\$ROOT_PASS\" shared-mysql mysql -u root <<EOSQL
-              CREATE DATABASE IF NOT EXISTS vietnet CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-              CREATE USER IF NOT EXISTS 'vietnet'@'%' IDENTIFIED BY '\$VN_PASS';
-              GRANT ALL PRIVILEGES ON *.* TO 'vietnet'@'%';
-              FLUSH PRIVILEGES;
-          EOSQL
+            MYSQL_PWD=\"\$ROOT_PASS\" docker exec -i -e MYSQL_PWD shared-mysql mysql -u root < /tmp/create_vietnet.sql
+            rm -f /tmp/create_vietnet.sql
           "
 
       - name: "[INIT] SSL certs"
@@ -471,20 +466,15 @@ jobs:
           MYSQL_STATUS=$(sshpass -e ssh -p $PORT $VPS "docker ps --filter name=shared-mysql --format '{{.Names}}'" 2>&1)
           [ -z "$MYSQL_STATUS" ] && { echo "::warning::shared-mysql not running — skip"; exit 0; }
           printf '%s' "$MYSQL_ROOT_PASSWORD" > /tmp/mysql_root_pass.txt
-          printf '%s' "$VIETNET_DB_PASSWORD" > /tmp/vietnet_db_pass.txt
+          printf "CREATE DATABASE IF NOT EXISTS vietnet CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;\nCREATE USER IF NOT EXISTS 'vietnet'@'%%' IDENTIFIED BY '%s';\nGRANT ALL PRIVILEGES ON *.* TO 'vietnet'@'%%';\nFLUSH PRIVILEGES;\n" "$VIETNET_DB_PASSWORD" > /tmp/ensure_vietnet.sql
           sshpass -e scp -P $PORT /tmp/mysql_root_pass.txt $VPS:/tmp/mysql_root_pass.txt
-          sshpass -e scp -P $PORT /tmp/vietnet_db_pass.txt $VPS:/tmp/vietnet_db_pass.txt
-          rm -f /tmp/mysql_root_pass.txt /tmp/vietnet_db_pass.txt
+          sshpass -e scp -P $PORT /tmp/ensure_vietnet.sql $VPS:/tmp/ensure_vietnet.sql
+          rm -f /tmp/mysql_root_pass.txt /tmp/ensure_vietnet.sql
           sshpass -e ssh -p $PORT $VPS "
             export PATH=\$PATH:/usr/local/bin
             ROOT_PASS=\$(cat /tmp/mysql_root_pass.txt)
-            VN_PASS=\$(cat /tmp/vietnet_db_pass.txt)
-            docker exec -i -e MYSQL_PWD=\"\$ROOT_PASS\" shared-mysql mysql -u root <<EOSQL
-              CREATE DATABASE IF NOT EXISTS vietnet CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-              CREATE USER IF NOT EXISTS 'vietnet'@'%' IDENTIFIED BY '\$VN_PASS';
-              GRANT ALL PRIVILEGES ON *.* TO 'vietnet'@'%';
-              FLUSH PRIVILEGES;
-          EOSQL
+            MYSQL_PWD=\"\$ROOT_PASS\" docker exec -i -e MYSQL_PWD shared-mysql mysql -u root < /tmp/ensure_vietnet.sql
+            rm -f /tmp/ensure_vietnet.sql /tmp/mysql_root_pass.txt
           "
 
       - name: Ensure DB schema
