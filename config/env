@@ -1,43 +1,18 @@
 # ============================================
 # VietNet Production — bhquan.store
-# File nay duoc deploy len VPS thanh .env
-# Sua truc tiep o day, commit + push de cap nhat
+# NON-SENSITIVE config only.
+# Sensitive values luu trong GitHub Actions Secrets.
 # ============================================
 
-# -- VPS (SSH connection, chung voi WebPhoto) --
-# IP address cua VPS
-VPS_HOST=143.198.217.127
-# SSH port
-VPS_PORT=22
-# SSH username
-VPS_USER=root
-# SSH password (dung voi sshpass)
-VPS_PASSWORD=12345678@Abc
-
-# -- API URL (cho cron jobs goi API tu ben ngoai) --
+# -- API URL --
 API_URL=https://bhquan.store
 
 # -- Domain --
 DOMAIN=bhquan.store
 
-# -- MySQL (shared: shared-mysql container — /opt/infra/) --
-# Root password (chung voi WebPhoto, dung de tao DB + user)
-MYSQL_ROOT_PASSWORD=8bb34f47771a83d9ab543bc0f47d5e1a
-# Password cho user vietnet (app connect den DB vietnet)
-VIETNET_DB_PASSWORD=17f4913345ce13e477de63465ac23c23
-
-# -- JWT --
-# Secret key de sign/verify access token + refresh token
-JWT_SECRET=3bae4c1b110b43a5f4df9e78acd5c6fbbbd132d76197f4872aa910defd68c8a1
-
-# -- Resend (Email service) --
-# API key tu resend.com — dung gui email thong bao, xac nhan
-RESEND_API_KEY=re_8EVQXeRj_HS7BNp9vJgsKgE5RPMA2hckM
-
-# -- ISR Revalidation --
-# Secret de backend goi Next.js revalidate API khi data thay doi
-REVALIDATE_SECRET=bf87194b40242cfaacb5d59d3dee0dcb
-
-# -- Cron --
-# Secret de GitHub Actions xac thuc khi goi /api/cron/* endpoints
-CRON_SECRET=de35774053787ad5331ca7bc6a3def356521c87a689a06778eeceb9a4632c6a3
+# -- Backend DB connection (qua docker network) --
+DB_HOST=shared-mysql
+DB_PORT=3306
+DB_USERNAME=vietnet
+DB_NAME=vietnet
+# trigger
