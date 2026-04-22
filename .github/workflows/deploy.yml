@@ -179,12 +179,19 @@ jobs:
 
       - name: "[INIT] Start shared infra"
         if: needs.build.outputs.mode == 'init'
+        env:
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
         run: |
           VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
           PORT="${{ secrets.VPS_PORT }}"
           INFRA_DIR=/opt/infra
           sshpass -e ssh -p $PORT $VPS "mkdir -p ${INFRA_DIR}"
           sshpass -e scp -P $PORT infra/docker-compose.yml $VPS:${INFRA_DIR}/
+          # Write .env with single-quoted value: handles $ and # in password safely
+          printf "MYSQL_ROOT_PASSWORD='%s'\n" "$MYSQL_ROOT_PASSWORD" > /tmp/infra.env
+          sshpass -e scp -P $PORT /tmp/infra.env $VPS:${INFRA_DIR}/.env
+          sshpass -e ssh -p $PORT $VPS "chmod 600 ${INFRA_DIR}/.env"
+          rm -f /tmp/infra.env
           sshpass -e ssh -p $PORT $VPS "
             export PATH=\$PATH:/usr/local/bin
             docker network create webphoto_backend 2>/dev/null || true
@@ -195,8 +202,6 @@ jobs:
               echo 'shared-mysql already running — skip infra start'
             else
               echo 'Starting shared infra...'
-              echo 'MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}' > ${INFRA_DIR}/.env
-              chmod 600 ${INFRA_DIR}/.env
               cd ${INFRA_DIR} && docker compose up -d 2>&1
               for i in \$(seq 1 60); do
                 docker exec shared-mysql mysqladmin ping -h localhost --silent 2>/dev/null && { echo 'MySQL ready!'; break; }
@@ -208,15 +213,29 @@ jobs:
 
       - name: "[INIT] Create DB + user"
         if: needs.build.outputs.mode == 'init'
+        env:
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+          VIETNET_DB_PASSWORD: ${{ secrets.VIETNET_DB_PASSWORD }}
         run: |
           VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
           PORT="${{ secrets.VPS_PORT }}"
-          sshpass -e ssh -p $PORT $VPS "docker exec -i shared-mysql mysql -u root -p'${{ secrets.MYSQL_ROOT_PASSWORD }}' <<EOSQL
-            CREATE DATABASE IF NOT EXISTS vietnet CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-            CREATE USER IF NOT EXISTS 'vietnet'@'%' IDENTIFIED BY '${{ secrets.VIETNET_DB_PASSWORD }}';
-            GRANT ALL PRIVILEGES ON *.* TO 'vietnet'@'%';
-            FLUSH PRIVILEGES;
-          EOSQL"
+          # Write passwords to files (env vars avoid inline ${{ }} expansion; printf avoids $ in SSH strings)
+          printf '%s' "$MYSQL_ROOT_PASSWORD" > /tmp/mysql_root_pass.txt
+          printf '%s' "$VIETNET_DB_PASSWORD" > /tmp/vietnet_db_pass.txt
+          sshpass -e scp -P $PORT /tmp/mysql_root_pass.txt $VPS:/tmp/mysql_root_pass.txt
+          sshpass -e scp -P $PORT /tmp/vietnet_db_pass.txt $VPS:/tmp/vietnet_db_pass.txt
+          rm -f /tmp/mysql_root_pass.txt /tmp/vietnet_db_pass.txt
+          sshpass -e ssh -p $PORT $VPS "
+            export PATH=\$PATH:/usr/local/bin
+            ROOT_PASS=\$(cat /tmp/mysql_root_pass.txt)
+            VN_PASS=\$(cat /tmp/vietnet_db_pass.txt)
+            docker exec -i -e MYSQL_PWD=\"\$ROOT_PASS\" shared-mysql mysql -u root <<EOSQL
+              CREATE DATABASE IF NOT EXISTS vietnet CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+              CREATE USER IF NOT EXISTS 'vietnet'@'%' IDENTIFIED BY '\$VN_PASS';
+              GRANT ALL PRIVILEGES ON *.* TO 'vietnet'@'%';
+              FLUSH PRIVILEGES;
+          EOSQL
+          "
 
       - name: "[INIT] SSL certs"
         if: needs.build.outputs.mode == 'init'
@@ -422,42 +441,65 @@ jobs:
 
       # ── SHARED: Config + DB ──────────────────────
       - name: Sync .env
+        env:
+          VIETNET_DB_PASSWORD: ${{ secrets.VIETNET_DB_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          REVALIDATE_SECRET: ${{ secrets.REVALIDATE_SECRET }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
           PORT="${{ secrets.VPS_PORT }}"
-          # Build full .env: non-sensitive from config/env + secrets appended
+          # Build full .env using env vars (not inline ${{ }} to avoid bash $ expansion of secret values)
           grep -v '^\s*#' config/env | grep -v '^\s*$' > /tmp/prod.env
-          {
-            echo "VIETNET_DB_PASSWORD=${{ secrets.VIETNET_DB_PASSWORD }}"
-            echo "JWT_SECRET=${{ secrets.JWT_SECRET }}"
-            echo "RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}"
-            echo "REVALIDATE_SECRET=${{ secrets.REVALIDATE_SECRET }}"
-            echo "CRON_SECRET=${{ secrets.CRON_SECRET }}"
-          } >> /tmp/prod.env
+          printf 'VIETNET_DB_PASSWORD=%s\n' "$VIETNET_DB_PASSWORD" >> /tmp/prod.env
+          printf 'JWT_SECRET=%s\n' "$JWT_SECRET" >> /tmp/prod.env
+          printf 'RESEND_API_KEY=%s\n' "$RESEND_API_KEY" >> /tmp/prod.env
+          printf 'REVALIDATE_SECRET=%s\n' "$REVALIDATE_SECRET" >> /tmp/prod.env
+          printf 'CRON_SECRET=%s\n' "$CRON_SECRET" >> /tmp/prod.env
           sshpass -e ssh -p $PORT $VPS "mkdir -p ${APP_DIR}/config"
           sshpass -e scp -P $PORT /tmp/prod.env $VPS:${APP_DIR}/.env
           sshpass -e ssh -p $PORT $VPS "chmod 600 ${APP_DIR}/.env && cp ${APP_DIR}/.env ${APP_DIR}/config/env"
 
       - name: Ensure DB + user
+        env:
+          MYSQL_ROOT_PASSWORD: ${{ secrets.MYSQL_ROOT_PASSWORD }}
+          VIETNET_DB_PASSWORD: ${{ secrets.VIETNET_DB_PASSWORD }}
         run: |
           VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
           PORT="${{ secrets.VPS_PORT }}"
           MYSQL_STATUS=$(sshpass -e ssh -p $PORT $VPS "docker ps --filter name=shared-mysql --format '{{.Names}}'" 2>&1)
           [ -z "$MYSQL_STATUS" ] && { echo "::warning::shared-mysql not running — skip"; exit 0; }
-          sshpass -e ssh -p $PORT $VPS "docker exec -i shared-mysql mysql -u root -p'${{ secrets.MYSQL_ROOT_PASSWORD }}' <<EOSQL
-            CREATE DATABASE IF NOT EXISTS vietnet CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-            CREATE USER IF NOT EXISTS 'vietnet'@'%' IDENTIFIED BY '${{ secrets.VIETNET_DB_PASSWORD }}';
-            GRANT ALL PRIVILEGES ON *.* TO 'vietnet'@'%';
-            FLUSH PRIVILEGES;
-          EOSQL"
+          printf '%s' "$MYSQL_ROOT_PASSWORD" > /tmp/mysql_root_pass.txt
+          printf '%s' "$VIETNET_DB_PASSWORD" > /tmp/vietnet_db_pass.txt
+          sshpass -e scp -P $PORT /tmp/mysql_root_pass.txt $VPS:/tmp/mysql_root_pass.txt
+          sshpass -e scp -P $PORT /tmp/vietnet_db_pass.txt $VPS:/tmp/vietnet_db_pass.txt
+          rm -f /tmp/mysql_root_pass.txt /tmp/vietnet_db_pass.txt
+          sshpass -e ssh -p $PORT $VPS "
+            export PATH=\$PATH:/usr/local/bin
+            ROOT_PASS=\$(cat /tmp/mysql_root_pass.txt)
+            VN_PASS=\$(cat /tmp/vietnet_db_pass.txt)
+            docker exec -i -e MYSQL_PWD=\"\$ROOT_PASS\" shared-mysql mysql -u root <<EOSQL
+              CREATE DATABASE IF NOT EXISTS vietnet CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+              CREATE USER IF NOT EXISTS 'vietnet'@'%' IDENTIFIED BY '\$VN_PASS';
+              GRANT ALL PRIVILEGES ON *.* TO 'vietnet'@'%';
+              FLUSH PRIVILEGES;
+          EOSQL
+          "
 
       - name: Ensure DB schema
         if: needs.build.outputs.db == 'true'
+        env:
+          VIETNET_DB_PASSWORD: ${{ secrets.VIETNET_DB_PASSWORD }}
         run: |
           set +e
           VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
           PORT="${{ secrets.VPS_PORT }}"
-          MYSQL_CMD="docker exec -i shared-mysql mysql -u vietnet -p${{ secrets.VIETNET_DB_PASSWORD }} vietnet"
+          printf '%s' "$VIETNET_DB_PASSWORD" > /tmp/vietnet_db_pass.txt
+          sshpass -e scp -P $PORT /tmp/vietnet_db_pass.txt $VPS:/tmp/vietnet_db_pass.txt
+          rm -f /tmp/vietnet_db_pass.txt
+          # MYSQL_PWD=$(cat file) sets env var for docker exec; -e MYSQL_PWD passes it into container
+          MYSQL_CMD="MYSQL_PWD=\$(cat /tmp/vietnet_db_pass.txt) docker exec -i -e MYSQL_PWD shared-mysql mysql -u vietnet vietnet"
           TABLES_ORDER=(users login_attempts refresh_tokens password_reset_tokens categories media projects project_gallery articles products product_images consultations page_configs page_config_history settings notifications page_views page_view_daily email_logs app_logs)
           for tbl in "${TABLES_ORDER[@]}"; do
             FILE="db/schema/tables/${tbl}.sql"
@@ -466,12 +508,17 @@ jobs:
           done
 
       - name: Run DB changelog
+        env:
+          VIETNET_DB_PASSWORD: ${{ secrets.VIETNET_DB_PASSWORD }}
         run: |
           set +e
           VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
           PORT="${{ secrets.VPS_PORT }}"
           [ ! -d "db/changelog" ] && exit 0
-          MYSQL_CMD="docker exec -i shared-mysql mysql -u vietnet -p${{ secrets.VIETNET_DB_PASSWORD }} vietnet"
+          printf '%s' "$VIETNET_DB_PASSWORD" > /tmp/vietnet_db_pass.txt
+          sshpass -e scp -P $PORT /tmp/vietnet_db_pass.txt $VPS:/tmp/vietnet_db_pass.txt
+          rm -f /tmp/vietnet_db_pass.txt
+          MYSQL_CMD="MYSQL_PWD=\$(cat /tmp/vietnet_db_pass.txt) docker exec -i -e MYSQL_PWD shared-mysql mysql -u vietnet vietnet"
 
           for f in $(find db/changelog/_init -name '*.sql' -type f 2>/dev/null | sort); do
             sshpass -e ssh -p $PORT $VPS "$MYSQL_CMD" < "$f" 2>&1 || true
