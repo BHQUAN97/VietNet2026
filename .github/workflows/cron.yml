@@ -7,23 +7,23 @@ on:
 
 jobs:
   traffic-sync:
-    if: false  # TEMP: disabled — fix CRON_SECRET on server first
+    if: github.event.schedule == '0 18 * * *'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
       - name: Run traffic sync cron
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
-          source config/env
           curl -f -s --max-time 30 -X POST -H "x-cron-secret: ${CRON_SECRET}" \
-            "${API_URL}/api/cron/traffic-sync"
+            "https://bhquan.store/api/cron/traffic-sync"
 
   cleanup-sessions:
     if: github.event.schedule == '0 19 * * *'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
       - name: Run cleanup expired sessions
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
-          source config/env
           curl -f -s --max-time 30 -X POST -H "x-cron-secret: ${CRON_SECRET}" \
-            "${API_URL}/api/cron/cleanup-sessions"
+            "https://bhquan.store/api/cron/cleanup-sessions"

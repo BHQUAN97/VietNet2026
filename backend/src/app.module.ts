@@ -28,6 +28,7 @@ import { QueuesModule } from './queues/queues.module';
 import { CronModule } from './modules/cron/cron.module';
 import { LogsModule } from './modules/logs/logs.module';
 import { ServicesModule } from './common/services/services.module';
+import { RedisModule } from './common/modules/redis.module';
 
 @Module({
   imports: [
@@ -79,6 +80,7 @@ import { ServicesModule } from './common/services/services.module';
     CronModule,
     LogsModule,
     ServicesModule,
+    RedisModule,
   ],
   providers: [
     {
