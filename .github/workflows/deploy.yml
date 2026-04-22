@@ -78,8 +78,8 @@ jobs:
         run: |
           VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
           PORT="${{ secrets.VPS_PORT }}"
-          # Check container ton tai (khong chi file) de tranh stuck khi INIT that bai giua chung
-          if sshpass -e ssh -p $PORT $VPS "export PATH=\$PATH:/usr/local/bin && docker ps -a --filter name=vietnet-api --format '{{.Names}}'" | grep -q vietnet-api; then
+          # Check container DANG CHAY (running) — stopped/crashed container = INIT again for clean slate
+          if sshpass -e ssh -p $PORT $VPS "export PATH=\$PATH:/usr/local/bin && docker ps --filter name=vietnet-api --filter status=running --format '{{.Names}}'" | grep -q vietnet-api; then
             echo "mode=update" >> $GITHUB_OUTPUT
             echo "Deploy mode: UPDATE"
           else

@@ -12,6 +12,7 @@ on:
           - docker
           - check
           - reset-mysql-volume
+          - reset-all
 
 jobs:
   setup:
@@ -97,4 +98,23 @@ jobs:
             docker volume rm shared_mysql_data 2>/dev/null && echo 'Volume removed' || echo 'Volume not found (ok)'
 
             echo '=== Done — next deploy will re-initialize MySQL with current MYSQL_ROOT_PASSWORD ==='
+          "
+
+      - name: Reset all (MySQL volume + app containers)
+        if: inputs.action == 'reset-all'
+        run: |
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
+          sshpass -e ssh -p $PORT $VPS "
+            export PATH=\$PATH:/usr/local/bin
+            echo '=== Stopping and removing all VietNet + shared infra containers ==='
+            docker stop vietnet-api vietnet-frontend shared-mysql shared-redis 2>/dev/null || true
+            docker rm vietnet-api vietnet-frontend shared-mysql shared-redis 2>/dev/null || true
+
+            echo '=== Removing MySQL data volume ==='
+            docker volume rm shared_mysql_data 2>/dev/null && echo 'Volume removed' || echo 'Volume not found (ok)'
+
+            echo '=== Current container state ==='
+            docker ps -a --format 'table {{.Names}}\t{{.Status}}' | grep -E 'vietnet|shared' || echo '(none)'
+            echo '=== Done — next deploy will be INIT mode ==='
           "
