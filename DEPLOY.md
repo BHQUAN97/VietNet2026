@@ -64,6 +64,16 @@ gh secret list --repo BHQUAN97/VietNet2026
 
 ---
 
+## Checklist trước khi deploy
+
+- [ ] `gh secret list --repo BHQUAN97/VietNet2026` hiện đủ 10 secrets
+- [ ] Push code lên `main` → Actions chạy tự động
+- [ ] Xem progress: `gh run watch --repo BHQUAN97/VietNet2026`
+
+> Đổi VPS password: `bash /e/DEVELOP/.claude-shared/secrets-infra/scripts/set-all-secrets.sh --shared`
+
+---
+
 ## Deploy
 
 ### Tự động (Khuyên dùng)
