@@ -249,16 +249,20 @@ jobs:
           sshpass -e ssh -p $PORT $VPS "
             cd ${WEBPHOTO_DIR}
             for DOMAIN in bhquan.store; do
-              CERT_EXISTS=\$(docker compose -f docker-compose.prod.yml run --rm --entrypoint '' certbot \
-                test -f /etc/letsencrypt/live/\${DOMAIN}/fullchain.pem 2>/dev/null && echo yes || echo no)
-              if [ \"\$CERT_EXISTS\" = 'no' ]; then
+              CERT_VALID=\$(docker compose -f docker-compose.prod.yml run --rm --entrypoint '' certbot sh -c \
+                'openssl x509 -in /etc/letsencrypt/live/'\$DOMAIN'/fullchain.pem -noout 2>/dev/null && echo yes || echo no' \
+                2>/dev/null || echo no)
+              if [ \"\$CERT_VALID\" = 'no' ]; then
+                echo 'Creating placeholder cert for '\$DOMAIN'...'
                 docker compose -f docker-compose.prod.yml run --rm --entrypoint '' certbot sh -c \"
-                  mkdir -p /etc/letsencrypt/live/\${DOMAIN}
+                  mkdir -p /etc/letsencrypt/live/\$DOMAIN
                   openssl req -x509 -nodes -days 1 -newkey rsa:2048 \
-                    -keyout /etc/letsencrypt/live/\${DOMAIN}/privkey.pem \
-                    -out /etc/letsencrypt/live/\${DOMAIN}/fullchain.pem \
-                    -subj '/CN=\${DOMAIN}' 2>/dev/null
-                \"
+                    -keyout /etc/letsencrypt/live/\$DOMAIN/privkey.pem \
+                    -out /etc/letsencrypt/live/\$DOMAIN/fullchain.pem \
+                    -subj '/CN=\$DOMAIN' && echo 'Placeholder cert created'
+                \" || echo '::error::Failed to create placeholder cert for '\$DOMAIN
+              else
+                echo 'Valid cert already exists for '\$DOMAIN
               fi
             done
           "
@@ -301,22 +305,22 @@ jobs:
           sshpass -e ssh -p $PORT $VPS "
             cd ${WEBPHOTO_DIR}
             DC='docker compose -f docker-compose.prod.yml'
-            \$DC run --rm --entrypoint '' certbot sh -c \
-              'rm -rf /etc/letsencrypt/live/bhquan.store* /etc/letsencrypt/archive/bhquan.store* /etc/letsencrypt/renewal/bhquan.store*.conf'
+            # Do NOT rm -rf cert first — if LE fails, placeholder stays and nginx keeps running
+            echo 'Requesting Lets Encrypt cert for bhquan.store...'
             timeout 120 \$DC run --rm --entrypoint '' certbot \
               certbot certonly --webroot -w /var/www/certbot \
               --non-interactive --cert-name bhquan.store \
               --email admin@bhquan.site --agree-tos --no-eff-email \
-              -d bhquan.store -d www.bhquan.store || {
-              \$DC run --rm --entrypoint '' certbot sh -c '
-                mkdir -p /etc/letsencrypt/live/bhquan.store
-                openssl req -x509 -nodes -days 1 -newkey rsa:2048 \
-                  -keyout /etc/letsencrypt/live/bhquan.store/privkey.pem \
-                  -out /etc/letsencrypt/live/bhquan.store/fullchain.pem \
-                  -subj /CN=bhquan.store 2>/dev/null
-              '
+              --keep-until-expiring \
+              -d bhquan.store -d www.bhquan.store 2>&1 || {
+              echo '::warning::Lets Encrypt failed for bhquan.store — keeping placeholder cert'
             }
-            docker exec shared-nginx nginx -t && docker exec shared-nginx nginx -s reload
+            # Reload nginx only if it is running
+            if docker inspect shared-nginx --format '{{.State.Running}}' 2>/dev/null | grep -q true; then
+              docker exec shared-nginx nginx -s reload 2>/dev/null && echo 'Nginx reloaded OK' || echo '::warning::nginx reload failed'
+            else
+              echo '::warning::shared-nginx not running — skip reload'
+            fi
           "
 
       # ── INIT: Seed (chi lan dau) ─────────────────
@@ -377,27 +381,49 @@ jobs:
         run: |
           VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
           PORT="${{ secrets.VPS_PORT }}"
-          sshpass -e scp -P $PORT nginx/conf.d/bhquan.store.conf $VPS:${WEBPHOTO_DIR}/nginx/conf.d/ 2>/dev/null && {
-            sshpass -e ssh -p $PORT $VPS "
-              if [ -f ${WEBPHOTO_DIR}/docker-compose.prod.yml ]; then
-                cd ${WEBPHOTO_DIR}
-                for DOMAIN in bhquan.store; do
-                  CERT_EXISTS=\$(docker compose -f docker-compose.prod.yml run --rm --entrypoint '' certbot \
-                    test -f /etc/letsencrypt/live/\${DOMAIN}/fullchain.pem 2>/dev/null && echo yes || echo no)
-                  if [ \"\$CERT_EXISTS\" = 'no' ]; then
-                    docker compose -f docker-compose.prod.yml run --rm --entrypoint '' certbot sh -c \"
-                      mkdir -p /etc/letsencrypt/live/\${DOMAIN}
-                      openssl req -x509 -nodes -days 1 -newkey rsa:2048 \
-                        -keyout /etc/letsencrypt/live/\${DOMAIN}/privkey.pem \
-                        -out /etc/letsencrypt/live/\${DOMAIN}/fullchain.pem \
-                        -subj '/CN=\${DOMAIN}' 2>/dev/null
-                    \"
-                  fi
-                done
+          sshpass -e scp -P $PORT nginx/conf.d/bhquan.store.conf $VPS:${WEBPHOTO_DIR}/nginx/conf.d/ 2>/dev/null || {
+            echo '::warning::Could not upload bhquan.store.conf — WebPhoto may not be deployed'
+            exit 0
+          }
+          sshpass -e ssh -p $PORT $VPS "
+            [ ! -f ${WEBPHOTO_DIR}/docker-compose.prod.yml ] && { echo 'WebPhoto not deployed — skip'; exit 0; }
+            cd ${WEBPHOTO_DIR}
+            for DOMAIN in bhquan.store; do
+              CERT_VALID=\$(docker compose -f docker-compose.prod.yml run --rm --entrypoint '' certbot sh -c \
+                'openssl x509 -in /etc/letsencrypt/live/'\$DOMAIN'/fullchain.pem -noout 2>/dev/null && echo yes || echo no' \
+                2>/dev/null || echo no)
+              if [ \"\$CERT_VALID\" = 'no' ]; then
+                echo 'Creating placeholder cert for '\$DOMAIN'...'
+                docker compose -f docker-compose.prod.yml run --rm --entrypoint '' certbot sh -c \"
+                  mkdir -p /etc/letsencrypt/live/\$DOMAIN
+                  openssl req -x509 -nodes -days 1 -newkey rsa:2048 \
+                    -keyout /etc/letsencrypt/live/\$DOMAIN/privkey.pem \
+                    -out /etc/letsencrypt/live/\$DOMAIN/fullchain.pem \
+                    -subj '/CN=\$DOMAIN' && echo 'Placeholder cert created'
+                \" || echo '::error::Failed to create placeholder cert'
               fi
-              docker exec shared-nginx nginx -t 2>&1 | tail -1 && docker exec shared-nginx nginx -s reload
-            "
-          } || true
+            done
+            echo '--- nginx config test ---'
+            docker exec shared-nginx nginx -t 2>&1 || true
+            if docker inspect shared-nginx --format '{{.State.Running}}' 2>/dev/null | grep -q true; then
+              docker exec shared-nginx nginx -s reload 2>/dev/null && echo 'Nginx reloaded OK' || echo '::warning::nginx reload failed'
+              sleep 3
+              NGINX_STATUS=\$(docker inspect shared-nginx --format '{{.State.Status}}' 2>/dev/null || echo missing)
+              if [ \"\$NGINX_STATUS\" != 'running' ]; then
+                echo '::error::shared-nginx not running after config update (status='\$NGINX_STATUS')'
+                docker logs shared-nginx --tail 20 2>&1 || true
+                docker run --rm \
+                  -v ${WEBPHOTO_DIR}/nginx/nginx.conf:/etc/nginx/nginx.conf:ro \
+                  -v ${WEBPHOTO_DIR}/nginx/conf.d:/etc/nginx/conf.d:ro \
+                  -v webphoto_certbot_data:/etc/letsencrypt:ro \
+                  nginx:1.27-alpine nginx -t 2>&1 || true
+                exit 1
+              fi
+              echo 'nginx: OK'
+            else
+              echo '::warning::shared-nginx not running — skip reload'
+            fi
+          "
 
       - name: "[UPDATE] Sync infra"
         if: needs.build.outputs.mode == 'update' && needs.build.outputs.infra == 'true'
