@@ -544,7 +544,7 @@ jobs:
           PORT="${{ secrets.VPS_PORT }}"
           sshpass -e ssh -p $PORT $VPS "mkdir -p ${APP_DIR}/scripts"
           sshpass -e scp -P $PORT scripts/crontab.vietnet $VPS:${APP_DIR}/scripts/crontab.vietnet
-          printf 'export CRON_SECRET=%s\n' "$CRON_SECRET" > /tmp/cron-env
+          printf 'export CRON_SECRET=%q\n' "$CRON_SECRET" > /tmp/cron-env
           sshpass -e scp -P $PORT /tmp/cron-env $VPS:${APP_DIR}/.cron-env
           rm -f /tmp/cron-env
           sshpass -e ssh -p $PORT $VPS "
@@ -730,11 +730,14 @@ jobs:
           VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
           PORT="${{ secrets.VPS_PORT }}"
           sshpass -e ssh -p $PORT $VPS "
-            if [ ! -f ${APP_DIR}/.cron-env ]; then
-              echo '::error::.cron-env missing — Install crontab step may have failed'
+            # Lấy CRON_SECRET trực tiếp từ container — loại bỏ shell-expansion
+            # issues khi source .cron-env (nếu secret có ký tự đặc biệt như \$, spaces)
+            CRON_SECRET=\$(docker exec vietnet-api printenv CRON_SECRET 2>/dev/null || echo '')
+            if [ -z \"\$CRON_SECRET\" ]; then
+              echo '::error::CRON_SECRET not set in vietnet-api container — check GitHub Secrets'
               exit 1
             fi
-            source ${APP_DIR}/.cron-env
+            echo \"CRON_SECRET loaded from container (len=\${#CRON_SECRET})\"
             FAIL=0
             for ep in publish-scheduled traffic-sync cleanup-sessions cleanup-orphan-media; do
               HTTP=\$(curl -s -o /tmp/cron_resp -w '%{http_code}' -X POST \
