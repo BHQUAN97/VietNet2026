@@ -17,7 +17,7 @@ concurrency:
 
 env:
   APP_DIR: /opt/vietnet
-  WEBPHOTO_DIR: /opt/webphoto
+  INFRA_DIR: /opt/infra
 
 # ══════════════════════════════════════════════════════
 # Pipeline: typecheck → build → deploy → verify
@@ -78,7 +78,6 @@ jobs:
         run: |
           VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
           PORT="${{ secrets.VPS_PORT }}"
-          # Check API health — true UPDATE only if API actually responds (not restart-loop state)
           if sshpass -e ssh -p $PORT $VPS "curl -sf http://localhost:4100/api/health > /dev/null 2>&1"; then
             echo "mode=update" >> $GITHUB_OUTPUT
             echo "Deploy mode: UPDATE (API healthy)"
@@ -156,13 +155,12 @@ jobs:
         run: |
           VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
           PORT="${{ secrets.VPS_PORT }}"
-          # Stop + remove any crashed/restart-looping containers before fresh INIT
           sshpass -e ssh -p $PORT $VPS "
             export PATH=\$PATH:/usr/local/bin
             docker stop vietnet-api vietnet-frontend 2>/dev/null || true
             docker rm vietnet-api vietnet-frontend 2>/dev/null || true
           "
-          sshpass -e ssh -p $PORT $VPS "mkdir -p ${APP_DIR}/{backend,frontend,nginx/conf.d,scripts,db,config}"
+          sshpass -e ssh -p $PORT $VPS "mkdir -p ${APP_DIR}/{backend,frontend,nginx/conf.d,scripts,db,config} ${INFRA_DIR}/nginx/conf.d"
           sshpass -e scp -P $PORT docker-compose.prod.yml $VPS:${APP_DIR}/
           sshpass -e scp -P $PORT .env.example $VPS:${APP_DIR}/
 
@@ -178,8 +176,8 @@ jobs:
             sshpass -e ssh -p $PORT $VPS "tar xzf - -C ${APP_DIR}/"
 
           echo "  Uploading nginx + db + scripts..."
-          sshpass -e ssh -p $PORT $VPS "mkdir -p ${WEBPHOTO_DIR}/nginx/conf.d"
-          sshpass -e scp -P $PORT nginx/conf.d/bhquan.store.conf $VPS:${WEBPHOTO_DIR}/nginx/conf.d/
+          sshpass -e scp -P $PORT nginx/conf.d/bhquan.store.conf $VPS:${INFRA_DIR}/nginx/conf.d/bhquan.store.conf
+          sshpass -e scp -P $PORT infra/nginx/nginx.conf $VPS:${INFRA_DIR}/nginx/nginx.conf
           sshpass -e scp -P $PORT -r db/changelog $VPS:${APP_DIR}/db/ 2>/dev/null || true
           sshpass -e scp -P $PORT -r db/schema $VPS:${APP_DIR}/db/ 2>/dev/null || true
 
@@ -190,10 +188,8 @@ jobs:
         run: |
           VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
           PORT="${{ secrets.VPS_PORT }}"
-          INFRA_DIR=/opt/infra
-          sshpass -e ssh -p $PORT $VPS "mkdir -p ${INFRA_DIR}"
-          sshpass -e scp -P $PORT infra/docker-compose.yml $VPS:${INFRA_DIR}/
-          # SCP raw password (no quoting) — used as shell env var for docker compose (bypasses .env quote parsing)
+          sshpass -e ssh -p $PORT $VPS "mkdir -p ${INFRA_DIR}/nginx/conf.d"
+          sshpass -e scp -P $PORT infra/docker-compose.yml $VPS:${INFRA_DIR}/docker-compose.yml
           printf '%s' "$MYSQL_ROOT_PASSWORD" > /tmp/mysql_root_pass.txt
           sshpass -e scp -P $PORT /tmp/mysql_root_pass.txt $VPS:/tmp/mysql_root_pass.txt
           rm -f /tmp/mysql_root_pass.txt
@@ -201,20 +197,42 @@ jobs:
             export PATH=\$PATH:/usr/local/bin
             docker network create webphoto_backend 2>/dev/null || true
             docker network create vietnet_frontend 2>/dev/null || true
+            mkdir -p /opt/webphoto/photo-storage/dist
 
-            # Neu shared-mysql da chay (WebPhoto quan ly) thi khong can start lai
-            if docker ps --filter name=shared-mysql --filter status=running --format '{{.Names}}' | grep -q shared-mysql; then
-              echo 'shared-mysql already running — skip infra start'
+            MYSQL_OK=\$(docker ps --filter name=shared-mysql --filter status=running --format '{{.Names}}' | grep -c shared-mysql || echo 0)
+            NGINX_OK=\$(docker ps --filter name=shared-nginx --filter status=running --format '{{.Names}}' | grep -c shared-nginx || echo 0)
+
+            if [ \"\$MYSQL_OK\" -gt 0 ] && [ \"\$NGINX_OK\" -gt 0 ]; then
+              echo 'Infra already running — skip'
               rm -f /tmp/mysql_root_pass.txt
             else
               echo 'Starting shared infra...'
-              # Pass MYSQL_ROOT_PASSWORD as shell env var — bypasses .env file quoting issues entirely
+              docker pull nginx:1.27-alpine 2>&1 | tail -1
+              echo '--- Pre-start: placeholder cert for bhquan.store (nginx needs cert to start) ---'
+              docker run --rm \
+                -v shared_certbot_data:/etc/letsencrypt \
+                certbot/certbot sh -c '
+                  CERT=/etc/letsencrypt/live/bhquan.store/fullchain.pem
+                  if openssl x509 -in \$CERT -noout -checkend 3600 2>/dev/null; then
+                    echo Cert already valid for bhquan.store
+                  else
+                    mkdir -p /etc/letsencrypt/live/bhquan.store
+                    openssl req -x509 -nodes -days 90 -newkey rsa:2048 \
+                      -keyout /etc/letsencrypt/live/bhquan.store/privkey.pem \
+                      -out \$CERT -subj /CN=bhquan.store 2>/dev/null && echo Placeholder OK
+                  fi
+                ' 2>&1 || echo '::warning::Placeholder cert failed — nginx may not start'
               MYSQL_ROOT_PASSWORD=\$(cat /tmp/mysql_root_pass.txt) docker compose -f ${INFRA_DIR}/docker-compose.yml up -d 2>&1
               rm -f /tmp/mysql_root_pass.txt
               for i in \$(seq 1 60); do
                 docker exec shared-mysql mysqladmin ping -h localhost --silent 2>/dev/null && { echo 'MySQL ready!'; break; }
                 [ \$i -eq 60 ] && { echo 'ERROR: MySQL not ready'; docker logs shared-mysql --tail 20; exit 1; }
                 sleep 1
+              done
+              for i in \$(seq 1 20); do
+                docker exec shared-nginx nginx -t 2>/dev/null && { echo 'Nginx ready!'; break; }
+                [ \$i -eq 20 ] && { echo '::warning::Nginx not ready yet — continuing'; break; }
+                sleep 2
               done
             fi
           "
@@ -226,45 +244,40 @@ jobs:
         run: |
           VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
           PORT="${{ secrets.VPS_PORT }}"
-          # Build SQL using VIETNET_DB_PASSWORD from env (safe printf %s)
           printf "CREATE DATABASE IF NOT EXISTS vietnet CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;\nCREATE USER IF NOT EXISTS 'vietnet'@'%%' IDENTIFIED BY '%s';\nGRANT ALL PRIVILEGES ON *.* TO 'vietnet'@'%%';\nFLUSH PRIVILEGES;\n" "$VIETNET_DB_PASSWORD" > /tmp/create_vietnet.sql
           sshpass -e scp -P $PORT /tmp/create_vietnet.sql $VPS:/tmp/create_vietnet.sql
           rm -f /tmp/create_vietnet.sql
           sshpass -e ssh -p $PORT $VPS "
             export PATH=\$PATH:/usr/local/bin
-            # Use container's own MYSQL_ROOT_PASSWORD env var — guaranteed to match init password
             docker cp /tmp/create_vietnet.sql shared-mysql:/tmp/create_vietnet.sql
             docker exec shared-mysql bash -c 'MYSQL_PWD=\"\$MYSQL_ROOT_PASSWORD\" mysql -u root < /tmp/create_vietnet.sql' 2>&1
             docker exec shared-mysql rm -f /tmp/create_vietnet.sql
             rm -f /tmp/create_vietnet.sql
           "
 
-      - name: "[INIT] SSL certs"
+      - name: "[INIT] SSL placeholder cert"
         if: needs.build.outputs.mode == 'init'
         run: |
           VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
           PORT="${{ secrets.VPS_PORT }}"
-          HAS_WP=$(sshpass -e ssh -p $PORT $VPS "test -f ${WEBPHOTO_DIR}/docker-compose.prod.yml && echo yes || echo no")
-          [ "$HAS_WP" != "yes" ] && { echo "WebPhoto not deployed — skip SSL"; exit 0; }
           sshpass -e ssh -p $PORT $VPS "
-            cd ${WEBPHOTO_DIR}
-            for DOMAIN in bhquan.store; do
-              CERT_VALID=\$(docker compose -f docker-compose.prod.yml run --rm --entrypoint '' certbot sh -c \
-                'openssl x509 -in /etc/letsencrypt/live/'\$DOMAIN'/fullchain.pem -noout 2>/dev/null && echo yes || echo no' \
-                2>/dev/null || echo no)
-              if [ \"\$CERT_VALID\" = 'no' ]; then
-                echo 'Creating placeholder cert for '\$DOMAIN'...'
-                docker compose -f docker-compose.prod.yml run --rm --entrypoint '' certbot sh -c \"
-                  mkdir -p /etc/letsencrypt/live/\$DOMAIN
-                  openssl req -x509 -nodes -days 1 -newkey rsa:2048 \
-                    -keyout /etc/letsencrypt/live/\$DOMAIN/privkey.pem \
-                    -out /etc/letsencrypt/live/\$DOMAIN/fullchain.pem \
-                    -subj '/CN=\$DOMAIN' && echo 'Placeholder cert created'
-                \" || echo '::error::Failed to create placeholder cert for '\$DOMAIN
-              else
-                echo 'Valid cert already exists for '\$DOMAIN
-              fi
-            done
+            DC='docker compose -f ${INFRA_DIR}/docker-compose.yml'
+            CERT_VALID=\$(\$DC run --rm --entrypoint '' certbot sh -c \
+              'openssl x509 -in /etc/letsencrypt/live/bhquan.store/fullchain.pem -noout -checkend 3600 2>/dev/null && echo yes || echo no' \
+              2>/dev/null || echo no)
+            if [ \"\$CERT_VALID\" = 'no' ]; then
+              echo 'Creating placeholder cert for bhquan.store...'
+              \$DC run --rm --entrypoint '' certbot sh -c '
+                mkdir -p /etc/letsencrypt/live/bhquan.store
+                openssl req -x509 -nodes -days 90 -newkey rsa:2048 \
+                  -keyout /etc/letsencrypt/live/bhquan.store/privkey.pem \
+                  -out /etc/letsencrypt/live/bhquan.store/fullchain.pem \
+                  -subj /CN=bhquan.store 2>/dev/null && echo Placeholder OK
+              ' || echo '::error::Failed to create placeholder cert'
+            else
+              echo 'Cert still valid for bhquan.store'
+            fi
+            docker exec shared-nginx nginx -s reload 2>/dev/null || true
           "
 
       - name: "[INIT] Build & Start services"
@@ -272,7 +285,6 @@ jobs:
         run: |
           VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
           PORT="${{ secrets.VPS_PORT }}"
-          # Stream output directly — avoids set -e swallowing errors from variable capture
           echo "=== Building images ==="
           if ! sshpass -e ssh -p $PORT $VPS "cd ${APP_DIR} && docker compose -f docker-compose.prod.yml build backend frontend 2>&1"; then
             echo "::error::Docker build failed"
@@ -300,30 +312,46 @@ jobs:
         run: |
           VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
           PORT="${{ secrets.VPS_PORT }}"
-          HAS_WP=$(sshpass -e ssh -p $PORT $VPS "test -f ${WEBPHOTO_DIR}/docker-compose.prod.yml && echo yes || echo no")
-          [ "$HAS_WP" != "yes" ] && exit 0
+          sleep 5
           sshpass -e ssh -p $PORT $VPS "
-            cd ${WEBPHOTO_DIR}
-            DC='docker compose -f docker-compose.prod.yml'
-            # Do NOT rm -rf cert first — if LE fails, placeholder stays and nginx keeps running
-            echo 'Requesting Lets Encrypt cert for bhquan.store...'
-            timeout 120 \$DC run --rm --entrypoint '' certbot \
-              certbot certonly --webroot -w /var/www/certbot \
-              --non-interactive --cert-name bhquan.store \
-              --email admin@bhquan.site --agree-tos --no-eff-email \
-              --keep-until-expiring \
-              -d bhquan.store -d www.bhquan.store 2>&1 || {
-              echo '::warning::Lets Encrypt failed for bhquan.store — keeping placeholder cert'
-            }
-            # Reload nginx only if it is running
-            if docker inspect shared-nginx --format '{{.State.Running}}' 2>/dev/null | grep -q true; then
-              docker exec shared-nginx nginx -s reload 2>/dev/null && echo 'Nginx reloaded OK' || echo '::warning::nginx reload failed'
+            DC='docker compose -f ${INFRA_DIR}/docker-compose.yml'
+            IS_REAL=\$(\$DC run --rm --entrypoint '' certbot sh -c '
+              CERT=/etc/letsencrypt/live/bhquan.store/fullchain.pem
+              [ ! -f \"\$CERT\" ] && echo no && exit 0
+              openssl x509 -in \"\$CERT\" -noout -checkend 2592000 2>/dev/null || { echo no; exit 0; }
+              openssl x509 -in \"\$CERT\" -noout -issuer 2>/dev/null | grep -qiE \"let.s encrypt|R3|R10|R11|E5|E6\" && echo yes || echo no
+            ' 2>/dev/null || echo no)
+            if [ \"\$IS_REAL\" = 'yes' ]; then
+              echo 'LE cert valid for bhquan.store — skip'
             else
-              echo '::warning::shared-nginx not running — skip reload'
+              echo 'Requesting LE cert for bhquan.store...'
+              \$DC run --rm --entrypoint '' certbot sh -c '
+                rm -rf /etc/letsencrypt/live/bhquan.store  /etc/letsencrypt/live/bhquan.store-*
+                rm -rf /etc/letsencrypt/archive/bhquan.store /etc/letsencrypt/archive/bhquan.store-*
+                rm -f  /etc/letsencrypt/renewal/bhquan.store.conf /etc/letsencrypt/renewal/bhquan.store-*.conf
+              '
+              if timeout 120 \$DC run --rm --entrypoint '' certbot \
+                certbot certonly --webroot -w /var/www/certbot \
+                --non-interactive --cert-name bhquan.store \
+                --email admin@bhquan.site --agree-tos --no-eff-email \
+                -d bhquan.store -d www.bhquan.store 2>&1; then
+                echo 'LE cert OK for bhquan.store (with www.)'
+              elif timeout 120 \$DC run --rm --entrypoint '' certbot \
+                certbot certonly --webroot -w /var/www/certbot \
+                --non-interactive --cert-name bhquan.store \
+                --email admin@bhquan.site --agree-tos --no-eff-email \
+                -d bhquan.store 2>&1; then
+                echo 'LE cert OK for bhquan.store (without www.)'
+              else
+                echo '::warning::LE failed for bhquan.store — keeping placeholder cert'
+              fi
+              if docker inspect shared-nginx --format '{{.State.Running}}' 2>/dev/null | grep -q true; then
+                docker exec shared-nginx nginx -s reload 2>/dev/null && echo 'Nginx reloaded OK' || true
+              fi
             fi
-          "
+          " || true
 
-      # ── INIT: Seed (chi lan dau) ─────────────────
+      # ── INIT: Seed ───────────────────────────────
       - name: "[INIT] Seed database"
         if: needs.build.outputs.mode == 'init'
         run: |
@@ -381,28 +409,23 @@ jobs:
         run: |
           VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
           PORT="${{ secrets.VPS_PORT }}"
-          sshpass -e scp -P $PORT nginx/conf.d/bhquan.store.conf $VPS:${WEBPHOTO_DIR}/nginx/conf.d/ 2>/dev/null || {
-            echo '::warning::Could not upload bhquan.store.conf — WebPhoto may not be deployed'
-            exit 0
-          }
+          sshpass -e ssh -p $PORT $VPS "mkdir -p ${INFRA_DIR}/nginx/conf.d"
+          sshpass -e scp -P $PORT nginx/conf.d/bhquan.store.conf $VPS:${INFRA_DIR}/nginx/conf.d/bhquan.store.conf
           sshpass -e ssh -p $PORT $VPS "
-            [ ! -f ${WEBPHOTO_DIR}/docker-compose.prod.yml ] && { echo 'WebPhoto not deployed — skip'; exit 0; }
-            cd ${WEBPHOTO_DIR}
-            for DOMAIN in bhquan.store; do
-              CERT_VALID=\$(docker compose -f docker-compose.prod.yml run --rm --entrypoint '' certbot sh -c \
-                'openssl x509 -in /etc/letsencrypt/live/'\$DOMAIN'/fullchain.pem -noout 2>/dev/null && echo yes || echo no' \
-                2>/dev/null || echo no)
-              if [ \"\$CERT_VALID\" = 'no' ]; then
-                echo 'Creating placeholder cert for '\$DOMAIN'...'
-                docker compose -f docker-compose.prod.yml run --rm --entrypoint '' certbot sh -c \"
-                  mkdir -p /etc/letsencrypt/live/\$DOMAIN
-                  openssl req -x509 -nodes -days 1 -newkey rsa:2048 \
-                    -keyout /etc/letsencrypt/live/\$DOMAIN/privkey.pem \
-                    -out /etc/letsencrypt/live/\$DOMAIN/fullchain.pem \
-                    -subj '/CN=\$DOMAIN' && echo 'Placeholder cert created'
-                \" || echo '::error::Failed to create placeholder cert'
-              fi
-            done
+            DC='docker compose -f ${INFRA_DIR}/docker-compose.yml'
+            CERT_VALID=\$(\$DC run --rm --entrypoint '' certbot sh -c \
+              'openssl x509 -in /etc/letsencrypt/live/bhquan.store/fullchain.pem -noout -checkend 3600 2>/dev/null && echo yes || echo no' \
+              2>/dev/null || echo no)
+            if [ \"\$CERT_VALID\" = 'no' ]; then
+              echo 'Creating placeholder cert for bhquan.store...'
+              \$DC run --rm --entrypoint '' certbot sh -c '
+                mkdir -p /etc/letsencrypt/live/bhquan.store
+                openssl req -x509 -nodes -days 90 -newkey rsa:2048 \
+                  -keyout /etc/letsencrypt/live/bhquan.store/privkey.pem \
+                  -out /etc/letsencrypt/live/bhquan.store/fullchain.pem \
+                  -subj /CN=bhquan.store 2>/dev/null
+              ' || true
+            fi
             echo '--- nginx config test ---'
             docker exec shared-nginx nginx -t 2>&1 || true
             if docker inspect shared-nginx --format '{{.State.Running}}' 2>/dev/null | grep -q true; then
@@ -413,9 +436,9 @@ jobs:
                 echo '::error::shared-nginx not running after config update (status='\$NGINX_STATUS')'
                 docker logs shared-nginx --tail 20 2>&1 || true
                 docker run --rm \
-                  -v ${WEBPHOTO_DIR}/nginx/nginx.conf:/etc/nginx/nginx.conf:ro \
-                  -v ${WEBPHOTO_DIR}/nginx/conf.d:/etc/nginx/conf.d:ro \
-                  -v webphoto_certbot_data:/etc/letsencrypt:ro \
+                  -v ${INFRA_DIR}/nginx/nginx.conf:/etc/nginx/nginx.conf:ro \
+                  -v ${INFRA_DIR}/nginx/conf.d:/etc/nginx/conf.d:ro \
+                  -v shared_certbot_data:/etc/letsencrypt:ro \
                   nginx:1.27-alpine nginx -t 2>&1 || true
                 exit 1
               fi
@@ -432,9 +455,9 @@ jobs:
         run: |
           VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
           PORT="${{ secrets.VPS_PORT }}"
-          INFRA_DIR=/opt/infra
-          sshpass -e ssh -p $PORT $VPS "mkdir -p ${INFRA_DIR}"
+          sshpass -e ssh -p $PORT $VPS "mkdir -p ${INFRA_DIR}/nginx/conf.d"
           sshpass -e scp -P $PORT infra/docker-compose.yml $VPS:${INFRA_DIR}/
+          sshpass -e scp -P $PORT infra/nginx/nginx.conf $VPS:${INFRA_DIR}/nginx/nginx.conf
           printf "MYSQL_ROOT_PASSWORD='%s'\n" "$MYSQL_ROOT_PASSWORD" > /tmp/infra_update.env
           sshpass -e scp -P $PORT /tmp/infra_update.env $VPS:${INFRA_DIR}/.env
           sshpass -e ssh -p $PORT $VPS "chmod 600 ${INFRA_DIR}/.env"
@@ -443,6 +466,7 @@ jobs:
             export PATH=\$PATH:/usr/local/bin
             docker network create webphoto_backend 2>/dev/null || true
             docker network create vietnet_frontend 2>/dev/null || true
+            docker pull nginx:1.27-alpine 2>&1 | tail -1
             cd ${INFRA_DIR} && docker compose up -d --force-recreate 2>&1 | tail -5
             for i in \$(seq 1 60); do
               docker exec shared-mysql mysqladmin ping -h localhost --silent 2>/dev/null && break
@@ -490,7 +514,6 @@ jobs:
         run: |
           VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
           PORT="${{ secrets.VPS_PORT }}"
-          # Build full .env using env vars (not inline secrets) to avoid bash $ expansion of secret values
           grep -v '^\s*#' config/env | grep -v '^\s*$' > /tmp/prod.env
           printf 'VIETNET_DB_PASSWORD=%s\n' "$VIETNET_DB_PASSWORD" >> /tmp/prod.env
           printf 'JWT_SECRET=%s\n' "$JWT_SECRET" >> /tmp/prod.env
@@ -500,6 +523,35 @@ jobs:
           sshpass -e ssh -p $PORT $VPS "mkdir -p ${APP_DIR}/config"
           sshpass -e scp -P $PORT /tmp/prod.env $VPS:${APP_DIR}/.env
           sshpass -e ssh -p $PORT $VPS "chmod 600 ${APP_DIR}/.env && cp ${APP_DIR}/.env ${APP_DIR}/config/env"
+
+      - name: Install crontab (idempotent)
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
+          sshpass -e ssh -p $PORT $VPS "mkdir -p ${APP_DIR}/scripts"
+          sshpass -e scp -P $PORT scripts/crontab.vietnet $VPS:${APP_DIR}/scripts/crontab.vietnet
+          printf 'export CRON_SECRET=%s\n' "$CRON_SECRET" > /tmp/cron-env
+          sshpass -e scp -P $PORT /tmp/cron-env $VPS:${APP_DIR}/.cron-env
+          rm -f /tmp/cron-env
+          sshpass -e ssh -p $PORT $VPS "
+            chmod 600 ${APP_DIR}/.cron-env
+            if [ ! -f /etc/cron.d/vietnet ]; then
+              if cp ${APP_DIR}/scripts/crontab.vietnet /etc/cron.d/vietnet 2>/dev/null; then
+                chmod 644 /etc/cron.d/vietnet
+                chown root:root /etc/cron.d/vietnet 2>/dev/null || true
+                echo 'Crontab installed: /etc/cron.d/vietnet'
+                ls -la /etc/cron.d/vietnet
+              else
+                echo '::warning::Cannot write /etc/cron.d/vietnet — manual install needed:'
+                echo '  sudo cp ${APP_DIR}/scripts/crontab.vietnet /etc/cron.d/vietnet && sudo chmod 644 /etc/cron.d/vietnet'
+              fi
+            else
+              echo 'Crontab already exists — skip (/etc/cron.d/vietnet)'
+              ls -la /etc/cron.d/vietnet
+            fi
+          "
 
       - name: Ensure DB + user
         env:
@@ -514,7 +566,6 @@ jobs:
           rm -f /tmp/ensure_vietnet.sql
           sshpass -e ssh -p $PORT $VPS "
             export PATH=\$PATH:/usr/local/bin
-            # Use container's own MYSQL_ROOT_PASSWORD env var — guaranteed to match init password
             docker cp /tmp/ensure_vietnet.sql shared-mysql:/tmp/ensure_vietnet.sql
             docker exec shared-mysql bash -c 'MYSQL_PWD=\"\$MYSQL_ROOT_PASSWORD\" mysql -u root < /tmp/ensure_vietnet.sql' 2>&1
             docker exec shared-mysql rm -f /tmp/ensure_vietnet.sql
@@ -532,7 +583,6 @@ jobs:
           printf '%s' "$VIETNET_DB_PASSWORD" > /tmp/vietnet_db_pass.txt
           sshpass -e scp -P $PORT /tmp/vietnet_db_pass.txt $VPS:/tmp/vietnet_db_pass.txt
           rm -f /tmp/vietnet_db_pass.txt
-          # MYSQL_PWD=$(cat file) sets env var for docker exec; -e MYSQL_PWD passes it into container
           MYSQL_CMD="MYSQL_PWD=\$(cat /tmp/vietnet_db_pass.txt) docker exec -i -e MYSQL_PWD shared-mysql mysql -u vietnet vietnet"
           TABLES_ORDER=(users login_attempts refresh_tokens password_reset_tokens categories media projects project_gallery articles products product_images consultations page_configs page_config_history settings notifications page_views page_view_daily email_logs app_logs)
           for tbl in "${TABLES_ORDER[@]}"; do
@@ -540,6 +590,7 @@ jobs:
             [ ! -f "$FILE" ] && continue
             sshpass -e ssh -p $PORT $VPS "$MYSQL_CMD" < "$FILE" 2>&1 || true
           done
+          sshpass -e ssh -p $PORT $VPS "rm -f /tmp/vietnet_db_pass.txt"
 
       - name: Run DB changelog
         env:
@@ -577,6 +628,7 @@ jobs:
               fi
             done
           done
+          sshpass -e ssh -p $PORT $VPS "rm -f /tmp/vietnet_db_pass.txt"
           echo "Changelog: $PASS applied, $SKIP skipped, $FAIL failed"
 
       - name: Restart after DB changes
@@ -654,6 +706,43 @@ jobs:
             sleep 2
           done
 
+      - name: Verify cron endpoints
+        run: |
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
+          sshpass -e ssh -p $PORT $VPS "
+            if [ ! -f ${APP_DIR}/.cron-env ]; then
+              echo '::error::.cron-env missing — Install crontab step may have failed'
+              exit 1
+            fi
+            source ${APP_DIR}/.cron-env
+            FAIL=0
+            for ep in publish-scheduled traffic-sync cleanup-sessions cleanup-orphan-media; do
+              HTTP=\$(curl -s -o /tmp/cron_resp -w '%{http_code}' -X POST \
+                -H \"x-cron-secret: \$CRON_SECRET\" \
+                http://127.0.0.1:4100/api/cron/\$ep 2>/dev/null)
+              BODY=\$(cat /tmp/cron_resp 2>/dev/null | head -c 300)
+              if [ \"\$HTTP\" = '200' ] || [ \"\$HTTP\" = '201' ]; then
+                echo \"  OK   /api/cron/\$ep -> \$HTTP\"
+              else
+                echo \"  FAIL /api/cron/\$ep -> HTTP \$HTTP\"
+                echo \"       Body: \$BODY\"
+                FAIL=1
+              fi
+            done
+            rm -f /tmp/cron_resp
+            if [ \$FAIL -eq 1 ]; then
+              echo '::error::Cron smoke test failed — checking API logs for details'
+              docker logs vietnet-api --tail 30 2>&1 | grep -iE 'cron|error|warn|route|404|exception' | head -15 || true
+              echo '--- Registered routes (cron) ---'
+              curl -sf http://127.0.0.1:4100/api 2>/dev/null | head -c 500 || true
+              exit 1
+            fi
+            echo 'Cron smoke test: all 4 endpoints OK'
+            echo '--- /etc/cron.d/vietnet status ---'
+            ls -la /etc/cron.d/vietnet 2>/dev/null || echo 'WARNING: /etc/cron.d/vietnet not found'
+          "
+
       - name: Frontend health
         run: |
           VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
@@ -671,22 +760,19 @@ jobs:
             sleep 2
           done
 
-      - name: Ensure SSL cert
+      - name: SSL cert status
         run: |
           VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
           PORT="${{ secrets.VPS_PORT }}"
-          HAS_WP=$(sshpass -e ssh -p $PORT $VPS "test -f ${WEBPHOTO_DIR}/docker-compose.prod.yml && echo yes || echo no")
-          [ "$HAS_WP" != "yes" ] && exit 0
           CERT_INFO=$(sshpass -e ssh -p $PORT $VPS "
-            cd ${WEBPHOTO_DIR}
-            docker compose -f docker-compose.prod.yml run --rm --entrypoint '' certbot sh -c '
+            docker compose -f ${INFRA_DIR}/docker-compose.yml run --rm --entrypoint '' certbot sh -c '
               CERT=/etc/letsencrypt/live/bhquan.store/fullchain.pem
               [ ! -f \$CERT ] && echo MISSING && exit 0
               ISSUER=\$(openssl x509 -in \$CERT -noout -issuer 2>/dev/null)
               echo \$ISSUER | grep -qiE \"let.s encrypt|R3|R10|R11|E5|E6\" && echo REAL || echo PLACEHOLDER
             '
           " 2>&1)
-          echo "SSL cert: $CERT_INFO"
+          echo "SSL cert bhquan.store: $CERT_INFO"
 
       - name: Deploy summary
         run: |
