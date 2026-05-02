@@ -648,7 +648,14 @@ jobs:
         run: |
           VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
           PORT="${{ secrets.VPS_PORT }}"
-          sshpass -e ssh -p $PORT $VPS "cd ${APP_DIR} && docker compose -f docker-compose.prod.yml restart backend frontend" 2>&1 || true
+          # Dùng 'up -d --no-build' thay 'restart' để Docker Compose
+          # recreate container và reload env_file — 'restart' chỉ restart
+          # process, KHÔNG reload .env đã thay đổi
+          sshpass -e ssh -p $PORT $VPS "
+            cd ${APP_DIR}
+            docker compose -f docker-compose.prod.yml up -d --no-build backend
+            docker compose -f docker-compose.prod.yml up -d --no-build frontend
+          " 2>&1 || true
           echo "Waiting for backend..."
           for i in $(seq 1 30); do
             if sshpass -e ssh -p $PORT $VPS "curl -sf http://localhost:4100/api/health" > /dev/null 2>&1; then
@@ -656,7 +663,7 @@ jobs:
               break
             fi
             if [ $i -eq 30 ]; then
-              echo "::error::Backend not ready after 60s post-restart"
+              echo "::error::Backend not ready after 60s post-recreate"
               sshpass -e ssh -p $PORT $VPS "docker logs vietnet-api --tail 30" 2>&1 || true
               exit 1
             fi
