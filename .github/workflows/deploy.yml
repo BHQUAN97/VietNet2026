@@ -735,6 +735,8 @@ jobs:
             CRON_SECRET=\$(docker exec vietnet-api printenv CRON_SECRET 2>/dev/null || echo '')
             if [ -z \"\$CRON_SECRET\" ]; then
               echo '::error::CRON_SECRET not set in vietnet-api container — check GitHub Secrets'
+              echo '--- Container env keys ---'
+              docker exec vietnet-api env 2>/dev/null | grep -oE '^[A-Z_]+' | sort || true
               exit 1
             fi
             echo \"CRON_SECRET loaded from container (len=\${#CRON_SECRET})\"

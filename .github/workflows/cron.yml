@@ -14,8 +14,12 @@ jobs:
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
-          curl -f -s --max-time 30 -X POST -H "x-cron-secret: ${CRON_SECRET}" \
-            "https://bhquan.store/api/cron/traffic-sync"
+          HTTP=$(curl -s -o /tmp/resp -w '%{http_code}' --max-time 30 -X POST \
+            -H "x-cron-secret: ${CRON_SECRET}" \
+            "https://bhquan.store/api/cron/traffic-sync")
+          BODY=$(cat /tmp/resp 2>/dev/null)
+          echo "HTTP: $HTTP | Body: $BODY"
+          [ "$HTTP" = "200" ] || [ "$HTTP" = "201" ] || { echo "::error::traffic-sync failed HTTP $HTTP: $BODY"; exit 1; }
 
   cleanup-sessions:
     if: github.event.schedule == '0 19 * * *'
@@ -25,5 +29,9 @@ jobs:
         env:
           CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
-          curl -f -s --max-time 30 -X POST -H "x-cron-secret: ${CRON_SECRET}" \
-            "https://bhquan.store/api/cron/cleanup-sessions"
+          HTTP=$(curl -s -o /tmp/resp -w '%{http_code}' --max-time 30 -X POST \
+            -H "x-cron-secret: ${CRON_SECRET}" \
+            "https://bhquan.store/api/cron/cleanup-sessions")
+          BODY=$(cat /tmp/resp 2>/dev/null)
+          echo "HTTP: $HTTP | Body: $BODY"
+          [ "$HTTP" = "200" ] || [ "$HTTP" = "201" ] || { echo "::error::cleanup-sessions failed HTTP $HTTP: $BODY"; exit 1; }
