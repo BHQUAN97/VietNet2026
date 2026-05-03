@@ -810,14 +810,22 @@ jobs:
         run: |
           VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
           PORT="${{ secrets.VPS_PORT }}"
+          set +e
           CERT_INFO=$(sshpass -e ssh -p $PORT $VPS "
-            docker compose -f ${INFRA_DIR}/docker-compose.yml run --rm --entrypoint '' certbot sh -c '
+            docker run --rm -v shared_certbot_data:/etc/letsencrypt:ro alpine:3.20 sh -c \"
+              apk add --no-cache openssl >/dev/null 2>&1 || exit 2
               CERT=/etc/letsencrypt/live/bhquan.store/fullchain.pem
-              [ ! -f \$CERT ] && echo MISSING && exit 0
-              ISSUER=\$(openssl x509 -in \$CERT -noout -issuer 2>/dev/null)
-              echo \$ISSUER | grep -qiE \"let.s encrypt|R3|R10|R11|E5|E6\" && echo REAL || echo PLACEHOLDER
-            '
+              [ ! -f \\\$CERT ] && echo MISSING && exit 0
+              ISSUER=\\\$(openssl x509 -in \\\$CERT -noout -issuer 2>/dev/null)
+              echo \\\$ISSUER | grep -qiE 'let.s encrypt|R3|R10|R11|E5|E6' && echo REAL || echo PLACEHOLDER
+            \"
           " 2>&1)
+          STATUS=$?
+          set -e
+          if [ $STATUS -ne 0 ]; then
+            echo "::warning::SSL cert status check failed (exit $STATUS): $CERT_INFO"
+            exit 0
+          fi
           echo "SSL cert bhquan.store: $CERT_INFO"
 
       - name: Deploy summary
