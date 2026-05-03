@@ -22,8 +22,8 @@ services:
       DB_HOST: shared-mysql
       DB_PORT: 3306
       DB_NAME: vietnet
-      DB_USER: vietnet
-      DB_PASS: ${VIETNET_DB_PASSWORD}
+      DB_USERNAME: vietnet
+      DB_PASSWORD: ${VIETNET_DB_PASSWORD}
       REDIS_HOST: shared-redis
       REDIS_PORT: 6379
       REDIS_PREFIX: "vn:"
