@@ -750,21 +750,24 @@ jobs:
           sshpass -e ssh -p $PORT $VPS "
             # Lấy CRON_SECRET trực tiếp từ container — loại bỏ shell-expansion
             # issues khi source .cron-env (nếu secret có ký tự đặc biệt như \$, spaces)
-            CRON_SECRET=\$(docker exec vietnet-api printenv CRON_SECRET 2>/dev/null || echo '')
-            if [ -z \"\$CRON_SECRET\" ]; then
+            CRON_SECRET_LEN=\$(docker exec vietnet-api node -e \"process.stdout.write(String((process.env.CRON_SECRET || '').length))\" 2>/dev/null || echo '0')
+            CRON_SECRET_SHA256=\$(docker exec vietnet-api node -e \"const crypto=require('crypto'); const s=process.env.CRON_SECRET || ''; process.stdout.write(crypto.createHash('sha256').update(s.replace(/[\\r\\n]/g, '').trim()).digest('hex'))\" 2>/dev/null || echo '')
+            if [ \"\$CRON_SECRET_LEN\" = '0' ] || [ -z \"\$CRON_SECRET_SHA256\" ]; then
               echo '::error::CRON_SECRET not set in vietnet-api container — check GitHub Secrets'
               echo '--- Container env keys ---'
               docker exec vietnet-api env 2>/dev/null | grep -oE '^[A-Z_]+' | sort || true
               exit 1
             fi
-            CRON_SECRET_SHA256=\$(printf '%s' \"\$CRON_SECRET\" | sha256sum | awk '{print \$1}')
-            echo \"CRON_SECRET loaded from container (len=\${#CRON_SECRET}, sha256=\${CRON_SECRET_SHA256:0:12}...)\"
+            if docker exec vietnet-api sh -c \"grep -R 'x-cron-secret-sha256' -n /app/dist >/dev/null 2>&1\"; then
+              echo 'dist_has_hash_guard=yes'
+            else
+              echo '::warning::dist_has_hash_guard=no - backend image may be stale'
+            fi
+            echo \"CRON_SECRET loaded from container (len=\$CRON_SECRET_LEN, sha256=\${CRON_SECRET_SHA256:0:12}...)\"
             FAIL=0
             for ep in publish-scheduled traffic-sync cleanup-sessions cleanup-orphan-media; do
-              HTTP=\$(curl -s -o /tmp/cron_resp -w '%{http_code}' -X POST \
-                -H \"x-cron-secret-sha256: \$CRON_SECRET_SHA256\" \
-                http://127.0.0.1:4100/api/cron/\$ep 2>/dev/null)
-              BODY=\$(cat /tmp/cron_resp 2>/dev/null | head -c 300)
+              HTTP=\$(docker exec -e CRON_SECRET_SHA256=\"\$CRON_SECRET_SHA256\" vietnet-api sh -c \"curl -s -o /tmp/cron_resp -w '%{http_code}' -X POST -H \\\"x-cron-secret-sha256: \\\$CRON_SECRET_SHA256\\\" http://127.0.0.1:4000/api/cron/\$ep\" 2>/dev/null)
+              BODY=\$(docker exec vietnet-api sh -c \"cat /tmp/cron_resp 2>/dev/null | head -c 300\" 2>/dev/null)
               if [ \"\$HTTP\" = '200' ] || [ \"\$HTTP\" = '201' ]; then
                 echo \"  OK   /api/cron/\$ep -> \$HTTP\"
               else
