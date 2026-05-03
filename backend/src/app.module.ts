@@ -36,6 +36,7 @@ import { RedisModule } from './common/modules/redis.module';
       isGlobal: true,
       load: [databaseConfig, redisConfig, jwtConfig, r2Config, mailConfig],
       envFilePath: ['.env'],
+      ignoreEnvFile: process.env.NODE_ENV === 'production',
     }),
 
     TypeOrmModule.forRootAsync({

@@ -524,13 +524,18 @@ jobs:
           PORT="${{ secrets.VPS_PORT }}"
           # Hash .env trước khi upload để detect thay đổi secret
           OLD_HASH=$(sshpass -e ssh -p $PORT $VPS "md5sum ${APP_DIR}/.env 2>/dev/null | awk '{print \$1}'" 2>/dev/null || echo "none")
+          CRON_SECRET_CLEAN=$(printf '%s' "$CRON_SECRET" | tr -d '\r\n')
+          if [ -z "$CRON_SECRET_CLEAN" ]; then
+            echo "::error::CRON_SECRET is empty after normalization"
+            exit 1
+          fi
           grep -v '^\s*#' config/env | grep -v '^\s*$' > /tmp/prod.env
           printf 'DB_PASSWORD=%s\n' "$VIETNET_DB_PASSWORD" >> /tmp/prod.env
           printf 'VIETNET_DB_PASSWORD=%s\n' "$VIETNET_DB_PASSWORD" >> /tmp/prod.env
           printf 'JWT_SECRET=%s\n' "$JWT_SECRET" >> /tmp/prod.env
           printf 'RESEND_API_KEY=%s\n' "$RESEND_API_KEY" >> /tmp/prod.env
           printf 'REVALIDATE_SECRET=%s\n' "$REVALIDATE_SECRET" >> /tmp/prod.env
-          printf 'CRON_SECRET=%s\n' "$CRON_SECRET" >> /tmp/prod.env
+          printf 'CRON_SECRET=%s\n' "$CRON_SECRET_CLEAN" >> /tmp/prod.env
           sshpass -e ssh -p $PORT $VPS "mkdir -p ${APP_DIR}/config"
           sshpass -e scp -P $PORT /tmp/prod.env $VPS:${APP_DIR}/.env
           sshpass -e ssh -p $PORT $VPS "chmod 600 ${APP_DIR}/.env && cp ${APP_DIR}/.env ${APP_DIR}/config/env"
@@ -550,9 +555,14 @@ jobs:
         run: |
           VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
           PORT="${{ secrets.VPS_PORT }}"
+          CRON_SECRET_CLEAN=$(printf '%s' "$CRON_SECRET" | tr -d '\r\n')
+          if [ -z "$CRON_SECRET_CLEAN" ]; then
+            echo "::error::CRON_SECRET is empty after normalization"
+            exit 1
+          fi
           sshpass -e ssh -p $PORT $VPS "mkdir -p ${APP_DIR}/scripts"
           sshpass -e scp -P $PORT scripts/crontab.vietnet $VPS:${APP_DIR}/scripts/crontab.vietnet
-          printf 'export CRON_SECRET=%q\n' "$CRON_SECRET" > /tmp/cron-env
+          printf 'export CRON_SECRET=%q\n' "$CRON_SECRET_CLEAN" > /tmp/cron-env
           sshpass -e scp -P $PORT /tmp/cron-env $VPS:${APP_DIR}/.cron-env
           rm -f /tmp/cron-env
           sshpass -e ssh -p $PORT $VPS "
