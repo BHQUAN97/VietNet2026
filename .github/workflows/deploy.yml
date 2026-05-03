@@ -483,6 +483,11 @@ jobs:
           BUILD_OUT=$(sshpass -e ssh -p $PORT $VPS "cd ${APP_DIR} && docker compose -f docker-compose.prod.yml build backend 2>&1")
           if [ $? -ne 0 ]; then echo "::error::Backend build failed"; echo "$BUILD_OUT" | tail -30; exit 1; fi
           sshpass -e ssh -p $PORT $VPS "cd ${APP_DIR} && docker compose -f docker-compose.prod.yml up -d backend"
+          if [ $? -ne 0 ]; then
+            echo "::error::Backend start failed. Logs:"
+            sshpass -e ssh -p $PORT $VPS "cd ${APP_DIR} && docker compose -f docker-compose.prod.yml logs backend --tail 50"
+            exit 1
+          fi
 
       - name: "[UPDATE] Rebuild frontend"
         if: needs.build.outputs.mode == 'update' && (needs.build.outputs.fe == 'true' || needs.build.outputs.infra == 'true')
