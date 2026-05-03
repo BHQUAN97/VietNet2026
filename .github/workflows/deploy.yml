@@ -757,11 +757,12 @@ jobs:
               docker exec vietnet-api env 2>/dev/null | grep -oE '^[A-Z_]+' | sort || true
               exit 1
             fi
-            echo \"CRON_SECRET loaded from container (len=\${#CRON_SECRET})\"
+            CRON_SECRET_SHA256=\$(printf '%s' \"\$CRON_SECRET\" | sha256sum | awk '{print \$1}')
+            echo \"CRON_SECRET loaded from container (len=\${#CRON_SECRET}, sha256=\${CRON_SECRET_SHA256:0:12}...)\"
             FAIL=0
             for ep in publish-scheduled traffic-sync cleanup-sessions cleanup-orphan-media; do
               HTTP=\$(curl -s -o /tmp/cron_resp -w '%{http_code}' -X POST \
-                -H \"x-cron-secret: \$CRON_SECRET\" \
+                -H \"x-cron-secret-sha256: \$CRON_SECRET_SHA256\" \
                 http://127.0.0.1:4100/api/cron/\$ep 2>/dev/null)
               BODY=\$(cat /tmp/cron_resp 2>/dev/null | head -c 300)
               if [ \"\$HTTP\" = '200' ] || [ \"\$HTTP\" = '201' ]; then
