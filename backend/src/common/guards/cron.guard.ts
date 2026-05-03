@@ -16,13 +16,20 @@ export class CronGuard implements CanActivate {
 
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();
-    const secret = this.configService.get<string>('CRON_SECRET')?.trim();
-    const provided = (request.headers['x-cron-secret'] as string)?.trim();
+    const secret = this.normalizeSecret(
+      process.env.CRON_SECRET ?? this.configService.get<string>('CRON_SECRET'),
+    );
+    const provided = this.normalizeSecret(request.headers['x-cron-secret']);
 
     if (!secret || provided !== secret) {
       throw new UnauthorizedException('Invalid cron secret');
     }
 
     return true;
+  }
+
+  private normalizeSecret(value: unknown): string | undefined {
+    const raw = Array.isArray(value) ? value[0] : value;
+    return typeof raw === 'string' ? raw.replace(/[\r\n]/g, '').trim() : undefined;
   }
 }
