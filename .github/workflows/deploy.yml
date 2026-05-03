@@ -523,6 +523,7 @@ jobs:
           # Hash .env trước khi upload để detect thay đổi secret
           OLD_HASH=$(sshpass -e ssh -p $PORT $VPS "md5sum ${APP_DIR}/.env 2>/dev/null | awk '{print \$1}'" 2>/dev/null || echo "none")
           grep -v '^\s*#' config/env | grep -v '^\s*$' > /tmp/prod.env
+          printf 'DB_PASSWORD=%s\n' "$VIETNET_DB_PASSWORD" >> /tmp/prod.env
           printf 'VIETNET_DB_PASSWORD=%s\n' "$VIETNET_DB_PASSWORD" >> /tmp/prod.env
           printf 'JWT_SECRET=%s\n' "$JWT_SECRET" >> /tmp/prod.env
           printf 'RESEND_API_KEY=%s\n' "$RESEND_API_KEY" >> /tmp/prod.env
