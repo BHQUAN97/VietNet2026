@@ -23,17 +23,12 @@ services:
       DB_PORT: 3306
       DB_NAME: vietnet
       DB_USERNAME: vietnet
-      DB_PASSWORD: ${DB_PASSWORD}
       REDIS_HOST: shared-redis
       REDIS_PORT: 6379
       REDIS_PREFIX: "vn:"
       APP_URL: https://bhquan.store
       API_URL: https://bhquan.store/api
       CORS_ORIGINS: https://bhquan.store
-      CRON_SECRET: ${CRON_SECRET}
-      JWT_SECRET: ${JWT_SECRET}
-      RESEND_API_KEY: ${RESEND_API_KEY}
-      REVALIDATE_SECRET: ${REVALIDATE_SECRET}
     ports:
       - '127.0.0.1:4100:4000'
     healthcheck:

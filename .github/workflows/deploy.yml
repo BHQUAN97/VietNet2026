@@ -163,6 +163,8 @@ jobs:
           sshpass -e ssh -p $PORT $VPS "mkdir -p ${APP_DIR}/{backend,frontend,nginx/conf.d,scripts,db,config} ${INFRA_DIR}/nginx/conf.d"
           sshpass -e scp -P $PORT docker-compose.prod.yml $VPS:${APP_DIR}/
           sshpass -e scp -P $PORT .env.example $VPS:${APP_DIR}/
+          # Đảm bảo .env tồn tại trước docker compose up (env_file: .env sẽ fail nếu file không có)
+          sshpass -e ssh -p $PORT $VPS "touch ${APP_DIR}/.env"
 
           echo "  Uploading backend..."
           tar czf - backend/src backend/package.json backend/package-lock.json \

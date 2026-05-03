@@ -16,9 +16,10 @@ export class CronGuard implements CanActivate {
 
   canActivate(context: ExecutionContext): boolean {
     const request = context.switchToHttp().getRequest();
-    const secret = this.configService.get<string>('CRON_SECRET');
+    const secret = this.configService.get<string>('CRON_SECRET')?.trim();
+    const provided = (request.headers['x-cron-secret'] as string)?.trim();
 
-    if (!secret || request.headers['x-cron-secret'] !== secret) {
+    if (!secret || provided !== secret) {
       throw new UnauthorizedException('Invalid cron secret');
     }
 
