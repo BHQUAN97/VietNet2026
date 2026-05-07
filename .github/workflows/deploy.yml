@@ -10,6 +10,7 @@ on:
       - '.github/workflows/cron.yml'
       - '.github/workflows/restore.yml'
       - '.github/workflows/vps-setup.yml'
+  workflow_dispatch:
 
 concurrency:
   group: deploy
