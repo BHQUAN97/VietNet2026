@@ -4,10 +4,11 @@ on:
   schedule:
     - cron: '0 18 * * *'   # 1:00 AM UTC+7 — traffic sync
     - cron: '0 19 * * *'   # 2:00 AM UTC+7 — cleanup expired sessions
+  workflow_dispatch:        # cho phép trigger thủ công để test
 
 jobs:
   traffic-sync:
-    if: github.event.schedule == '0 18 * * *'
+    if: github.event.schedule == '0 18 * * *' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - name: Run traffic sync cron
@@ -22,7 +23,7 @@ jobs:
           [ "$HTTP" = "200" ] || [ "$HTTP" = "201" ] || { echo "::error::traffic-sync failed HTTP $HTTP: $BODY"; exit 1; }
 
   cleanup-sessions:
-    if: github.event.schedule == '0 19 * * *'
+    if: github.event.schedule == '0 19 * * *' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     steps:
       - name: Run cleanup expired sessions
