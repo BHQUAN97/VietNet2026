@@ -1,5 +1,4 @@
 import { Metadata } from 'next'
-import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -51,11 +50,10 @@ export default async function ArticleDetailPage({ params }: { params: Promise<{ 
   if (!article) notFound()
 
   const related = await serverFetchList<any>(`/articles/${article.id}/related`, { tags: ['articles'] })
-  const nonce = (await headers()).get('x-nonce') ?? undefined
 
   return (
     <>
-      <script type="application/ld+json" nonce={nonce} dangerouslySetInnerHTML={{
+      <script type="application/ld+json" dangerouslySetInnerHTML={{
         __html: JSON.stringify(articleJsonLd(article)).replace(/</g, '\\u003c'),
       }} />
 

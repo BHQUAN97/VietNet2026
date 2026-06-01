@@ -1,5 +1,4 @@
 import { Metadata } from 'next'
-import { headers } from 'next/headers'
 import { notFound } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -88,11 +87,9 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
     }
   }
 
-  const nonce = (await headers()).get('x-nonce') ?? undefined
-
   return (
     <>
-      <script type="application/ld+json" nonce={nonce} dangerouslySetInnerHTML={{
+      <script type="application/ld+json" dangerouslySetInnerHTML={{
         __html: JSON.stringify(productJsonLd(product)).replace(/</g, '\\u003c'),
       }} />
 
