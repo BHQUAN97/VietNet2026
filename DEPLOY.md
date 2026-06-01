@@ -1,13 +1,13 @@
 # VIETNET INTERIOR — DEPLOYMENT GUIDE
 
-> Domain: bhquan.store | VPS: 134.122.21.251 | Stack: NestJS + Next.js + MySQL + Redis
+> Domain: bhquan.store | VPS: 159.223.77.247 | Stack: NestJS + Next.js + MySQL + Redis
 
 ---
 
 ## Kiến trúc Production
 
 ```
-  VPS Ubuntu (134.122.21.251)
+  VPS Ubuntu (159.223.77.247)
   ┌──────────────────────────────────────────────┐
   │  shared-nginx (Docker) :80/:443               │
   │  ├─ bhquan.site  → WebPhoto                  │
@@ -30,6 +30,12 @@
   └──────────────────────────────────────────────┘
 ```
 
+### Nginx routing
+
+Config: `/opt/infra/nginx/conf.d/bhquan.store.conf`
+- `/api/*` → `http://vietnet-api:4000`
+- `/*` → `http://vietnet-frontend:3000`
+
 ---
 
 ## GitHub Actions Secrets
@@ -38,7 +44,7 @@ Secrets được lưu trong **repo settings** — không commit lên git.
 
 | Secret | Mô tả |
 |--------|-------|
-| `VPS_HOST` | IP VPS: `134.122.21.251` |
+| `VPS_HOST` | IP VPS: `159.223.77.247` |
 | `VPS_PORT` | SSH port: `22` |
 | `VPS_USER` | SSH user: `root` |
 | `VPS_PASSWORD` | Mật khẩu SSH VPS |
@@ -93,7 +99,7 @@ brew install sshpass        # Mac
 
 # Kết nối VPS
 export SSHPASS="mat_khau_vps"
-sshpass -e ssh root@134.122.21.251
+sshpass -e ssh root@159.223.77.247
 
 # Trên VPS: xem trạng thái
 cd /opt/vietnet
@@ -106,7 +112,7 @@ docker compose -f docker-compose.prod.yml logs -f backend
 ## Quản lý trên VPS
 
 ```bash
-ssh root@134.122.21.251
+ssh root@159.223.77.247
 cd /opt/vietnet
 
 # Xem logs
