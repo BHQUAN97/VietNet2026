@@ -2,12 +2,13 @@
 
 import { Suspense } from 'react'
 import Link from 'next/link'
-import Image from 'next/image'
 import { PageContainer } from '@/components/layout/PageContainer'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { DataStates } from '@/components/shared/DataStates'
 import { Pagination } from '@/components/shared/Pagination'
 import { usePaginatedList, type PaginatedInitialData } from '@/hooks/usePaginatedList'
+import { resolveMediaUrl } from '@/lib/api-url'
+import { SafeImage } from '@/components/ui/SafeImage'
 import { formatDate } from '@/lib/date'
 import type { Article } from '@/types'
 
@@ -52,8 +53,8 @@ function ArticlesContent({ initialData }: ArticlesClientProps) {
               >
                 <div className="relative aspect-[16/9] overflow-hidden bg-surface-container">
                   {article.cover_image?.preview_url ? (
-                    <Image
-                      src={article.cover_image.preview_url}
+                    <SafeImage
+                      src={resolveMediaUrl(article.cover_image.preview_url)}
                       alt={article.cover_image.alt_text || article.title}
                       fill
                       className="object-cover transition-transform duration-500 group-hover:scale-105"

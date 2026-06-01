@@ -24,7 +24,7 @@ export const dynamicParams = true
 export async function generateStaticParams() {
   try {
     const res = await fetch(
-      `${getServerApiUrl()}/articles?status=published&limit=50&sort=view_count:desc`,
+      `${getServerApiUrl()}/articles?status=published&limit=50&sort=published_at&order=DESC`,
       { next: { revalidate: 3600 } },
     )
     if (!res.ok) return []
