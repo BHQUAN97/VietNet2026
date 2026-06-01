@@ -104,14 +104,15 @@ jobs:
         run: |
           VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
           PORT="${{ secrets.VPS_PORT }}"
+          # Copy to /app/ so Node CJS resolves node_modules from /app/node_modules
           sshpass -e ssh -p $PORT $VPS "
             export PATH=\$PATH:/usr/local/bin
-            echo '=== Copying seed-demo-data.ts into container /tmp ==='
-            docker cp /tmp/seed-demo-data.ts vietnet-api:/tmp/seed-demo-data.ts
-            echo '=== Running seed-demo-data.ts (workdir /app so dotenv loads) ==='
-            docker exec -w /app vietnet-api npx tsx /tmp/seed-demo-data.ts
+            echo '=== Copying seed-demo-data.ts into /app/ in container ==='
+            docker cp /tmp/seed-demo-data.ts vietnet-api:/app/seed-demo-data.ts
+            echo '=== Running seed-demo-data.ts ==='
+            docker exec -w /app vietnet-api sh -c 'npx tsx seed-demo-data.ts'
             RET=\$?
-            docker exec vietnet-api rm -f /tmp/seed-demo-data.ts
+            docker exec -u root vietnet-api rm -f /app/seed-demo-data.ts 2>/dev/null || true
             rm -f /tmp/seed-demo-data.ts
             [ \$RET -eq 0 ] && echo 'seed-demo-data DONE' || { echo 'seed-demo-data FAILED'; exit 1; }
           "
@@ -122,12 +123,13 @@ jobs:
           PORT="${{ secrets.VPS_PORT }}"
           sshpass -e ssh -p $PORT $VPS "
             export PATH=\$PATH:/usr/local/bin
-            echo '=== Copying seed-products-20.ts into container /tmp ==='
+            echo '=== Copying seed-products-20.ts into /app/ in container ==='
             docker cp /tmp/seed-products-20.ts vietnet-api:/tmp/seed-products-20.ts
+            docker exec -u root vietnet-api cp /tmp/seed-products-20.ts /app/seed-products-20.ts
             echo '=== Running seed-products-20.ts ==='
-            docker exec -w /app vietnet-api npx tsx /tmp/seed-products-20.ts
+            docker exec -w /app vietnet-api sh -c 'npx tsx seed-products-20.ts'
             RET=\$?
-            docker exec vietnet-api rm -f /tmp/seed-products-20.ts
+            docker exec -u root vietnet-api rm -f /app/seed-products-20.ts /tmp/seed-products-20.ts 2>/dev/null || true
             rm -f /tmp/seed-products-20.ts
             [ \$RET -eq 0 ] && echo 'seed-products-20 DONE' || { echo 'seed-products-20 FAILED'; exit 1; }
           "
