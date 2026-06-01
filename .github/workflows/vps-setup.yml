@@ -89,137 +89,43 @@ jobs:
         run: |
           VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
           PORT="${{ secrets.VPS_PORT }}"
+
+          echo "=== Step 1: Upload correct infra/docker-compose.yml ==="
+          sshpass -e scp -P $PORT infra/docker-compose.yml $VPS:/opt/infra/docker-compose.yml
+
+          echo "=== Step 2: Create placeholder certs on VPS ==="
           sshpass -e ssh -p $PORT $VPS "
             export PATH=\$PATH:/usr/local/bin
-            echo '=== Creating placeholder certs for all domains ==='
             for DOMAIN in bhquan.store bhquan.site shop.bhquan.store lqd.bhquan.store photostorage.cloud www.bhquan.store www.bhquan.site; do
-              CERT=/tmp/letsencrypt/live/\$DOMAIN/fullchain.pem
               mkdir -p /tmp/letsencrypt/live/\$DOMAIN
-              if [ ! -f \"\$CERT\" ]; then
-                openssl req -x509 -nodes -days 90 -newkey rsa:2048 \
-                  -keyout /tmp/letsencrypt/live/\$DOMAIN/privkey.pem \
-                  -out \$CERT -subj /CN=\$DOMAIN 2>/dev/null && echo \"Cert OK: \$DOMAIN\" || echo \"Cert FAIL: \$DOMAIN\"
-              else
-                echo \"Cert already exists: \$DOMAIN\"
-              fi
+              openssl req -x509 -nodes -days 90 -newkey rsa:2048 \
+                -keyout /tmp/letsencrypt/live/\$DOMAIN/privkey.pem \
+                -out /tmp/letsencrypt/live/\$DOMAIN/fullchain.pem \
+                -subj /CN=\$DOMAIN 2>/dev/null && echo 'Cert OK: '\$DOMAIN || echo 'Cert FAIL: '\$DOMAIN
             done
-
-            echo '=== Copying certs to shared_certbot_data volume ==='
             docker run --rm \
               -v shared_certbot_data:/etc/letsencrypt \
-              -v /tmp/letsencrypt:/tmp/letsencrypt:ro \
-              alpine sh -c '
-                for d in /tmp/letsencrypt/live/*/; do
-                  domain=\$(basename \"\$d\")
-                  mkdir -p /etc/letsencrypt/live/\$domain
-                  cp \$d/fullchain.pem /etc/letsencrypt/live/\$domain/fullchain.pem 2>/dev/null || true
-                  cp \$d/privkey.pem /etc/letsencrypt/live/\$domain/privkey.pem 2>/dev/null || true
-                  echo \"Copied: \$domain\"
-                done
-              ' 2>&1
+              -v /tmp/letsencrypt:/src:ro \
+              alpine sh -c 'for d in /src/live/*/; do dom=\$(basename \$d); mkdir -p /etc/letsencrypt/live/\$dom; cp \$d/fullchain.pem /etc/letsencrypt/live/\$dom/; cp \$d/privkey.pem /etc/letsencrypt/live/\$dom/; echo Copied: \$dom; done' 2>&1
             rm -rf /tmp/letsencrypt
+          "
 
-            echo '=== Infra dir contents ==='
-            ls -la /opt/infra/ 2>/dev/null || echo '/opt/infra not found'
-            ls -la /opt/infra/nginx/conf.d/ 2>/dev/null || echo 'conf.d empty or missing'
-
-            echo '=== Docker compose services in infra ==='
-            cd /opt/infra && cat docker-compose.yml | grep -E '^\s+(services|nginx|mysql|redis|certbot|container_name)' 2>/dev/null || echo 'Cannot read compose file'
-
-            echo '=== Uploading correct infra/docker-compose.yml ==='
-            cat > /opt/infra/docker-compose.yml << 'COMPOSE_EOF'
-services:
-  mysql:
-    image: mysql:8.0
-    container_name: shared-mysql
-    restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-    volumes:
-      - mysql_data:/var/lib/mysql
-    command: >
-      --default-authentication-plugin=mysql_native_password
-      --innodb-buffer-pool-size=256M
-      --max-connections=100
-      --character-set-server=utf8mb4
-      --collation-server=utf8mb4_unicode_ci
-    healthcheck:
-      test: ['CMD', 'mysqladmin', 'ping', '-h', 'localhost']
-      interval: 10s
-      timeout: 5s
-      retries: 10
-    networks:
-      - webphoto_backend
-  redis:
-    image: redis:7-alpine
-    container_name: shared-redis
-    restart: always
-    command: redis-server --maxmemory 128mb --maxmemory-policy noeviction --appendonly yes
-    volumes:
-      - redis_data:/data
-    healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    networks:
-      - webphoto_backend
-  nginx:
-    image: nginx:1.27-alpine
-    container_name: shared-nginx
-    restart: always
-    ports:
-      - '80:80'
-      - '443:443'
-    volumes:
-      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
-      - /opt/webphoto/photo-storage/dist:/usr/share/nginx/html:ro
-      - shared_certbot_data:/etc/letsencrypt:ro
-      - certbot_webroot:/var/www/certbot:ro
-    networks:
-      - webphoto_backend
-  certbot:
-    image: certbot/certbot
-    container_name: infra-certbot
-    volumes:
-      - shared_certbot_data:/etc/letsencrypt
-      - certbot_webroot:/var/www/certbot
-    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
-volumes:
-  mysql_data:
-    name: shared_mysql_data
-  redis_data:
-    name: shared_redis_data
-  shared_certbot_data:
-    name: shared_certbot_data
-  certbot_webroot:
-    name: certbot_webroot
-networks:
-  webphoto_backend:
-    name: webphoto_backend
-    external: true
-COMPOSE_EOF
-            echo 'docker-compose.yml updated'
-
-            echo '=== Restarting shared-nginx ==='
+          echo "=== Step 3: Start nginx via docker compose ==="
+          sshpass -e ssh -p $PORT $VPS "
+            export PATH=\$PATH:/usr/local/bin
             NGINX_STATUS=\$(docker inspect shared-nginx --format '{{.State.Status}}' 2>/dev/null || echo missing)
-            echo "nginx status: \$NGINX_STATUS"
+            echo 'nginx status: '\$NGINX_STATUS
             if [ \"\$NGINX_STATUS\" = 'running' ]; then
               docker exec shared-nginx nginx -t 2>&1 && docker exec shared-nginx nginx -s reload 2>&1 || docker restart shared-nginx 2>&1
             elif [ \"\$NGINX_STATUS\" = 'exited' ] || [ \"\$NGINX_STATUS\" = 'created' ] || [ \"\$NGINX_STATUS\" = 'restarting' ]; then
               docker start shared-nginx 2>&1
-              sleep 3
-              docker inspect shared-nginx --format 'nginx status after start: {{.State.Status}}' 2>/dev/null || true
             else
-              echo 'shared-nginx not found — starting via docker compose up -d nginx'
+              echo 'Starting nginx via compose...'
               cd /opt/infra && docker compose up -d nginx 2>&1
-              sleep 5
-              docker inspect shared-nginx --format 'nginx status: {{.State.Status}}' 2>/dev/null || echo 'still not found after compose start'
             fi
-
+            sleep 3
             echo '=== Final status ==='
-            docker ps -a --format 'table {{.Names}}\t{{.Status}}' | grep -E 'shared|infra' || echo 'No shared containers'
+            docker ps --format 'table {{.Names}}\t{{.Status}}' | grep -E 'shared|infra' || echo 'No shared containers'
             ss -tlnp | grep -E ':80|:443' || echo 'No services on 80/443 yet'
           "
 
