@@ -1,8 +1,7 @@
 # ============================================
-# SHARED INFRASTRUCTURE — MySQL + Redis
-# Dung chung cho WebPhoto (bhquan.site) va VietNet (bhquan.store)
-# Deploy tai /opt/infra/ tren VPS
-# App nao deploy truoc se start infra nay
+# SHARED INFRASTRUCTURE — MySQL + Redis + Nginx + Certbot
+# Dung chung cho tat ca projects (WebPhoto, VietNet, FashionEcom, LeQuyDon, WebTemplate)
+# Deploy tai /opt/infra/ tren VPS — bat ky project nao deploy truoc se start infra nay
 # ============================================
 
 services:
@@ -44,11 +43,39 @@ services:
     networks:
       - webphoto_backend
 
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: shared-nginx
+    restart: always
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - /opt/webphoto/photo-storage/dist:/usr/share/nginx/html:ro
+      - shared_certbot_data:/etc/letsencrypt:ro
+      - certbot_webroot:/var/www/certbot:ro
+    networks:
+      - webphoto_backend
+
+  certbot:
+    image: certbot/certbot
+    container_name: infra-certbot
+    volumes:
+      - shared_certbot_data:/etc/letsencrypt
+      - certbot_webroot:/var/www/certbot
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+
 volumes:
   mysql_data:
     name: shared_mysql_data
   redis_data:
     name: shared_redis_data
+  shared_certbot_data:
+    name: shared_certbot_data
+  certbot_webroot:
+    name: certbot_webroot
 
 networks:
   webphoto_backend:
