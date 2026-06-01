@@ -1,0 +1,151 @@
+name: Reseed Production DB
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "yes" to confirm reseed (this deletes old seeded records)'
+        required: true
+        default: ''
+
+env:
+  APP_DIR: /opt/vietnet
+
+jobs:
+  reseed:
+    name: Delete old seed data + re-run seeds
+    runs-on: ubuntu-latest
+    if: github.event.inputs.confirm == 'yes'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq sshpass > /dev/null
+          mkdir -p ~/.ssh
+          ssh-keyscan -p ${{ secrets.VPS_PORT }} -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+          echo "SSHPASS=${{ secrets.VPS_PASSWORD }}" >> $GITHUB_ENV
+
+      - name: Delete old seeded records
+        env:
+          VIETNET_DB_PASSWORD: ${{ secrets.VIETNET_DB_PASSWORD }}
+        run: |
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
+
+          # Write delete SQL to temp file
+          cat > /tmp/delete_seed.sql << 'ENDSQL'
+          -- Delete seeded products (20)
+          DELETE FROM products WHERE slug IN (
+            'modern-walnut-l-shape-kitchen','classic-oak-island-kitchen','japanese-hinoki-u-shape',
+            'scandinavian-birch-galley','crystal-white-high-gloss-kitchen','midnight-black-acrylic-suite',
+            'champagne-gold-acrylic-kitchen','urban-grey-melamine-kitchen','warm-teak-melamine-suite',
+            'snow-white-melamine-compact','walk-in-closet-premium','sliding-door-wardrobe-modern',
+            'kids-room-wardrobe-colorful','floating-tv-console-walnut','marble-top-display-shelf',
+            'modular-bookshelf-system','executive-l-desk-solid-wood','standing-desk-adjustable',
+            'platform-bed-scandinavian','storage-bed-king-size'
+          );
+
+          -- Delete seeded articles (20)
+          DELETE FROM articles WHERE slug IN (
+            'xu-huong-noi-that-2025-thien-nhien-trong-nha','cach-chon-go-tu-nhien-cho-noi-that',
+            'phong-thuy-phong-khach-7-nguyen-tac-vang','10-meo-trang-tri-phong-ngu-nho',
+            'tu-bep-acrylic-vs-melamine-so-sanh','thiet-ke-bep-dao-xu-huong-hien-dai',
+            'anh-sang-trong-thiet-ke-noi-that','phong-thuy-phong-ngu-vo-chong',
+            'bien-nha-cu-30-nam-thanh-biet-thu-hien-dai','da-thach-anh-vs-granite-chon-mat-bep-nao',
+            'trang-tri-nha-voi-cay-xanh-indoor','kien-thuc-co-ban-ve-san-go',
+            'phong-thuy-cua-chinh-don-tai-loc','diy-tu-lam-ke-go-treo-tuong',
+            'cau-chuyen-penthouse-tren-may','xu-huong-mau-sac-noi-that-2025-2026',
+            'thiet-ke-home-office-hieu-qua','bi-quyet-chon-rem-cua-dep',
+            'smart-home-nha-thong-minh-cho-moi-nha','cau-chuyen-quan-cafe-trong-nha-may-cu'
+          );
+
+          -- Delete seeded projects (20)
+          DELETE FROM projects WHERE slug IN (
+            'saigon-serenity-villa','grand-oak-executive-suite','emerald-lake-kitchen',
+            'vintage-loft-master','riverside-penthouse','coastal-retreat-house',
+            'urban-micro-studio','japanese-tea-house','luxury-spa-resort',
+            'startup-creative-hub','heritage-boutique-hotel','eco-garden-villa',
+            'luxury-car-showroom','minimalist-duplex','mountain-lodge',
+            'fashion-concept-store','smart-family-home','dental-clinic-premium',
+            'rooftop-sky-bar','scandinavian-townhouse'
+          );
+
+          -- Delete orphaned media referencing old Unsplash URLs
+          DELETE FROM media WHERE url LIKE '%images.unsplash.com%'
+            OR thumb_url LIKE '%images.unsplash.com%'
+            OR preview_url LIKE '%images.unsplash.com%';
+          ENDSQL
+
+          printf '%s' "$VIETNET_DB_PASSWORD" > /tmp/vietnet_db_pass.txt
+          sshpass -e scp -P $PORT /tmp/delete_seed.sql $VPS:/tmp/delete_seed.sql
+          sshpass -e scp -P $PORT /tmp/vietnet_db_pass.txt $VPS:/tmp/vietnet_db_pass.txt
+          rm -f /tmp/delete_seed.sql /tmp/vietnet_db_pass.txt
+
+          sshpass -e ssh -p $PORT $VPS "
+            export PATH=\$PATH:/usr/local/bin
+            echo '=== Deleting old seeded records ==='
+            MYSQL_PWD=\$(cat /tmp/vietnet_db_pass.txt) docker exec -i -e MYSQL_PWD shared-mysql \
+              mysql -u vietnet vietnet < /tmp/delete_seed.sql
+            echo 'Delete done'
+            rm -f /tmp/delete_seed.sql /tmp/vietnet_db_pass.txt
+          "
+
+      - name: Copy updated seed scripts to VPS
+        run: |
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
+          sshpass -e scp -P $PORT backend/src/scripts/seed-demo-data.ts $VPS:/tmp/seed-demo-data.ts
+          sshpass -e scp -P $PORT backend/src/scripts/seed-products-20.ts $VPS:/tmp/seed-products-20.ts
+
+      - name: Run seed-demo-data (projects + articles + categories)
+        run: |
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
+          sshpass -e ssh -p $PORT $VPS "
+            export PATH=\$PATH:/usr/local/bin
+            echo '=== Copying seed scripts into backend container ==='
+            docker cp /tmp/seed-demo-data.ts vietnet-api:/app/src/scripts/seed-demo-data.ts
+            echo '=== Running seed-demo-data.ts ==='
+            docker exec vietnet-api npx tsx src/scripts/seed-demo-data.ts
+            echo 'seed-demo-data done'
+            rm -f /tmp/seed-demo-data.ts
+          "
+
+      - name: Run seed-products-20 (products)
+        run: |
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
+          sshpass -e ssh -p $PORT $VPS "
+            export PATH=\$PATH:/usr/local/bin
+            docker cp /tmp/seed-products-20.ts vietnet-api:/app/src/scripts/seed-products-20.ts
+            echo '=== Running seed-products-20.ts ==='
+            docker exec vietnet-api npx tsx src/scripts/seed-products-20.ts
+            echo 'seed-products-20 done'
+            rm -f /tmp/seed-products-20.ts
+          "
+
+      - name: Flush Redis cache
+        run: |
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
+          sshpass -e ssh -p $PORT $VPS "
+            export PATH=\$PATH:/usr/local/bin
+            echo '=== Flushing Redis cache ==='
+            docker exec shared-redis redis-cli FLUSHDB || true
+            echo 'Redis flushed'
+          "
+
+      - name: Summary
+        run: |
+          echo "=== RESEED COMPLETE ==="
+          echo "✓ Old Unsplash-based seeded records deleted"
+          echo "✓ seed-demo-data.ts re-run (20 projects + 20 articles + categories)"
+          echo "✓ seed-products-20.ts re-run (20 products)"
+          echo "✓ Redis cache flushed"
+          echo ""
+          echo "Check live site: https://bhquan.store/articles"
+          echo "Check live site: https://bhquan.store/projects"
+          echo "Check live site: https://bhquan.store/catalog"

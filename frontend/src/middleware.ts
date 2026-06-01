@@ -32,7 +32,7 @@ function buildCsp(nonce: string): string {
     `default-src 'self'`,
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' 'unsafe-eval'`,
     `style-src 'self' 'unsafe-inline' https://fonts.googleapis.com`,
-    `img-src 'self' data: blob: https://*.r2.dev https://*.r2.cloudflarestorage.com https://bhquan.site https://bhquan.store https://images.unsplash.com`,
+    `img-src 'self' data: blob: https://*.r2.dev https://*.r2.cloudflarestorage.com https://bhquan.site https://bhquan.store https://images.unsplash.com https://picsum.photos`,
     `font-src 'self' data: https://fonts.gstatic.com https://fonts.googleapis.com`,
     `connect-src 'self' wss: ws: https://*.r2.dev`,
     `media-src 'self' data: blob: https://*.r2.dev https://*.r2.cloudflarestorage.com`,
