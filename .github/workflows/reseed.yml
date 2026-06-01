@@ -106,12 +106,14 @@ jobs:
           PORT="${{ secrets.VPS_PORT }}"
           sshpass -e ssh -p $PORT $VPS "
             export PATH=\$PATH:/usr/local/bin
-            echo '=== Copying seed scripts into backend container ==='
-            docker cp /tmp/seed-demo-data.ts vietnet-api:/app/src/scripts/seed-demo-data.ts
-            echo '=== Running seed-demo-data.ts ==='
-            docker exec vietnet-api npx tsx src/scripts/seed-demo-data.ts
-            echo 'seed-demo-data done'
+            echo '=== Copying seed-demo-data.ts into container /tmp ==='
+            docker cp /tmp/seed-demo-data.ts vietnet-api:/tmp/seed-demo-data.ts
+            echo '=== Running seed-demo-data.ts (workdir /app so dotenv loads) ==='
+            docker exec -w /app vietnet-api npx tsx /tmp/seed-demo-data.ts
+            RET=\$?
+            docker exec vietnet-api rm -f /tmp/seed-demo-data.ts
             rm -f /tmp/seed-demo-data.ts
+            [ \$RET -eq 0 ] && echo 'seed-demo-data DONE' || { echo 'seed-demo-data FAILED'; exit 1; }
           "
 
       - name: Run seed-products-20 (products)
@@ -120,11 +122,14 @@ jobs:
           PORT="${{ secrets.VPS_PORT }}"
           sshpass -e ssh -p $PORT $VPS "
             export PATH=\$PATH:/usr/local/bin
-            docker cp /tmp/seed-products-20.ts vietnet-api:/app/src/scripts/seed-products-20.ts
+            echo '=== Copying seed-products-20.ts into container /tmp ==='
+            docker cp /tmp/seed-products-20.ts vietnet-api:/tmp/seed-products-20.ts
             echo '=== Running seed-products-20.ts ==='
-            docker exec vietnet-api npx tsx src/scripts/seed-products-20.ts
-            echo 'seed-products-20 done'
+            docker exec -w /app vietnet-api npx tsx /tmp/seed-products-20.ts
+            RET=\$?
+            docker exec vietnet-api rm -f /tmp/seed-products-20.ts
             rm -f /tmp/seed-products-20.ts
+            [ \$RET -eq 0 ] && echo 'seed-products-20 DONE' || { echo 'seed-products-20 FAILED'; exit 1; }
           "
 
       - name: Flush Redis cache
