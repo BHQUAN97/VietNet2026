@@ -119,20 +119,32 @@ jobs:
               ' 2>&1
             rm -rf /tmp/letsencrypt
 
+            echo '=== Infra dir contents ==='
+            ls -la /opt/infra/ 2>/dev/null || echo '/opt/infra not found'
+            ls -la /opt/infra/nginx/conf.d/ 2>/dev/null || echo 'conf.d empty or missing'
+
+            echo '=== Docker compose services in infra ==='
+            cd /opt/infra && cat docker-compose.yml | grep -E '^\s+(services|nginx|mysql|redis|certbot|container_name)' 2>/dev/null || echo 'Cannot read compose file'
+
             echo '=== Restarting shared-nginx ==='
             NGINX_STATUS=\$(docker inspect shared-nginx --format '{{.State.Status}}' 2>/dev/null || echo missing)
+            echo "nginx status: \$NGINX_STATUS"
             if [ \"\$NGINX_STATUS\" = 'running' ]; then
-              docker exec shared-nginx nginx -s reload 2>&1 || docker restart shared-nginx 2>&1
-            elif [ \"\$NGINX_STATUS\" = 'exited' ] || [ \"\$NGINX_STATUS\" = 'created' ]; then
+              docker exec shared-nginx nginx -t 2>&1 && docker exec shared-nginx nginx -s reload 2>&1 || docker restart shared-nginx 2>&1
+            elif [ \"\$NGINX_STATUS\" = 'exited' ] || [ \"\$NGINX_STATUS\" = 'created' ] || [ \"\$NGINX_STATUS\" = 'restarting' ]; then
               docker start shared-nginx 2>&1
+              sleep 3
+              docker inspect shared-nginx --format 'nginx status after start: {{.State.Status}}' 2>/dev/null || true
             else
-              echo 'shared-nginx not found — starting via docker compose'
-              cd /opt/infra && docker compose up -d nginx 2>&1 || true
+              echo 'shared-nginx not found — starting full infra via docker compose'
+              MYSQL_ROOT_PASSWORD=dummy cd /opt/infra && docker compose up -d 2>&1 || true
+              sleep 5
+              docker inspect shared-nginx --format 'nginx status: {{.State.Status}}' 2>/dev/null || echo 'still not found'
             fi
 
-            echo '=== Status ==='
-            docker ps --format 'table {{.Names}}\t{{.Status}}' | grep -E 'shared|infra' || echo 'No shared containers'
-            ss -tlnp | grep -E ':80|:443' || echo 'No services on 80/443 yet (may need reload)'
+            echo '=== Final status ==='
+            docker ps -a --format 'table {{.Names}}\t{{.Status}}' | grep -E 'shared|infra' || echo 'No shared containers'
+            ss -tlnp | grep -E ':80|:443' || echo 'No services on 80/443 yet'
           "
 
       - name: Reset MySQL volume
