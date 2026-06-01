@@ -1,0 +1,43 @@
+name: Debug - Get Container Logs
+
+on:
+  workflow_dispatch:
+
+env:
+  APP_DIR: /opt/vietnet
+
+jobs:
+  get-logs:
+    name: Get frontend and backend logs
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup SSH
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq sshpass > /dev/null
+          mkdir -p ~/.ssh
+          ssh-keyscan -p ${{ secrets.VPS_PORT }} -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts 2>/dev/null
+          echo "SSHPASS=${{ secrets.VPS_PASSWORD }}" >> $GITHUB_ENV
+
+      - name: Get frontend logs
+        run: |
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
+          echo "=== FRONTEND LOGS (last 100 lines) ==="
+          sshpass -e ssh -p $PORT $VPS "
+            export PATH=\$PATH:/usr/local/bin
+            docker logs vietnet-frontend --tail=100 2>&1
+          "
+
+      - name: Trigger article page and capture error
+        run: |
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
+          echo "=== Curl article detail page (internal) ==="
+          sshpass -e ssh -p $PORT $VPS "
+            export PATH=\$PATH:/usr/local/bin
+            curl -s -o /dev/null -w '%{http_code}' http://localhost:3100/articles/tu-bep-acrylic-vs-melamine-so-sanh
+            echo ''
+            sleep 2
+            echo '=== Frontend logs after request ==='
+            docker logs vietnet-frontend --tail=50 2>&1
+          "
