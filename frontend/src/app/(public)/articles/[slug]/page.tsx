@@ -16,7 +16,8 @@ import { getServerApiUrl } from '@/lib/api-url'
 
 const SEO_CONFIG = { entityName: 'Bài viết', basePath: '/articles' }
 
-// ISR fallback cho slug chua sinh — non-generated slugs van render on-demand
+// Force dynamic — root layout dung headers() nen khong the static-generate
+export const dynamic = 'force-dynamic'
 export const dynamicParams = true
 
 // Build-time: pre-generate top 50 articles (by view_count desc) de toi uu TTFB + SEO

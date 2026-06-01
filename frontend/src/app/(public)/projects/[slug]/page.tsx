@@ -16,6 +16,7 @@ import { ArrowLeft } from 'lucide-react'
 const SEO_CONFIG = { entityName: 'Dự án', basePath: '/projects' }
 
 // ISR fallback cho slug chua sinh — non-generated slugs van render on-demand
+export const dynamic = 'force-dynamic'
 export const dynamicParams = true
 
 // Build-time: pre-generate top 50 projects (by view_count desc) de toi uu TTFB + SEO

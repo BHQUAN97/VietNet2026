@@ -17,6 +17,7 @@ import { ArrowLeft, ArrowRight } from 'lucide-react'
 const SEO_CONFIG = { entityName: 'Sản phẩm', basePath: '/catalog', ogType: 'website' as const }
 
 // ISR fallback cho slug chua sinh — non-generated slugs van render on-demand
+export const dynamic = 'force-dynamic'
 export const dynamicParams = true
 
 // Build-time: pre-generate top 50 products (by view_count desc) de toi uu TTFB + SEO
