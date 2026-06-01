@@ -1,5 +1,4 @@
 import type { Metadata } from 'next'
-import { headers } from 'next/headers'
 import './globals.css'
 import { GlassNav } from '@/components/layout/GlassNav'
 import { Footer } from '@/components/layout/Footer'
@@ -24,17 +23,11 @@ export const metadata: Metadata = {
   },
 }
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  // Doc nonce tu middleware de forward xuong page (JSON-LD inline script can nonce nay).
-  // Neu middleware khong chay (vi du static export), fallback ve undefined — Next.js
-  // se tu inject nonce vao _next script tag qua build-time, inline script user-land
-  // se bi block (acceptable fallback).
-  const nonce = (await headers()).get('x-nonce') ?? undefined
-
   return (
     <html lang="vi">
       <head>
@@ -45,10 +38,8 @@ export default async function RootLayout({
         {/* Preconnect to R2 CDN for faster image loading */}
         <link rel="preconnect" href="https://pub-vietnet.r2.dev" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://pub-vietnet.r2.dev" />
-        {/* Preconnect to API (SSR internal) */}
-        <link rel="preconnect" href={process.env.INTERNAL_API_URL || 'http://localhost:4000'} />
       </head>
-      <body className="min-h-screen antialiased" data-nonce={nonce}>
+      <body className="min-h-screen antialiased">
         <GlassNav />
         <PublicShell>
           {children}
