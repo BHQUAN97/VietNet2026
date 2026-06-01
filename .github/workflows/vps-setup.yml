@@ -11,6 +11,7 @@ on:
         options:
           - docker
           - check
+          - fix-nginx
           - reset-mysql-volume
           - reset-all
 
@@ -81,6 +82,57 @@ jobs:
             systemctl enable docker
             systemctl start docker
             echo '=== Docker ready ==='
+          "
+
+      - name: Fix nginx (create placeholder certs + restart)
+        if: inputs.action == 'fix-nginx'
+        run: |
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
+          sshpass -e ssh -p $PORT $VPS "
+            export PATH=\$PATH:/usr/local/bin
+            echo '=== Creating placeholder certs for all domains ==='
+            for DOMAIN in bhquan.store bhquan.site shop.bhquan.store lqd.bhquan.store photostorage.cloud www.bhquan.store www.bhquan.site; do
+              CERT=/tmp/letsencrypt/live/\$DOMAIN/fullchain.pem
+              mkdir -p /tmp/letsencrypt/live/\$DOMAIN
+              if [ ! -f \"\$CERT\" ]; then
+                openssl req -x509 -nodes -days 90 -newkey rsa:2048 \
+                  -keyout /tmp/letsencrypt/live/\$DOMAIN/privkey.pem \
+                  -out \$CERT -subj /CN=\$DOMAIN 2>/dev/null && echo \"Cert OK: \$DOMAIN\" || echo \"Cert FAIL: \$DOMAIN\"
+              else
+                echo \"Cert already exists: \$DOMAIN\"
+              fi
+            done
+
+            echo '=== Copying certs to shared_certbot_data volume ==='
+            docker run --rm \
+              -v shared_certbot_data:/etc/letsencrypt \
+              -v /tmp/letsencrypt:/tmp/letsencrypt:ro \
+              alpine sh -c '
+                for d in /tmp/letsencrypt/live/*/; do
+                  domain=\$(basename \"\$d\")
+                  mkdir -p /etc/letsencrypt/live/\$domain
+                  cp \$d/fullchain.pem /etc/letsencrypt/live/\$domain/fullchain.pem 2>/dev/null || true
+                  cp \$d/privkey.pem /etc/letsencrypt/live/\$domain/privkey.pem 2>/dev/null || true
+                  echo \"Copied: \$domain\"
+                done
+              ' 2>&1
+            rm -rf /tmp/letsencrypt
+
+            echo '=== Restarting shared-nginx ==='
+            NGINX_STATUS=\$(docker inspect shared-nginx --format '{{.State.Status}}' 2>/dev/null || echo missing)
+            if [ \"\$NGINX_STATUS\" = 'running' ]; then
+              docker exec shared-nginx nginx -s reload 2>&1 || docker restart shared-nginx 2>&1
+            elif [ \"\$NGINX_STATUS\" = 'exited' ] || [ \"\$NGINX_STATUS\" = 'created' ]; then
+              docker start shared-nginx 2>&1
+            else
+              echo 'shared-nginx not found — starting via docker compose'
+              cd /opt/infra && docker compose up -d nginx 2>&1 || true
+            fi
+
+            echo '=== Status ==='
+            docker ps --format 'table {{.Names}}\t{{.Status}}' | grep -E 'shared|infra' || echo 'No shared containers'
+            ss -tlnp | grep -E ':80|:443' || echo 'No services on 80/443 yet (may need reload)'
           "
 
       - name: Reset MySQL volume
