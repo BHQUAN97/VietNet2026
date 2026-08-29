@@ -47,9 +47,9 @@ jobs:
             rm -rf \$BACKUP_DIR
             mkdir -p \$BACKUP_DIR
 
-            DB_PWD=\$(grep '^LQD_DB_PASSWORD=' ${APP_DIR}/.env 2>/dev/null | cut -d= -f2-)
+            DB_PWD=\$(grep '^DB_PASSWORD=' ${APP_DIR}/.env 2>/dev/null | cut -d= -f2-)
             if [ -z \"\$DB_PWD\" ]; then
-              echo 'ERROR: LQD_DB_PASSWORD not found in ${APP_DIR}/.env'
+              echo 'ERROR: DB_PASSWORD not found in ${APP_DIR}/.env'
               exit 1
             fi
 
