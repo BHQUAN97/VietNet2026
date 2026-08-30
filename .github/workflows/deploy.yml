@@ -165,6 +165,7 @@ jobs:
         run: |
           VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
           PORT="${{ secrets.VPS_PORT }}"
+          PORT="${PORT:-22}"
           [ ! -d db/changelog ] && echo "No db/changelog — skip" && exit 0
           # Upload script + chạy idempotent baseline + version migrations
           sshpass -e scp -P $PORT -r db/changelog $VPS:/opt/vietnet/db/
