@@ -1,147 +1,122 @@
 #!/bin/bash
-# ============================================================
-# DB CHANGELOG RUNNER (directory-versioned) — VietNet
-# Cau truc: db/changelog/{version}/{NNN}__mo_ta.sql
+# scripts/db-changelog.sh — Flyway-style versioned SQL migration runner (CHUẨN thống nhất)
 #
-# Usage:
-#   bash scripts/db-changelog.sh <vps-ip>              # chay tat ca pending
-#   bash scripts/db-changelog.sh <vps-ip> 1.1.0        # force chay 1 version
-#   bash scripts/db-changelog.sh <vps-ip> --status     # xem trang thai
-# ============================================================
+# Chuẩn hóa 2026-08-30: dùng docker exec shared-mysql (KHÔNG mysql -h localhost),
+# bảng schema_changelog với UNIQUE(version, filename), skip-if-applied, checksum sha256.
+# Áp dụng cho VietNet.
+#
+# Convention: db/changelog/{version}/{NNN__mo_ta}.sql
+# Cấu hình qua env: DB_CONTAINER, DB_NAME, DB_USER, DB_PASSWORD, ENV_FILE, CHANGELOG_DIR
+#
+# QUAN TRONG: day la nguon migration DUY NHAT cua VietNet (khong co ORM).
+# scripts/deploy.sh coi script nay la FATAL — fail thi KHONG duoc deploy tiep.
 
-set -e
+set -euo pipefail
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
-VPS_IP="${1:?Usage: bash scripts/db-changelog.sh <vps-ip> [version|--status]}"
-SINGLE="${2:-}"
-VPS_USER="${VPS_USER:-root}"
-VPS_HOST="${VPS_USER}@${VPS_IP}"
-APP_DIR="/opt/vietnet"
+log()   { echo "[INFO] $*"; }
+log_warn() { echo "[WARN] $*"; }
+log_error() { echo "[ERROR] $*"; }
 
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-CYAN='\033[0;36m'
-YELLOW='\033[0;33m'
-NC='\033[0m'
+DB_CONTAINER="${DB_CONTAINER:-shared-mysql}"
+DB_NAME="${DB_NAME:-vietnet}"
+DB_USER="${DB_USER:-vietnet}"
+ENV_FILE="${ENV_FILE:-/opt/vietnet/.env}"
+CHANGELOG_DIR="${CHANGELOG_DIR:-${PROJECT_ROOT}/db/changelog}"
+APPLIED_BY="${APPLIED_BY:-$(whoami 2>/dev/null || echo ci)}"
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-CHANGELOG_DIR="$ROOT_DIR/db/changelog"
-
-if [ ! -d "$CHANGELOG_DIR" ]; then
-  echo -e "${RED}[ERR]${NC} Khong tim thay thu muc db/changelog/"
+if [[ -n "${DB_PASSWORD:-}" ]]; then
+  : # da co san
+elif [[ -f "$ENV_FILE" ]]; then
+  DB_PASSWORD="$(grep -E '^DB_PASSWORD=' "$ENV_FILE" | head -1 | cut -d= -f2-)"
+fi
+if [[ -z "${DB_PASSWORD:-}" ]]; then
+  log_error "Khong tim thay DB_PASSWORD"
   exit 1
 fi
 
-# VietNet dung chung shared-mysql nhung DB rieng (vietnet)
-VIETNET_DB_PWD=$(ssh "${VPS_HOST}" "grep '^VIETNET_DB_PASSWORD=' ${APP_DIR}/.env | cut -d= -f2-")
-if [ -z "$VIETNET_DB_PWD" ]; then
-  echo -e "${RED}[ERR]${NC} Khong doc duoc VIETNET_DB_PASSWORD tu .env tren VPS"
-  exit 1
-fi
+mysql_exec() {
+  docker exec -e MYSQL_PWD="$DB_PASSWORD" "$DB_CONTAINER" \
+    mysql --protocol=tcp -h 127.0.0.1 -u"$DB_USER" --default-character-set=utf8mb4 "$DB_NAME" "$@"
+}
 
-MYSQL_CMD="docker exec -i shared-mysql mysql -u vietnet -p${VIETNET_DB_PWD} vietnet"
+mysql_exec_file() {
+  docker exec -i -e MYSQL_PWD="$DB_PASSWORD" "$DB_CONTAINER" \
+    mysql --protocol=tcp -h 127.0.0.1 -u"$DB_USER" --default-character-set=utf8mb4 "$DB_NAME" < "$1"
+}
 
-echo ""
-echo "=== DB Changelog Runner (VietNet) ==="
-echo "  VPS: ${VPS_HOST}"
-echo ""
+# 1. Dam bao bang tracking ton tai
+mysql_exec -e "
+CREATE TABLE IF NOT EXISTS schema_changelog (
+  version      VARCHAR(50)  NOT NULL,
+  filename     VARCHAR(255) NOT NULL,
+  description  VARCHAR(255) NOT NULL DEFAULT '',
+  checksum     VARCHAR(64)  NOT NULL,
+  applied_by   VARCHAR(100) NOT NULL DEFAULT 'ci',
+  applied_at   TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  execution_ms INT          NULL,
+  PRIMARY KEY (version, filename)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+"
 
-# Ensure tracker table exists
-for f in "$CHANGELOG_DIR"/_init/*.sql; do
-  [ -f "$f" ] && ssh "${VPS_HOST}" "$MYSQL_CMD" < "$f" > /dev/null 2>&1
-done
-
-# --status
-if [ "$SINGLE" = "--status" ]; then
-  echo -e "${CYAN}Applied migrations:${NC}"
-  ssh "${VPS_HOST}" "$MYSQL_CMD -e \"SELECT version, filename, applied_at, applied_by, execution_ms FROM schema_changelog ORDER BY version, filename\"" 2>/dev/null
-  echo ""
-
-  APPLIED=$(ssh "${VPS_HOST}" "$MYSQL_CMD -N -e \"SELECT CONCAT(version, '/', filename) FROM schema_changelog\"" 2>/dev/null || echo "")
-  echo -e "${CYAN}Pending migrations:${NC}"
-  PENDING=0
-  for ver_dir in $(find "$CHANGELOG_DIR" -mindepth 1 -maxdepth 1 -type d ! -name '_init' | sort); do
-    VER=$(basename "$ver_dir")
-    for f in $(find "$ver_dir" -name '*.sql' -type f | sort); do
-      FNAME=$(basename "$f")
-      KEY="${VER}/${FNAME}"
-      if ! echo "$APPLIED" | grep -qF "$KEY"; then
-        echo "  $KEY"
-        ((PENDING++))
-      fi
-    done
-  done
-  [ $PENDING -eq 0 ] && echo "  (none — all up to date)"
+if [[ ! -d "$CHANGELOG_DIR" ]]; then
+  log_warn "Khong co thu muc ${CHANGELOG_DIR} — bo qua"
   exit 0
 fi
 
-# Get applied
-APPLIED=$(ssh "${VPS_HOST}" "$MYSQL_CMD -N -e \"SELECT CONCAT(version, '/', filename) FROM schema_changelog\"" 2>/dev/null || echo "")
+PASS_COUNT=0
+SKIP_COUNT=0
+FAIL_COUNT=0
 
-# Collect version directories
-if [ -n "$SINGLE" ]; then
-  if [ ! -d "$CHANGELOG_DIR/$SINGLE" ]; then
-    echo -e "${RED}[ERR]${NC} Khong tim thay thu muc: db/changelog/$SINGLE"
-    exit 1
-  fi
-  VER_DIRS=("$CHANGELOG_DIR/$SINGLE")
-  echo -e "${YELLOW}[FORCE]${NC} Running version $SINGLE"
-  FORCE_MODE=true
-else
-  VER_DIRS=()
-  while IFS= read -r d; do
-    VER_DIRS+=("$d")
-  done < <(find "$CHANGELOG_DIR" -mindepth 1 -maxdepth 1 -type d ! -name '_init' | sort)
-  FORCE_MODE=false
+# 2. Chay _init/*.sql truoc (idempotent), bo qua 001__schema_changelog.sql (da ensure)
+if [[ -d "$CHANGELOG_DIR/_init" ]]; then
+  while IFS= read -r sql_file; do
+    filename="$(basename "$sql_file")"
+    [[ "$filename" == "001__schema_changelog.sql" ]] && continue
+    log "INIT  _init/${filename} ..."
+    if mysql_exec_file "$sql_file"; then
+      log "PASS  _init/${filename}"
+      PASS_COUNT=$((PASS_COUNT + 1))
+    else
+      log_error "FAIL  _init/${filename}"
+      exit 1
+    fi
+  done < <(find "$CHANGELOG_DIR/_init" -maxdepth 1 -name '*.sql' | sort)
 fi
 
-if [ ${#VER_DIRS[@]} -eq 0 ]; then
-  echo "Khong co version changelog nao."
-  exit 0
-fi
+# 3. Scan cac version dir (bo _*), skip-if-applied
+while IFS= read -r version_dir; do
+  version="$(basename "$version_dir")"
+  [[ "$version" == _* ]] && continue
 
-PASS=0
-SKIP=0
-FAIL=0
+  while IFS= read -r sql_file; do
+    filename="$(basename "$sql_file")"
 
-for ver_dir in "${VER_DIRS[@]}"; do
-  VER=$(basename "$ver_dir")
-  echo -e "\n${CYAN}── Version $VER ──${NC}"
+    already=$(mysql_exec -N -B -e \
+      "SELECT COUNT(*) FROM schema_changelog WHERE version='${version}' AND filename='${filename}';" 2>/dev/null || echo "0")
 
-  for f in $(find "$ver_dir" -name '*.sql' -type f | sort); do
-    FNAME=$(basename "$f")
-    KEY="${VER}/${FNAME}"
-
-    if [ "$FORCE_MODE" != "true" ] && echo "$APPLIED" | grep -qF "$KEY"; then
-      echo -e "  ${CYAN}[SKIP]${NC} $FNAME (already applied)"
-      ((SKIP++))
+    if [[ "$already" == "1" ]]; then
+      log "SKIP  ${version}/${filename} (da applied)"
+      SKIP_COUNT=$((SKIP_COUNT + 1))
       continue
     fi
 
-    echo -ne "  ${CYAN}[RUN]${NC} $FNAME ... "
-
-    START_S=$(date +%s)
-    OUTPUT=$(ssh "${VPS_HOST}" "$MYSQL_CMD" < "$f" 2>&1)
-    EXIT_CODE=$?
-    END_S=$(date +%s)
-    DURATION_MS=$(( (END_S - START_S) * 1000 ))
-
-    if [ $EXIT_CODE -eq 0 ]; then
-      DESC=$(echo "$FNAME" | sed 's/^[0-9]*__//; s/\.sql$//; s/_/ /g')
-      CHECKSUM=$(sha256sum "$f" | cut -d' ' -f1)
-
-      ssh "${VPS_HOST}" "$MYSQL_CMD -e \"REPLACE INTO schema_changelog (version, filename, description, applied_by, checksum, execution_ms) VALUES ('$VER', '$FNAME', '$DESC', 'manual', '$CHECKSUM', $DURATION_MS)\"" 2>/dev/null
-
-      echo -e "${GREEN}OK${NC} (${DURATION_MS}ms)"
-      echo "$OUTPUT" | grep -E '^\[OK\]|^\[SKIP\]|^result' | sed 's/^/    /'
-      ((PASS++))
+    log "APPLY ${version}/${filename} ..."
+    if mysql_exec_file "$sql_file"; then
+      checksum=$(sha256sum "$sql_file" | awk '{print $1}')
+      description=$(echo "$filename" | sed -E 's/^[0-9]+_?//; s/\.sql$//; s/_/ /g')
+      mysql_exec -e "INSERT INTO schema_changelog (version, filename, description, checksum, applied_by) \
+        VALUES ('${version}', '${filename}', '${description}', '${checksum}', '${APPLIED_BY}');"
+      log "PASS  ${version}/${filename}"
+      PASS_COUNT=$((PASS_COUNT + 1))
     else
-      echo -e "${RED}FAILED${NC}"
-      echo "$OUTPUT" | tail -5 | sed 's/^/    /'
-      ((FAIL++))
+      log_error "FAIL  ${version}/${filename} — dung changelog ngay"
+      FAIL_COUNT=$((FAIL_COUNT + 1))
+      log "Summary: PASS=${PASS_COUNT} SKIP=${SKIP_COUNT} FAIL=${FAIL_COUNT}"
+      exit 1
     fi
-  done
-done
+  done < <(find "$version_dir" -maxdepth 1 -name '*.sql' | sort)
+done < <(find "$CHANGELOG_DIR" -mindepth 1 -maxdepth 1 -type d | sort)
 
-echo ""
-echo "=== Done: ${PASS} applied, ${SKIP} skipped, ${FAIL} failed ==="
+log "Summary: PASS=${PASS_COUNT} SKIP=${SKIP_COUNT} FAIL=${FAIL_COUNT}"
