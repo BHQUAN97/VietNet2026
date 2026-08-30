@@ -144,17 +144,58 @@ jobs:
             rm -f /tmp/ensure_vietnet.sql
           "
 
-      # ── Ensure DB migrations (nếu có db/changelog) ─
-      - name: Ensure DB schema init
+      # ── ĐỒNG BỘ HÓA: Run DB changelog (chuẩn Flyway) ─
+      # Ensure bảng theo dõi version + chạy version migrations (skip-if-applied)
+      - name: Run DB changelog
+        id: changelog
         env:
           VIETNET_DB_PASSWORD: ${{ secrets.VIETNET_DB_PASSWORD }}
         run: |
+          set +e
           VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
           PORT="${{ secrets.VPS_PORT || '22' }}"
-          [ ! -d db/schema ] && [ ! -d db/changelog ] && echo "No db folder — skip" && exit 0
+          [ ! -d db/changelog ] && echo "No db/changelog — skip" && exit 0
+
+          MYSQL_CMD="docker exec -i shared-mysql mysql -u vietnet -p$VIETNET_DB_PASSWORD vietnet"
+
+          echo "=== Ensure schema_changelog table ==="
           if [ -f db/changelog/_init/001__schema_changelog.sql ]; then
-            sshpass -e ssh -p $PORT $VPS "docker exec -i shared-mysql mysql -u vietnet -p$VIETNET_DB_PASSWORD vietnet" < db/changelog/_init/001__schema_changelog.sql 2>/dev/null || true
+            sshpass -e ssh -p $PORT $VPS "$MYSQL_CMD" < db/changelog/_init/001__schema_changelog.sql 2>/dev/null || true
           fi
+
+          echo "=== Running _init scripts ==="
+          for f in $(find db/changelog/_init -name '*.sql' -type f 2>/dev/null | sort); do
+            case "$(basename "$f")" in
+              001__schema_changelog.sql) continue ;; # đã ensure ở trên
+            esac
+            echo -n "  $(basename $f) ... "
+            OUTPUT=$(sshpass -e ssh -p $PORT $VPS "$MYSQL_CMD" < "$f" 2>&1)
+            if [ $? -eq 0 ]; then echo "OK"; else echo "FAILED"; echo "$OUTPUT" | tail -3 | sed 's/^/    /'; fi
+          done
+
+          echo "=== Running versioned migrations ==="
+          APPLIED=$(sshpass -e ssh -p $PORT $VPS "$MYSQL_CMD -N -e \"SELECT CONCAT(version, '/', filename) FROM schema_changelog\"" 2>/dev/null || echo "")
+          PASS=0; SKIP=0; FAIL=0
+
+          for ver_dir in $(find db/changelog -mindepth 1 -maxdepth 1 -type d ! -name '_init' | sort); do
+            VER=$(basename "$ver_dir")
+            for f in $(find "$ver_dir" -name '*.sql' -type f | sort); do
+              FNAME=$(basename "$f"); KEY="${VER}/${FNAME}"
+              echo "$APPLIED" | grep -qF "$KEY" && { ((SKIP++)); continue; }
+              echo -n "  $VER/$FNAME ... "
+              OUTPUT=$(sshpass -e ssh -p $PORT $VPS "$MYSQL_CMD" < "$f" 2>&1)
+              if [ $? -eq 0 ]; then
+                DESC=$(echo "$FNAME" | sed 's/^[0-9]*__//;s/\.sql$//;s/_/ /g')
+                CHECKSUM=$(sha256sum "$f" | cut -d' ' -f1)
+                sshpass -e ssh -p $PORT $VPS "$MYSQL_CMD -e \"REPLACE INTO schema_changelog (version,filename,description,applied_by,checksum) VALUES ('$VER','$FNAME','$DESC','ci','$CHECKSUM')\"" 2>/dev/null
+                echo "OK"; ((PASS++))
+              else
+                echo "FAILED"; echo "$OUTPUT" | tail -3 | sed 's/^/    /'; ((FAIL++))
+              fi
+            done
+          done
+          echo "Changelog: $PASS applied, $SKIP skipped, $FAIL failed"
+          [ $PASS -gt 0 ] && echo "db_changed=true" >> $GITHUB_OUTPUT || echo "db_changed=false" >> $GITHUB_OUTPUT
 
       # ── Clone repo nếu chưa có trên VPS ──────────
       - name: Ensure repo present on VPS
