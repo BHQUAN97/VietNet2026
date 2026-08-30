@@ -144,18 +144,6 @@ jobs:
             rm -f /tmp/ensure_vietnet.sql
           "
 
-      # ── ĐỒNG BỘ HÓA: Run DB changelog (chuẩn Flyway) ─
-      # Ensure bảng theo dõi version + chạy version migrations (skip-if-applied)
-      - name: Run DB changelog
-        id: changelog
-        run: |
-          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
-          PORT="${{ secrets.VPS_PORT }}"
-          [ ! -d db/changelog ] && echo "No db/changelog — skip" && exit 0
-          # Upload script + chạy idempotent baseline + version migrations
-          sshpass -e scp -P $PORT -r db/changelog $VPS:/opt/vietnet/db/
-          sshpass -e scp -P $PORT scripts/db-changelog.sh $VPS:/opt/vietnet/scripts/db-changelog.sh
-          sshpass -e ssh -p $PORT $VPS "cd /opt/vietnet && bash scripts/db-changelog.sh 2>&1 || { echo '::error::db-changelog failed'; exit 1; }"
       - name: Ensure repo present on VPS
         run: |
           VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
@@ -170,6 +158,18 @@ jobs:
             git fetch origin main
             git reset --hard origin/main
           "
+
+# Ensure bảng theo dõi version + chạy version migrations (skip-if-applied)
+      - name: Run DB changelog
+        id: changelog
+        run: |
+          VPS="${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}"
+          PORT="${{ secrets.VPS_PORT }}"
+          [ ! -d db/changelog ] && echo "No db/changelog — skip" && exit 0
+          # Upload script + chạy idempotent baseline + version migrations
+          sshpass -e scp -P $PORT -r db/changelog $VPS:/opt/vietnet/db/
+          sshpass -e scp -P $PORT scripts/db-changelog.sh $VPS:/opt/vietnet/scripts/db-changelog.sh
+          sshpass -e ssh -p $PORT $VPS "cd /opt/vietnet && bash scripts/db-changelog.sh 2>&1 || { echo '::error::db-changelog failed'; exit 1; }"
 
       # ── Deploy: networks + build + up ────────────
       - name: Deploy containers (an toàn)
